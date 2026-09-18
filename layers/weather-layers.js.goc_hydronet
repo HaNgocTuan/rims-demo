@@ -1,0 +1,1624 @@
+/* =====================================================================
+   weather-layers.js  v0.25  —  Lớp Khí tượng–Thủy văn (WeatherPlus) cho viewer HydroNet
+   v0.25: hyetograph trục Y nice-ticks · động cơ refresh thời gian thực (mưa+mực nước, bám mốc đồng hồ) · nhãn mực nước trên tam giác · cờ "cũ" khi mất tín hiệu
+   v0.26: lớp BÃO giàu — track tô màu cường độ · observed/forecast · nón · icon xoáy · bảng · nhiều bão · realtime.
+   v0.27: icon xoáy · nón 3 tầng · endpoint /cone · bấm icon mở bảng.
+   v0.28: nón trơn · chong chóng 4 cánh · bảng đầy đủ.
+   v0.29: màu theo mã cấp WP · cánh quạt · bảng RMA.
+   v0.30: icon WMO.
+   v0.31: bảng mở rộng + cấp VN Beaufort.
+   v0.32: suy mã quốc tế từ gió khi thiếu mã.
+   v0.36: bảng — gộp THỜI GIAN(dd/mm/yy hh:mm,UTC+7); CẤP BÃO 3 cột Cấp|Việt Nam|JMA; ô màu cấp; bảng kéo dãn (resize); chân bảng "tâm bão hiện tại" (ô màu·giờ·VN·JMA·gió·áp suất).
+   v0.35: nới vùng lọc bão sang đông tới quần đảo Marshall (lonMax 132→173).
+   v0.34: gió quy về 2 PHÚT (JTWC×0.93/JMA×1.06) cho cả cột gió + cấp VN; BỎ cột gió giật (API không có); LỌC vùng Biển Đông+biển Philippines (lon99–132,lat0–30); cấp VN dạng "16 Siêu bão".
+   v0.33: VIẾT LẠI theo schema API thật /api/storms/latest — wind=KNOT (×1.852→km/h); mã cấp đọc thẳng code B/D/S/SS/T/ST/VT/E→LPA/TD/TS/STS/TY/STY/VTY/EX; nón dùng ring "cone" sẵn; đường đi vẽ mượt theo "spline"; cờ "forecast" tách nét đứt; bỏ fetch /track-/cone riêng. API KHÔNG có gió giật → cột "–".
+   v0.37: ĐỒNG HỒ CHỦ — thanh trượt thời gian dùng chung (union các lớp), tâm bão nội suy chạy theo giờ, tile snap frame; LEGEND NỔI góc dưới-phải dùng đúng RAIN_LUT.
+   v0.42: RADAR khớp RMA — decode ĐỌC range từ header x-{type}-range (sửa lệch ~2× do giả định range=palette); ngoài cửa sổ dữ liệu → ẨN lớp (không treo khung cũ). THANG MÀU CHUNG: tích lũy dùng họ màu mưa (ngưỡng phân cấp mưa ngày VN), legend cường độ mm/h (0.5..100) dạng dải, caption tích lũy kèm cửa sổ.
+   v0.43: LEGEND THỐNG NHẤT — cả radar lẫn tích lũy vẽ smooth (như RMA) bằng MỘT dải 8 màu chung (RAMP8, kết thúc TRẮNG=cực đoan). Hai thanh giống hệt, chỉ khác nhãn (radar 0.5..200 mm/h · tích lũy 16..500 mm). ACC_STOPS = đúng 8 màu RAMP8.
+   v0.44: (1) radar ⟷ mưa LOẠI TRỪ lẫn nhau (cùng mm/h, cùng vùng) -> hết chồng tile + legend trùng. (2) SỬA: cửa sổ LỊCH (quá khứ, vd 8/2024) không còn bị đánh dấu "cũ" -> ghim lên màu + hiện số đúng. (3) Trạm KHÔNG có mẫu trong cửa sổ -> ghim "không dữ liệu". (4) caption legend ghi rõ "trực tiếp"/"cố định".
+   v0.45: nhịp realtime mặc định 15 phút (refreshMin).
+   v0.46: TRẠNG THÁI TRẠM 3 mức theo last_data/last_data_at (POST /api/map/station/status): LỖI (last_data null -> giọt rỗng+✕ đỏ) · TRỄ (last_data_at ≥ ngưỡng lateMin setting, mặc định 120 phút -> vẫn lên màu tổng + viền nét đứt + đồng hồ) · ĐÚNG GIỜ (<ngưỡng -> đầy màu+số). Chỉ áp ở chế độ trực tiếp; chế độ LỊCH giữ tổng/no-data như cũ.
+   v0.47: AN TOÀN khi xem LỊCH — băng cảnh báo + nút "Về thời gian thực" + AUTO-REVERT khi bỏ quên (idleRevertMin, mặc định 10; 0=tắt). Mọi tương tác reset đồng hồ.
+   v0.48: Băng gọn lại "⏸ Đang xem quá khứ mưa trạm"; nút "Về thời gian thực" gắn ĐỒNG HỒ ĐẾM LÙI mm:ss (tới 0:00 tự chuyển). Tương tác reset thì đếm lùi cũng reset.
+   v0.49: Lớp MƯA DỰ BÁO — xác minh khớp RMA + sửa nhãn forecast.
+   v0.50: GIÓ animation HẠT — canvas overlay (pane wx-windfx z390) giải u/v từ tile gió; 2 mode Hạt/Dòng; tắt/bật độc lập; windSpeedScale chỉnh được.
+   v0.51: VỆ TINH Himawari — xác minh khớp RMA (tile .jpg /api/satellite/himawari/{y/M/d/H/m}/{z/x/y}, timeline lon/lat/hours=24, UTC, 10 phút). Vá 2 điểm: maxNativeZoom=7 (phóng to thay vì 404 khi z>7) + lọc frame available!==false. -> XONG 5 lớp khí tượng (bão·radar·mưa dự báo·gió·vệ tinh).
+   Gắn vào window.HYDRO_MAP. Tự tạo panel riêng "Khí tượng – Thủy văn".
+   ---------------------------------------------------------------------
+   HIỂN THỊ THẲNG:  Trạm · Bão (track GeoJSON) · Vệ tinh (tile JPG + timeline)
+   GIẢI MÃ CANVAS (port từ scalarBackendSource/noaaBackendSource, KHÔNG cần WebGL):
+     • Radar (mm/h)   value=(R/255)^gamma·range  -> bảng màu RAINFALL_STOPS
+     • Mưa  (mm/h)    như radar (path không có phút)
+     • Gió  (m/s)     speed=(B/255)·36           -> palette gió (LUT 512)
+   ---------------------------------------------------------------------
+   Sandbox không gọi được API WP -> chạy ở máy có mạng WP. Token chỉ cần cho Trạm.
+   Tile cần CORS cho phép đọc pixel (fetch+createImageBitmap). Chỗ cần chỉnh: [CHỈNH].
+===================================================================== */
+(function () {
+  console.log("%c[HydroNet] weather-layers.js v0.57 (vệ tinh: PREWARM tile mọi frame trong vùng xem -> play đều nhịp, hết khựng)","color:#1f93e3;font-weight:700");
+  console.log("%c[HydroNet] weather-layers.js v0.58 (icon bão xoáy XOAY + tách Mưa phân tích/Mưa dự báo loại trừ + lớp dự báo GMOS NIMBUS square-net, có LOG chẩn đoán API)","color:#1f93e3;font-weight:700");
+  console.log("%c[HydroNet] weather-layers.js v0.59 (marker bão kẹp ở điểm quan trắc cuối -> now không lấn dự báo, khớp trường gió hơn)","color:#1f93e3;font-weight:700");
+  console.log("%c[HydroNet] weather-layers.js v0.60 (forecast: log URL+HTTP từng bước, không alert nổ ra -> dễ tìm điểm hỏng)","color:#1f93e3;font-weight:700");
+  console.log("%c[HydroNet] weather-layers.js v0.61 (forecast: chọn phiên MỚI NHẤT + dump+bóc lớp bọc DATA)","color:#1f93e3;font-weight:700");
+  console.log("%c[HydroNet] weather-layers.js v0.62 (forecast CHẠY: sửa tràn stack min/max, parser {cellId:{giờ:mm}} -> render ô lưới)","color:#1f93e3;font-weight:700");
+  console.log("%c[HydroNet] weather-layers.js v0.63 (forecast: log frame theo t khi tua để chẩn đoán)","color:#1f93e3;font-weight:700");
+  console.log("%c[HydroNet] weather-layers.js v0.64 (forecast: dropdown Model+Phiên, tự chọn phiên mới nhất >=2 giờ -> tua được)","color:#1f93e3;font-weight:700");
+  console.log("%c[HydroNet] weather-layers.js v0.65 (forecast: giới hạn 3 model GFS/ECMWF/NIMBUS + 12 phiên gần nhất)","color:#1f93e3;font-weight:700");
+  console.log("%c[HydroNet] weather-layers.js v0.66 (forecast: lọc model ưu tiên tên TRÙNG KHỚP -> NIMBUS đúng, hết lỗi)","color:#1f93e3;font-weight:700");
+  console.log("%c[HydroNet] weather-layers.js v0.67 (mưa dự báo: Ô lưới/Làm mịn + đánh bóng menu: sub-panel accent, segmented, hover/active)","color:#1f93e3;font-weight:700");
+  console.log("%c[HydroNet] weather-layers.js v0.68 (SMOOTH: nội suy mưa dự báo A->B, cross-fade liên tục vệ tinh (mây trôi), radar/mưa phân tích không chớp, tốc độ êm)","color:#1f93e3;font-weight:700");
+  console.log("%c[HydroNet] weather-layers.js v0.69 (mưa dự báo: hiện thang màu cường độ mưa trong legend)","color:#1f93e3;font-weight:700");
+  console.log("%c[HydroNet] weather-layers.js v0.70 (forecast: cache phép chiếu + giới hạn ~16fps -> hết khựng khi bật cùng gió)","color:#1f93e3;font-weight:700");
+  console.log("%c[HydroNet] weather-layers.js v0.72 (forecast: CHIA ĐỀU bước theo frame -> hết lướt nhanh/đông cứng dù dữ liệu thưa/lệch)","color:#1f93e3;font-weight:700");
+  console.log("%c[HydroNet] weather-layers.js v0.73 (forecast renderer NHẸ: mini-grid 1 drawImage, bỏ 50k fillRect + bỏ cấp phát canvas mỗi khung -> hết treo)","color:#1f93e3;font-weight:700");
+  console.log("%c[HydroNet] weather-layers.js v0.74 (gió: giới hạn buildField ~1/giây -> hết treo khi chạy cùng mưa dự báo)","color:#1f93e3;font-weight:700");
+  console.log("%c[HydroNet] weather-layers.js v0.75 (MƯA DỰ BÁO LÊN GPU/WebGL: nội suy+tô màu trong shader, gần 0% CPU -> chạy cùng gió không treo; fallback canvas tự động)","color:#1f93e3;font-weight:700");
+  console.log("%c[HydroNet] weather-layers.js v0.76 (đồng hồ: mỗi lớp play TRỌN dải riêng theo % tiến độ -> mưa không còn khựng khi bật cùng gió)","color:#1f93e3;font-weight:700");
+  console.log("%c[HydroNet] weather-layers.js v0.77 (BÃO dùng thời gian tuyệt đối + range tới quan trắc cuối -> bật gió không làm tâm bão nhảy, play không chạy vào tương lai)","color:#1f93e3;font-weight:700");
+  // ---------- CONFIG: điền trước khi chạy ----------
+  const WX = {
+    rmaBase:     "https://wpe-tools.seho.vn/api/rma",   // (cũ) — chỉ còn dùng làm fallback nếu thiếu rmaGw
+    rmaGw:       "https://wpe-tools.seho.vn/api/portal/gateway/rma",  // gateway RMA — x-api-key (Dev)
+    rmaKey:      "",                                    // API key RMA (bắt buộc cho lớp Trạm + mưa dự báo)
+    resourceUrl: "https://resources.weatherplus.vn",    // vệ tinh + radar + mưa + gió
+    stormBase:   "https://resources.weatherplus.vn",    // bão (không cần auth)
+    center:      { lon: 105.65, lat: 18.20 },           // tâm vùng Hố Hô (timeline vệ tinh)
+  };
+  // Ghi đè bằng cấu hình từ tab "Cài đặt" (window.HYDRO_SETTINGS) nếu có
+  (function(){ const S=window.HYDRO_SETTINGS||{};
+    if(S.rmaBase)WX.rmaBase=S.rmaBase; if(S.rmaGw)WX.rmaGw=S.rmaGw; if(S.rmaKey)WX.rmaKey=S.rmaKey; if(S.resourceUrl)WX.resourceUrl=S.resourceUrl;
+    if(S.stormBase)WX.stormBase=S.stormBase;
+    if(S.centerLat&&S.centerLon)WX.center={lon:+S.centerLon,lat:+S.centerLat};
+  })();
+
+  const map = window.HYDRO_MAP, L = window.L;
+  if (!map) { console.error("weather-layers: thiếu window.HYDRO_MAP"); return; }
+  map.createPane("wx-tiles");   map.getPane("wx-tiles").style.zIndex = 380;
+  map.createPane("wx-cone");    map.getPane("wx-cone").style.zIndex = 455;
+  map.createPane("wx-storm");   map.getPane("wx-storm").style.zIndex = 460;
+  map.createPane("wx-station"); map.getPane("wx-station").style.zIndex = 470;
+  const res = () => WX.resourceUrl.replace(/\/+$/, "");
+  const layers = {};
+  let stormAnim=[];
+  let rawStations = null;
+  // ---- RMA auth: CHỈ x-api-key qua gateway mới (đã gỡ token) ----
+  function rmaKey(){ return (window.HYDRO_SETTINGS&&window.HYDRO_SETTINGS.rmaKey) || WX.rmaKey || ""; }
+  function rmaBaseU(){ return (WX.rmaGw||WX.rmaBase).replace(/\/+$/,""); }
+  function rmaHdr(json){ var h = {"x-api-key":rmaKey()}; if(json)h["Content-Type"]="application/json"; return h; }
+  function rmaAuthOK(){ return !!rmaKey(); }
+  const satState = { frames: [], idx: -1, pending: -1, layers: {}, order: [] };  // double-buffer + cache
+
+  /* ============ BẢNG MÀU ============ */
+  const RAINFALL_STOPS = [
+    [0/200,[188,228,251,0]],[0.5/200,[176,221,250,160]],[1/200,[84,134,234,230]],
+    [5/200,[118,91,197,255]],[10/200,[247,114,106,255]],[20/200,[249,193,71,255]],
+    [50/200,[252,251,110,255]],[100/200,[253,253,151,255]],[150/200,[255,255,208,255]],
+    [1.0,[255,255,255,255]],
+  ];
+  const PW = 512;
+  function buildLUT(stops){
+    const lut=new Uint8Array(PW*4);
+    for(let i=0;i<PW;i++){const t=i/(PW-1);let s0=stops[0],s1=stops[stops.length-1];
+      for(let k=0;k<stops.length-1;k++){if(t>=stops[k][0]&&t<=stops[k+1][0]){s0=stops[k];s1=stops[k+1];break;}}
+      const span=(s1[0]-s0[0])||1,f=Math.min(Math.max((t-s0[0])/span,0),1);
+      for(let c=0;c<4;c++)lut[i*4+c]=Math.round(s0[1][c]+(s1[1][c]-s0[1][c])*f);}
+    return lut;
+  }
+  const RAIN_LUT = buildLUT(RAINFALL_STOPS);
+  // palette gió (RGB nén base64, 512 mốc), speed 0..63.75 m/s
+  const WIND_B64 = "W0aoW0mqWkurWk6tWlCuWlOwWlWyWli0WVq1WV23WF+4WWK6WWS8WGa9WGm/WGzBWG/DV3HEV3PFV3bHV3jJV3vLVn3MV4DNWILNWYXNWYbNWonOW4zOW43OXJDOXZPPXpXPX5jPX5nPYJzQYZ7QYqLQY6TQZKfRZKnRZazRZa3RZ7DSaLPSaLTRabfSarrTa7zSbL3QbL7ObsDNb8HLcMPKccTJc8bIc8fGdcnFdcrDd8zCeM7AeM6+etC9e9K8fdS7fdW5fta3f9i2gNm1gtu0g92yhN6xhd+vh+KtiOOri+SqjuSpkOSnk+WnluammealnOejnuahoeegpOifp+meqemdrOqcr+qasuqZtOqXt+uWuuyVvOyTv+2Tw+2Sxe6Sx+6Rye6Ry+6Rzu+R0O+R0u+R1fCR1/CQ2fCQ2/CQ3vGQ4PGQ4vGP5vKQ6PKQ6vOQ7fOP7vKO8PON8vOM9POL9PCK9O6K9OqJ9OiI9OaH9eSH9eOH9OCF9d+F9t6F9tyE9tqE9diC9teC9tWB99SB99KA99GA989/+M1/98t++Mp9+Mh9+MZ8+MV8+MN8+MJ7+MB7971597x597p597h597d497V49rN39rJ39bB29q529q119ap09al09ah09aZ09aRz9KJy9KFy9J9x9J5x9Jxx9Jtw85hw85dv8pVu85Ru85Ju8ZBt8Y9t8I1t74xs7ops7Ihr7Idr6oVq6oRq6YJp54Bp5n5o5X1o5Htn43ln4nhn4HZm4HVm33Nm3nJl3XBl225j221k2Wtj2Wpj2Ghi12di1WVh1WNh02Fg0mBg0WBgz15gz15hzl1hzF1iy1xiyVphyFpix1lixlljxVhjxFdjwlZjwVZkv1RjvlRkvVNku1FkulFluVFluFBmtk9mtE5ltE1mskxmsUxnsEtnr0tnrUlnrEloqkhnqkdoqUdop0VopkVppUVppERqokNqoEFpoEFqn0BqnkBqnT9qnT9rmz5qmz5rmj1qmTxrmTxrlztqlzprljprlTlrlDlrkzdrkjdrkTZrkTZskDVskDVsjjRsjjRsjDJsjDJsizJsijFsijBsiTBtiDBthy9thi1shi1thS1thCxtgyxtgyttgiptgSptgCltfyltfyhufSdtfSdufCZufCZueyVueSRteSRueCNudyJudiJudiFvdCBudCBvcx9uch5vch5vcB1ucB1vbxxvbxxwbhtvbBpvbBpvaxlvahlwaRhwaRhwaBZwZxZwZhVwZRVwZRRwYxNwYxNwYhNxYhJxYRFxXxBwXxBxXg9xXg9xXQ5xXA5xWw1xWgxxWQtxWAtxWApyVglxVglyVQhyVQhyVAdyUgZyUgZyUQVyUQVyUARyTwRzTwRzUAdzUQlzUgx0VA91VBF0VRR1VxZ2WBl2WRt3WR12WyB3XCN4XSZ4Xih5YCt5YC15YjB6YjJ6ZDV7ZTd7ZTl7Zz58aUB9akN9a0V+a0d+bUmAbkqBcE2CcU6Dc1CFdFGFdlOHdlSHeFeJeliKelmLfFyMfl6Of2CPgGGQgWKRg2SShGaThmiVh2mWiWuXim2Yi2+ZjHCajnKcj3Odj3SdkXafk3iglHqhlXuiln2jmH+kmYClmoKnm4OonYWpnoapn4iroImroYuto42uo42upY+wppGxp5KyqJSzqZSzqpa1q5e1rZm3rpq3r5y5sJ25sZ+6sqC7s6G8taO9taS+t6a/uKfAuanBuqrCu6vCvK3Eva7Fv7DGv7HHwbPJwrTJw7bKxLfLxrjMx7rNx7vNyb3Pyr7Qy8DRzMHSzcLSzsTUz8XV0cfW0sjX08rY1MvY1cza1cza1s7b18/c18/c2dDd2tLe29Pf29Pf29Tf3dXg3dbh3tfi39ji4Nnj4Nrk4dvk4dvl493m5N7n5N7n5eDo5uHp5+Lq6OPq6OPq6eTs6uXs6+bt6+fu7ejv7env7urw7uvw7+zx8O3y8O3y8e/z8/D08/H19PL19PL19fP29vT39/X4+Pb4+ff5+fj6+vn7+vn7+/v8/Pz9/Pz9/v3+////";
+  const WIND_SPEED_MAX = 63.75, WIND_RANGE = 36; // speed=(B/255)*36 m/s
+  const WIND_BYTES = (()=>{const b=atob(WIND_B64);const u=new Uint8Array(b.length);for(let i=0;i<b.length;i++)u[i]=b.charCodeAt(i);return u;})();
+  function windColor(speed){const i=Math.max(0,Math.min(PW-1,Math.round(speed/WIND_SPEED_MAX*PW)))*3;return [WIND_BYTES[i],WIND_BYTES[i+1],WIND_BYTES[i+2]];}
+
+  /* ============ LỚP CANVAS TỰ GIẢI MÃ ============ */
+  const DecodedGrid = L.GridLayer.extend({
+    createTile(coords, done){
+      const tile=document.createElement("canvas"); tile.width=tile.height=256;
+      const ctx=tile.getContext("2d");
+      const url=this.options.urlFor(coords);
+      if(!url){ done(null,tile); return tile; }
+      const readEnc=this.options.readEnc;
+      fetch(url,{headers:{Accept:"image/webp"}})
+        .then(r=>{ if(!r.ok)return null; const enc=readEnc?readEnc(r.headers):null; return r.blob().then(b=>({b,enc})); })
+        .then(o=> o&&o.b ? createImageBitmap(o.b).then(img=>({img,enc:o.enc})) : null)
+        .then(o=>{
+          if(!o||!o.img){ done(null,tile); return; }
+          const off=document.createElement("canvas"); off.width=off.height=256;
+          const octx=off.getContext("2d",{willReadFrequently:true});
+          octx.drawImage(o.img,0,0,256,256);
+          let id; try{ id=octx.getImageData(0,0,256,256); }
+          catch(e){ done(e,tile); return; }     // canvas taint -> thiếu CORS
+          const d=id.data, dec=this.options.decode, enc=o.enc;
+          for(let i=0;i<d.length;i+=4){ const c=dec(d[i],d[i+1],d[i+2],d[i+3],enc); d[i]=c[0];d[i+1]=c[1];d[i+2]=c[2];d[i+3]=c[3]; }
+          ctx.putImageData(id,0,0); done(null,tile);
+        }).catch(e=> done(e,tile));
+      return tile;
+    }
+  });
+  function wrapX(x,z){const n=2**z;return ((x%n)+n)%n;}
+
+  // giải mã radar/mưa (PORT ĐÚNG RMA scalarHeatmapLayer):
+  //   value(mm/h) = (R/255)^gamma · range  ;  range đọc từ header x-{type}-range (mặc định 100)
+  //   màu: idx = value / RAINFALL_RANGE(200) -> RAIN_LUT  (KHÔNG giả định range=palette)
+  const GAMMA = 2.0;
+  const RAINFALL_RANGE = 200;          // mẫu số tô màu (mm/h) — trùng palette RMA
+  const SCALAR_FALLBACK_RANGE = 100;   // khi tile thiếu header range (mặc định RMA)
+  function b64urlJson(v){ if(!v)return null; try{ const s=String(v).replace(/-/g,"+").replace(/_/g,"/").padEnd(Math.ceil(String(v).length/4)*4,"="); const bin=atob(s); const u=new Uint8Array(bin.length); for(let i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i); return JSON.parse(new TextDecoder().decode(u)); }catch(e){ return null; } }
+  function scalarEnc(type){ return function(headers){ const num=(x,d)=>{const f=parseFloat(x);return isFinite(f)&&f>0?f:d;};
+    const meta=b64urlJson(headers&&headers.get("x-"+type+"-meta"))||b64urlJson(headers&&headers.get("x-rainfall-meta")); const me=(meta&&meta.encoding)||{};
+    const enc={ range:num(me.range!=null?me.range:(headers&&(headers.get("x-"+type+"-range")||headers.get("x-rainfall-range"))),SCALAR_FALLBACK_RANGE), gamma:num(me.gamma,GAMMA), curve:me.curve==="linear"?"linear":"gamma" };
+    if(!scalarEnc._lg)scalarEnc._lg={}; if(!scalarEnc._lg[type]){scalarEnc._lg[type]=1;console.info("[wx] "+type+": range="+enc.range+" mm/h, gamma="+enc.gamma+", curve="+enc.curve);} return enc; }; }
+  function decodeScalar(R,G,B,A,enc){
+    if(A<10) return [0,0,0,0];
+    const range=(enc&&enc.range)||SCALAR_FALLBACK_RANGE, gamma=(enc&&enc.gamma)||GAMMA;
+    const norm=(enc&&enc.curve==="linear")?(R/255):Math.pow(R/255,gamma);
+    const t=Math.max(0,Math.min(1,(norm*range)/RAINFALL_RANGE));   // value(mm/h)/200
+    const idx=Math.round(t*(PW-1))*4;
+    return [RAIN_LUT[idx],RAIN_LUT[idx+1],RAIN_LUT[idx+2],RAIN_LUT[idx+3]];
+  }
+  // giải mã gió: B=speed
+  function decodeWind(R,G,B,A){
+    const sp=(B/255)*WIND_RANGE;
+    const c=windColor(sp);
+    const a=Math.round(Math.min(1,sp/WIND_RANGE)*200)+20;  // gió mạnh đậm hơn
+    return [c[0],c[1],c[2],sp<0.3?0:a];
+  }
+
+  /* ============ KHUNG GIỜ (timeline) ============ */
+  function pad2(n){return String(n).padStart(2,"0");} function pad3(n){return String(n).padStart(3,"0");}
+  async function latestScalarFrame(type){
+    const hours = type==="radar"?6:24;
+    const tl = await (await fetch(`${res()}/api/${type}/timeline?hours=${hours}`)).json();
+    const frames=(tl.frames||[]).filter(f=>f&&f.available!==false);
+    if(!frames.length) throw new Error("timeline rỗng");
+    const latest = tl.latest?.timestamp;
+    return frames.find(f=>f.timestamp===latest) || frames[frames.length-1];
+  }
+  function scalarTileUrl(type,frame,c){
+    const d=new Date(frame.timestamp);
+    const p=`${d.getUTCFullYear()}/${pad2(d.getUTCMonth()+1)}/${pad2(d.getUTCDate())}/${pad2(d.getUTCHours())}`;
+    const x=wrapX(c.x,c.z);
+    return type==="radar"
+      ? `${res()}/api/radar/tiles/${p}/${pad2(d.getUTCMinutes())}/${c.z}/${x}/${c.y}.webp`
+      : `${res()}/api/rainfall/tiles/${p}/${c.z}/${x}/${c.y}.webp`;
+  }
+  async function currentWindFrame(){
+    const tl = await (await fetch(`${res()}/api/wind/noaa-gfs/timeline`)).json();
+    const frames=tl.frames||[];
+    if(!frames.length) throw new Error("wind timeline rỗng");
+    return frames.find(f=>f.run===tl.current?.run && f.forecastHour===tl.current?.forecastHour) || frames[frames.length-1];
+  }
+  function windTileUrl(frame,c){
+    const x=wrapX(c.x,c.z);
+    return `${res()}/api/wind/noaa-gfs/tiles/webp/10m/${frame.date}/${frame.cycle}/f${pad3(frame.forecastHour)}/${c.z}/${x}/${c.y}.webp`;
+  }
+
+  /* ============ UI ============ */
+  const css=`
+  #wxPanel{position:absolute;left:14px;top:150px;width:236px;background:#fff;border:1px solid #3a444d;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.4);z-index:1000;font-family:inherit;overflow:hidden}
+  #wxPanel .h{background:linear-gradient(135deg,#1f93e3,#0e6fb5);color:#fff;padding:9px 12px;font-size:12.5px;font-weight:700}
+  #wxPanel .b{padding:6px 8px}
+  #wxPanel .r{display:flex;align-items:center;gap:8px;padding:6px;font-size:12px;border-radius:8px}
+  #wxPanel .r small{color:#9aa1a9;font-size:10px;display:block}
+  #wxPanel input[type=checkbox]{accent-color:#1f93e3;width:15px;height:15px}
+  #wxPanel .grp{font-size:9.5px;font-weight:700;letter-spacing:.4px;color:#6e757e;text-transform:uppercase;margin:8px 6px 2px}
+  #wxPanel .sat-time{padding:2px 8px 8px;font-size:10.5px;color:#9aa1a9} #wxPanel .sat-time input{width:100%}
+  #wxPanel.docked{position:static;width:100%;box-shadow:none;border:0;border-radius:0}
+  #wxPanel.docked .h{display:none}
+  #wxPanel.docked .b{padding:2px 4px}
+  .hy-popup .leaflet-popup-content-wrapper{border-radius:14px;box-shadow:0 14px 36px rgba(0,0,0,.4);padding:0}
+  .hy-popup .leaflet-popup-content{margin:0}
+  .hyeto{position:relative;font-family:inherit;color:#e7e9ec;display:flex;flex-direction:column;width:452px;height:344px;min-width:320px;min-height:260px;max-width:860px;max-height:640px;overflow:hidden;padding:14px 16px 13px}
+  .hy-resize{position:absolute;right:2px;bottom:2px;width:16px;height:16px;cursor:nwse-resize;z-index:5;background:linear-gradient(135deg,transparent 0 42%,#bdbbcc 42% 52%,transparent 52% 62%,#bdbbcc 62% 72%,transparent 72% 82%,#bdbbcc 82% 92%,transparent 92%)}
+  .hy-head{flex:none;display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin-bottom:11px;padding-bottom:10px;border-bottom:1px solid #3a444d}
+  .hy-name{font-size:14px;font-weight:700;line-height:1.25;color:#0e6fb5}
+  .hy-code{font-size:9.5px;color:#6e757e;font-weight:500;white-space:nowrap;letter-spacing:.3px}
+  .hy-row{flex:none;display:flex;gap:10px;align-items:flex-end;margin-bottom:11px}
+  .hy-row label{font-size:10px;font-weight:600;color:#9aa1a9;display:flex;flex-direction:column;gap:3px}
+  .hy-row input[type=date]{font-family:inherit;font-size:12px;padding:6px 9px;border:1px solid #3a444d;border-radius:8px;color:#e7e9ec}
+  .hy-row input[type=date]:focus{outline:none;border-color:#1f93e3;box-shadow:0 0 0 3px rgba(31,147,227,.22)}
+  .hy-load{margin-left:auto;font-family:inherit;font-size:12.5px;font-weight:600;padding:8px 16px;border:0;border-radius:9px;background:#1f93e3;color:#fff;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.35)}
+  .hy-load:hover{background:#0e6fb5} .hy-load:disabled{opacity:.6;cursor:default;box-shadow:none}
+  .hy-chart{flex:1 1 auto;min-height:120px;background:#1f262d;border:1px solid #3a444d;border-radius:10px;padding:6px;overflow:hidden}
+  .hy-empty{font-size:11.5px;color:#6e757e;text-align:center;padding:74px 8px}
+  .hy-legend{flex:none;display:flex;align-items:center;gap:6px;margin-top:8px;font-size:10px;color:#9aa1a9}
+  .hy-legend .lg-bar{width:11px;height:9px;border-radius:2px;background:#1d6fb8;display:inline-block}
+  .hy-legend .lg-line{width:14px;border-top:2px solid #e0791e;display:inline-block;margin-left:10px}
+  .hy-foot{flex:none;display:flex;align-items:center;justify-content:space-between;margin-top:12px}
+  .hy-total{font-size:12px;font-weight:600;color:#1d6fb8;background:#223441;border-radius:99px;padding:5px 12px}
+  .hy-total:empty{display:none}
+  .hy-csv{font-family:inherit;font-size:12px;font-weight:500;padding:7px 14px;border:1px solid #3a444d;border-radius:9px;background:#fff;cursor:pointer;color:#e7e9ec}
+  .hy-csv:hover:not(:disabled){border-color:#1f93e3;color:#1f93e3} .hy-csv:disabled{opacity:.5;cursor:default}
+  .hy-chart svg rect.bar:hover{fill:#155a96}
+  .acc-box{margin:4px 6px 2px;padding:8px;border:1px solid #3a444d;border-radius:9px;background:#1f262d}
+  .acc-title{font-size:10px;font-weight:700;letter-spacing:.4px;color:#1f93e3;text-transform:uppercase;margin-bottom:6px}
+  .acc-chips{display:flex;flex-wrap:wrap;gap:4px}
+  .acc-chip{font-family:inherit;font-size:11px;padding:4px 9px;border:1px solid #3a444d;border-radius:99px;background:#fff;cursor:pointer;color:#e7e9ec}
+  .acc-chip:hover{border-color:#1f93e3} .acc-chip.on{background:#1f93e3;color:#fff;border-color:#1f93e3}
+  .acc-chip.acc-off{margin-left:auto;color:#6e757e}
+  .acc-cal{flex-direction:column;align-items:stretch;gap:6px;margin-top:6px}
+  .acc-dates{display:flex;align-items:center;gap:5px}
+  .acc-dates input[type=date]{flex:1;min-width:0;font-family:inherit;font-size:11px;padding:4px 5px;border:1px solid #3a444d;border-radius:6px;color:#e7e9ec}
+  .acc-cal #accGo{align-self:flex-start;font-family:inherit;font-size:11px;font-weight:600;padding:5px 16px;border:0;border-radius:7px;background:#1f93e3;color:#fff;cursor:pointer}
+  .acc-busy{margin-top:6px;font-size:10.5px;color:#9aa1a9}
+  .acc-legend{margin-top:8px}
+  .acc-cap{font-size:9px;color:#6e757e;margin-bottom:2px}
+  .acc-bar{height:9px;border-radius:3px;border:1px solid #3a444d;background:linear-gradient(90deg,#ffffff,#cdeffb,#7ed4e8,#4bb89a,#5cc24f,#c9d84a,#f2c53d,#ef8a3c,#e0492f,#b71c52,#78146e)}
+  .acc-lab{display:flex;justify-content:space-between;font-size:9px;color:#6e757e;margin-top:2px}
+  .drop-icon{background:none;border:0}
+  .drop-icon svg{filter:drop-shadow(0 1px 1.5px rgba(20,30,50,.35))}
+  .acc-check{display:flex;align-items:center;gap:7px;margin-top:8px;font-size:11px;color:#e7e9ec;cursor:pointer}
+  .acc-check input{width:14px;height:14px;accent-color:#1f93e3;cursor:pointer}
+  .tri-icon{background:none;border:0} .tri-icon svg{filter:drop-shadow(0 1px 1.5px rgba(20,30,50,.4))}
+  .tri-wrap{display:flex;flex-direction:column;align-items:center;line-height:1}
+  .tri-val{height:14px;line-height:14px;font-family:'Be Vietnam Pro',inherit;font-size:10px;font-weight:700;color:#15324a;background:rgba(255,255,255,.88);border:1px solid rgba(60,70,90,.18);border-radius:5px;padding:0 4px;margin-bottom:1px;white-space:nowrap;box-shadow:0 1px 2px rgba(20,30,50,.18)}
+  .tri-val-stale{color:#6b7686;background:rgba(238,240,244,.9)}
+  .drop-stale svg{opacity:.55}
+  .wx-live{display:flex;align-items:center;gap:8px;padding:4px 6px 2px}
+  .wx-live-foot{margin-top:12px;padding-top:9px;border-top:1px solid #3a444d;justify-content:space-between}
+  .wx-sub{margin-left:26px;font-size:12px;color:#9fb3c2}
+  #wxPanel .r{transition:background .12s}
+  #wxPanel .r:hover{background:rgba(255,255,255,.045)}
+  #wxPanel .r:has(input:checked){background:rgba(31,147,227,.12)}
+  #wxPanel .r:has(input:checked) span{color:#eaf4fb}
+  .wx-sub-panel{margin:-1px 6px 7px 28px;padding:8px 10px;border-left:2px solid #1f93e3;background:#1c232b;border-radius:0 9px 9px 0;display:flex;flex-direction:column;gap:8px}
+  .wx-sub-panel[hidden]{display:none}
+  .wx-sub-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .wx-sub-lbl{font-size:9.5px;font-weight:700;letter-spacing:.4px;color:#7c8794;text-transform:uppercase;min-width:46px}
+  .wx-field{display:flex;align-items:center;gap:6px;font-size:11px;color:#9fb3c2;flex:1 1 100%;min-width:0}
+  .wx-field>span{min-width:46px}
+  .wx-sel{flex:1;min-width:0;background:#232b33;color:#cfe3f2;border:1px solid #3a444d;border-radius:7px;padding:3px 6px;font-family:inherit;font-size:11px;cursor:pointer}
+  .wx-sel:hover{border-color:#1f93e3}
+  .wx-sel:focus{outline:none;border-color:#1f93e3;box-shadow:0 0 0 3px rgba(31,147,227,.2)}
+  .wx-seg{display:inline-flex;background:#232b33;border:1px solid #3a444d;border-radius:8px;padding:2px;gap:2px}
+  .wx-seg-b{font-family:inherit;font-size:11px;font-weight:600;padding:3px 11px;border:0;border-radius:6px;background:transparent;color:#9aa1a9;cursor:pointer;transition:.12s}
+  .wx-seg-b.on{background:#1f93e3;color:#fff;box-shadow:0 1px 3px rgba(0,0,0,.3)}
+  .wx-seg-b:hover:not(.on){color:#e7e9ec}
+  .wx-toggle{display:inline-flex;align-items:center;gap:6px;font-size:11px;color:#cdd6df;cursor:pointer}
+  .wx-toggle input{width:14px;height:14px;accent-color:#1f93e3;cursor:pointer}
+  #wxRefreshNow{font-family:inherit;font-size:11px;font-weight:600;padding:5px 10px;border:1px solid #3a444d;border-radius:8px;background:#fff;color:#1f93e3;cursor:pointer;display:inline-flex;align-items:center;gap:4px}
+  #wxRefreshNow:hover{background:#232b33;border-color:#1f93e3} #wxRefreshNow:active{transform:translateY(1px)}
+  .wx-upd{font-size:10px;color:#6e757e}
+  .tri-val{color:#e7e9ec;background:rgba(28,32,44,.86);border-color:rgba(120,130,150,.3)}
+  .tri-val-stale{color:#9aa1a9;background:rgba(34,38,52,.86)}
+  #wxRefreshNow{background:#232b33;border-color:#3a444d;color:#1f93e3}
+  .wx-upd{color:#6e757e}
+  /* ===== BÃO ===== */
+  @keyframes hn-spin{to{transform:rotate(360deg)}}
+  .hn-storm-ic{background:none;border:0}
+  .hn-eye{width:40px;height:40px;animation:hn-spin 3.4s linear infinite;transform-origin:50% 50%;filter:drop-shadow(0 1px 2.5px rgba(10,15,30,.55))}
+  .hn-storm-tt{background:rgba(20,20,32,.82);color:#fff;border:0;font-size:10.5px;font-weight:700;padding:2px 7px;border-radius:6px;box-shadow:0 2px 6px rgba(0,0,0,.3);white-space:nowrap}
+  .leaflet-popup.hn-storm-wrap .leaflet-popup-content-wrapper{border-radius:12px;box-shadow:0 12px 30px rgba(0,0,0,.4);padding:0}
+  .leaflet-popup.hn-storm-wrap .leaflet-popup-content{margin:0}
+  .hn-storm-pop{font-family:inherit;min-width:180px;color:#e7e9ec}
+  .hn-sp-h{background:linear-gradient(135deg,#1f93e3,#0e6fb5);color:#fff;font-size:12.5px;font-weight:700;padding:8px 12px;border-radius:12px 12px 0 0}
+  .hn-sp-t{border-collapse:collapse;width:100%;font-size:11.5px}
+  .hn-sp-t td{padding:5px 12px;border-top:1px solid #3a444d}
+  .hn-sp-t td:first-child{color:#9aa1a9;white-space:nowrap}
+  .hn-sp-t td:last-child{font-weight:600;text-align:right}
+  .hn-storm-pop{color:#e7e9ec}
+  .hn-sp-t td{border-top-color:#3a444d}
+  .hn-sp-t td:first-child{color:#9aa1a9}
+  .leaflet-popup.hn-storm-wrap .leaflet-popup-content-wrapper{background:#2a323b}
+  .hn-storm-full{min-width:210px;max-width:300px}
+  .hn-sp-int{font-weight:500;opacity:.9;font-size:11px}
+  .hn-sp-ag{display:block;font-size:9.5px;font-weight:600;opacity:.82;margin-top:1px;letter-spacing:.3px}
+  .hn-sp-cur,.hn-sp-sub{font-size:9.5px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;color:#1f93e3;padding:7px 12px 2px}
+  .hn-fc-wrap{max-height:170px;overflow:auto;border-top:1px solid #3a444d}
+  .hn-fc{font-size:10.5px}
+  .hn-fc th{position:sticky;top:0;background:#232b33;color:#9aa1a9;font-weight:700;text-align:left;padding:4px 8px}
+  .hn-fc td{padding:3px 8px;text-align:left;font-weight:500;color:#e7e9ec}
+  .hn-fc td:nth-child(3),.hn-fc td:nth-child(4){text-align:right;color:#1d6fb8}
+  .hn-sp-cur,.hn-sp-sub{color:#1f93e3}
+  .hn-fc-wrap{border-top-color:#3a444d}
+  .hn-fc th{background:#3a444d;color:#9aa1a9}
+  .hn-fc td{color:#e7e9ec}
+  /* ===== BẢNG BÃO kiểu RMA ===== */
+  .hn-storm-tbl{min-width:340px;max-width:none;border-radius:12px;overflow:hidden}
+  .hn-tb-h{background:linear-gradient(135deg,#1f93e3,#0e6fb5);color:#fff;padding:11px 14px 9px}
+  .hn-tb-name{font-size:14px;font-weight:700}
+  .hn-tb-src{font-size:10.5px;opacity:.78;margin-top:2px}
+  .hn-tb-wrap{min-width:320px;max-width:88vw;max-height:62vh;overflow:auto;resize:both}
+  .hn-tb{border-collapse:collapse;width:100%;font-size:11.5px}
+  .hn-tb thead th{position:sticky;top:0;background:#fff;text-align:left;font-weight:700;font-size:9.5px;letter-spacing:.3px;padding:6px 10px;color:#6e757e;white-space:nowrap;border-bottom:1px solid #3a444d}
+  .hn-tb thead th small{display:block;font-weight:500;opacity:.7;font-size:8.5px;letter-spacing:0}
+  .hn-tb td{padding:5px 10px;border-top:1px solid rgba(140,140,160,.14);color:#e7e9ec}
+  .hn-tb td.hn-num{text-align:right;font-variant-numeric:tabular-nums}
+  .hn-tr-cur{background:rgba(239,91,24,.15)}
+  .hn-tr-cur td{font-weight:700}
+  .hn-bdg{display:inline-block;min-width:30px;text-align:center;padding:2px 6px;border-radius:4px;color:#fff;font-size:10px;font-weight:800;letter-spacing:.5px}
+  .hn-tb-foot{display:flex;align-items:center;gap:9px;padding:9px 14px;border-top:1px solid rgba(140,140,160,.2);font-size:11.5px;font-weight:600;color:#e7e9ec}
+  .hn-tb thead th{background:#2a323b;color:#9aa1a9;border-bottom-color:#3a444d}
+  .hn-tb td{color:#e7e9ec}
+  .hn-tb-foot{color:#e7e9ec}
+  .hn-tb thead th{text-align:center}
+  .hn-tb thead th.hn-grp{border-bottom:1px solid #3a444d;font-size:9px}
+  .hn-tb thead th.hn-sub{font-weight:600;font-size:8.5px;opacity:.85;padding-top:2px}
+  .hn-tb td:first-child,.hn-tb td:nth-child(2){white-space:nowrap}
+  .hn-tb td{text-align:center}
+  .hn-tb td.hn-num{text-align:right}
+  .hn-vn{font-weight:700;white-space:nowrap}
+  .hn-tb thead th.hn-grp{border-bottom-color:#3a444d}
+  .hn-tb-note{padding:5px 10px 0;font-size:9.5px;color:#6e757e;line-height:1.35}
+  .hn-tb-note{color:#6e757e}
+  .hn-cap-box{display:inline-block;min-width:24px;padding:1px 6px;border-radius:5px;color:#fff;font-weight:800;font-size:11px;line-height:1.5;text-align:center}
+  .hn-tb td.hn-dt{white-space:nowrap;text-align:center;font-variant-numeric:tabular-nums}
+  .hn-tb-foot{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+  .hn-foot-lbl{font-weight:700;opacity:.65;font-size:10px;text-transform:uppercase;letter-spacing:.3px}
+  .hn-foot-i{font-size:11px;white-space:nowrap}
+  .hn-storm-wrap .leaflet-popup-content{width:auto!important}
+  .al-row{flex:none;display:flex;align-items:center;gap:8px;margin-top:9px;flex-wrap:wrap}
+  .al-lab{font-size:10px;font-weight:600;color:#9aa1a9}
+  .al-f{display:flex;flex-direction:column;gap:2px;font-size:9px;font-weight:700}
+  .al-f input{width:58px;font-family:inherit;font-size:11px;padding:3px 5px;border:1px solid #3a444d;border-radius:6px;color:#e7e9ec}
+  .al-g{color:#2e7d32} .al-y{color:#b8860b} .al-r{color:#c0271c}
+  .al-g input{border-color:#bfe0c2} .al-y input{border-color:#ecd9a0} .al-r input{border-color:#eebbb5}
+  /* ===== DARK THEME ===== */
+  #wxPanel{background:#2a323b;border-color:#3a444d;color:#e7e9ec}
+  #wxPanel .r small{color:#9aa1a9}
+  #wxPanel .grp{color:#6e757e}
+  #wxPanel .sat-time{color:#9aa1a9}
+  .leaflet-popup-content-wrapper,.leaflet-popup-tip{background:#2a323b;color:#e7e9ec}
+  .hyeto{color:#e7e9ec}
+  .hy-head{border-bottom-color:#3a444d}
+  .hy-name{color:#1f93e3}
+  .hy-code{color:#6e757e}
+  .hy-row label{color:#9aa1a9}
+  .hy-row input[type=date]{background:#232b33;border-color:#3a444d;color:#e7e9ec}
+  .hy-chart{background:#1f262d;border-color:#3a444d}
+  .hy-empty{color:#6e757e}
+  .hy-legend{color:#9aa1a9}
+  .hy-total{color:#5fb6e6;background:#223441}
+  .hy-csv{background:#232b33;border-color:#3a444d;color:#e7e9ec}
+  .hy-resize{background:linear-gradient(135deg,transparent 0 42%,#5a6470 42% 52%,transparent 52% 62%,#5a6470 62% 72%,transparent 72% 82%,#5a6470 82% 92%,transparent 92%)}
+  .acc-box{background:#1f262d;border-color:#3a444d}
+  .acc-chip{background:#232b33;border-color:#3a444d;color:#e7e9ec}
+  .acc-dates input[type=date]{background:#232b33;border-color:#3a444d;color:#e7e9ec}
+  .acc-busy{color:#9aa1a9}
+  .acc-check{color:#e7e9ec}
+  .acc-lab{color:#6e757e}
+  .al-lab{color:#9aa1a9}
+  .al-f input{background:#232b33;color:#e7e9ec}
+  .acc-cap{color:#6e757e}
+  #hnTimeBar{position:fixed;left:50%;bottom:14px;transform:translateX(-50%);z-index:1200;display:none;align-items:center;gap:10px;background:rgba(22,27,33,.92);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);border:1px solid rgba(255,255,255,.12);border-radius:30px;padding:7px 14px;box-shadow:0 8px 28px rgba(0,0,0,.35);font-family:inherit}
+  #hnTimeBar button{background:#1f93e3;color:#fff;border:0;width:30px;height:30px;border-radius:50%;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex:none;line-height:1}
+  #hnTimeBar #hnSpeed{width:auto;min-width:34px;padding:0 9px;border-radius:15px;font-weight:700;font-size:11px;background:#0e6fb5}
+  #hnTimeBar #hnScrubWrap{position:relative;display:inline-flex;align-items:center;width:min(46vw,520px)}
+  #hnTimeBar #hnScrub{width:100%;accent-color:#5fb6e6;cursor:pointer}
+  #hnTimeBar #hnNowMark{position:absolute;top:-4px;bottom:-4px;left:0;width:2px;margin-left:-1px;background:#5fb6e6;border-radius:2px;pointer-events:none;box-shadow:0 0 0 1px rgba(255,255,255,.55);display:none}
+  #hnTimeBar #hnNow{width:auto;padding:0 10px;border-radius:15px;font-size:11px;font-weight:700;background:#5fb6e6;color:#15240a}
+  #hnTimeBar #hnClock{color:#e9e7f6;font-size:11.5px;font-weight:600;min-width:128px;text-align:right;font-variant-numeric:tabular-nums}
+  #hnLegend{position:fixed;right:14px;bottom:64px;z-index:1150;background:rgba(255,255,255,.94);border:1px solid #3a444d;border-radius:10px;box-shadow:0 6px 20px rgba(44,38,128,.16);padding:8px 10px;font-family:inherit;min-width:184px}
+  #hnLegend .hn-lg-sec+.hn-lg-sec{margin-top:8px;padding-top:8px;border-top:1px solid #eee}
+  #hnLegend .hn-lg-cap{font-size:10.5px;font-weight:700;color:#4a4960;margin-bottom:3px}
+  #hnLegend .hn-lg-bar{height:10px;border-radius:3px;border:1px solid rgba(0,0,0,.08)}
+  #hnLegend .hn-lg-lab{display:flex;justify-content:space-between;font-size:9.5px;color:#8a899c;margin-top:2px}
+  #hnLegend{background:rgba(34,40,48,.94);border-color:#3a444d}
+  #hnLegend .hn-lg-cap{color:#e7e9ec}
+  #hnLegend .hn-lg-lab{color:#9aa1a9}
+  #hnLegend .hn-lg-sec+.hn-lg-sec{border-top-color:#3a444d}
+  `;
+  const st=document.createElement("style"); st.textContent=css; document.head.appendChild(st);
+  const panel=document.createElement("div"); panel.id="wxPanel";
+  panel.innerHTML=`
+   <div class="h">Khí tượng – Thủy văn</div>
+   <div class="b">
+     <div class="grp">Điểm / Vector</div>
+     <label class="r"><input type="checkbox" data-wx="hydro"><span>Trạm thủy văn<small>mực nước · báo động</small></span></label>
+     <label class="r"><input type="checkbox" data-wx="stations"><span>Trạm đo mưa</span></label>
+     <label class="acc-check wx-sub"><input type="checkbox" id="accShowVal" checked>Biểu diễn lượng mưa</label>
+     <div id="accBox" class="acc-box">
+       <div class="acc-title">Thời đoạn xem (mưa &amp; thủy văn)</div>
+       <div class="acc-chips">
+         <button class="acc-chip" data-h="3">3h</button><button class="acc-chip" data-h="12">12h</button><button class="acc-chip on" data-h="24">24h</button><button class="acc-chip" data-h="48">48h</button><button class="acc-chip" data-h="72">72h</button><button class="acc-chip" data-cal="1">Lịch…</button>
+       </div>
+       <div id="accCal" class="acc-cal" style="display:none"><div class="acc-dates"><input type="date" id="accFrom"><span>→</span><input type="date" id="accTo"></div><button id="accGo">Tính</button></div>
+       <div id="accBusy" class="acc-busy" style="display:none"></div>
+     </div>
+     <label class="r"><input type="checkbox" data-wx="storm"><span>Bão</span></label>
+     <label class="r"><input type="checkbox" data-wx="radar"><span>Radar thời tiết</span></label>
+     <label class="r"><input type="checkbox" data-wx="rainfall"><span>Mưa phân tích</span></label>
+     <label class="r"><input type="checkbox" data-wx="forecast"><span>Mưa dự báo<small id="fcstSub"></small></span></label>
+     <div class="wx-sub-panel" id="fcstCtl" hidden>
+       <div class="wx-sub-row"><label class="wx-field"><span>Mô hình</span><select id="fcstModel" class="wx-sel"></select></label></div>
+       <div class="wx-sub-row"><label class="wx-field"><span>Phiên</span><select id="fcstSession" class="wx-sel"></select></label></div>
+       <div class="wx-sub-row"><span class="wx-sub-lbl">Hiển thị</span><div class="wx-seg" data-seg="fcstNet"><button type="button" class="wx-seg-b on" data-v="square">Ô lưới</button><button type="button" class="wx-seg-b" data-v="smooth">Làm mịn</button></div></div>
+     </div>
+     <label class="r"><input type="checkbox" data-wx="wind"><span>Gió</span></label>
+     <div class="wx-sub-panel" id="windFx" hidden>
+       <div class="wx-sub-row"><label class="wx-toggle"><input type="checkbox" id="windFxOn" checked>Hiệu ứng động</label><div class="wx-seg" data-seg="windMode"><button type="button" class="wx-seg-b on" data-v="particles">Hạt</button><button type="button" class="wx-seg-b" data-v="streams">Dòng</button></div></div>
+     </div>
+     <label class="r"><input type="checkbox" data-wx="satellite"><span>Ảnh vệ tinh</span></label>
+     <div class="wx-live wx-live-foot"><button id="wxRefreshNow" type="button" title="Cập nhật ngay">↻ Cập nhật ngay</button><span id="wxLastUpd" class="wx-upd"></span></div>
+   </div>`;
+  const mount=document.getElementById("wxMount");
+  if(mount){ panel.classList.add("docked"); mount.appendChild(panel); } else { document.body.appendChild(panel); }
+  panel.querySelectorAll("input[data-wx]").forEach(cb=>cb.addEventListener("change",e=>toggle(e.target.dataset.wx,e.target.checked,e.target)));
+  { const fxOn=document.getElementById("windFxOn"); if(fxOn)fxOn.addEventListener("change",()=>{ _windFxOn=fxOn.checked; if(layers.wind)WindFX.setOn(_windFxOn); });
+    panel.querySelectorAll(".wx-seg").forEach(seg=>seg.addEventListener("click",e=>{ const btn=e.target.closest(".wx-seg-b"); if(!btn)return;
+      seg.querySelectorAll(".wx-seg-b").forEach(x=>x.classList.toggle("on",x===btn)); const v=btn.dataset.v, kind=seg.dataset.seg;
+      if(kind==="windMode"){ _windMode=v; WindFX.setMode(v); } else if(kind==="fcstNet"){ _fcstNet=v; FcstFX.setNet(v); } })); }
+  { const mSel=document.getElementById("fcstModel"), sSel=document.getElementById("fcstSession");
+    if(mSel)mSel.addEventListener("change",()=>fcstOnModelChange(mSel.value));
+    if(sSel)sSel.addEventListener("change",()=>fcstOnSessionChange(sSel.value)); }
+  { const rb=document.getElementById("wxRefreshNow"); if(rb) rb.addEventListener("click",()=>runRefresh("manual")); }
+  (function(){
+    const accBox=document.getElementById("accBox");
+    if(accBox){
+      const chips=accBox.querySelectorAll(".acc-chip");
+      chips.forEach(b=>b.addEventListener("click",async()=>{
+        if(b.dataset.cal){ chips.forEach(x=>x.classList.remove("on")); b.classList.add("on"); document.getElementById("accCal").style.display="flex"; return; }
+        chips.forEach(x=>x.classList.remove("on")); b.classList.add("on");
+        document.getElementById("accCal").style.display="none";
+        accWindow={hours:+b.dataset.h};
+        await computeAccumulation();
+        _histExitLive();
+      }));
+      const sv=document.getElementById("accShowVal");
+      if(sv) sv.addEventListener("change",()=>{ accShowVal=sv.checked; if(rawStations) renderStations(); });
+      document.getElementById("accGo").addEventListener("click",async()=>{
+        const f=document.getElementById("accFrom").value, t=document.getElementById("accTo").value;
+        if(!f||!t){ alert("Chọn Từ và Đến."); return; }
+        accWindow={from:f,to:t};
+        await computeAccumulation();
+        showHistBanner(true); armHistIdle();
+      });
+    }
+  })();
+
+  /* ============ LEGEND NỔI (góc dưới-phải) ============ */
+  const hnLegend=document.createElement("div"); hnLegend.id="hnLegend"; hnLegend.style.display="none";
+  hnLegend.innerHTML=`
+    <div class="hn-lg-sec" id="lgRain" style="display:none"><div class="hn-lg-cap">Mưa / Radar — cường độ (mm/h)</div><div class="hn-lg-bar" id="lgRainBar"></div><div class="hn-lg-lab"><span>0.5</span><span>1</span><span>5</span><span>10</span><span>20</span><span>50</span><span>100</span><span>200</span></div></div>
+    <div class="hn-lg-sec" id="lgAcc" style="display:none"><div class="hn-lg-cap" id="lgAccCap">Mưa tích lũy (mm)</div><div class="hn-lg-bar" id="lgAccBar"></div><div class="hn-lg-lab"><span>16</span><span>50</span><span>100</span><span>200</span><span>300</span><span>400</span><span>500</span></div></div>
+    <div class="hn-lg-sec" id="lgWind" style="display:none"><div class="hn-lg-cap">Gió (m/s)</div><div class="hn-lg-bar" id="lgWindBar"></div><div class="hn-lg-lab"><span>0</span><span>12</span><span>24</span><span>36</span></div></div>`;
+  document.body.appendChild(hnLegend);
+  function lutCss(){ const N=16,a=[]; for(let i=0;i<N;i++){ const t=i/(N-1),idx=Math.round(t*(PW-1))*4,al=(RAIN_LUT[idx+3]/255).toFixed(2); a.push(`rgba(${RAIN_LUT[idx]},${RAIN_LUT[idx+1]},${RAIN_LUT[idx+2]},${al}) ${Math.round(t*100)}%`);} return `linear-gradient(90deg,${a.join(",")})`; }
+  function accCss(){ const mx=ACC_STOPS[ACC_STOPS.length-1][0]; return `linear-gradient(90deg,${ACC_STOPS.map(([v,c])=>`rgb(${c.join(",")}) ${(v/mx*100).toFixed(1)}%`).join(",")})`; }
+  // dải cường độ mm/h dạng 7 nấc đều (giống legend RMA): khớp nhãn 0.5·1·5·10·20·50·100
+  // DẢI MÀU CHUNG (8 nấc) cho cả radar(cường độ) lẫn trạm(tích lũy) — vẽ smooth như RMA.
+  // xanh nhạt → lam → tím → đỏ → cam → vàng → vàng nhạt → TRẮNG (cực đoan).
+  const RAMP8=[[176,221,250],[84,134,234],[118,91,197],[247,114,106],[249,193,71],[252,251,110],[253,253,151],[255,255,255]];
+  function rampSmoothCss(){ const n=RAMP8.length; return `linear-gradient(90deg,${RAMP8.map((c,i)=>`rgb(${c.join(",")}) ${(i/(n-1)*100).toFixed(1)}%`).join(",")})`; }
+  function windCss(){ const N=16,a=[]; for(let i=0;i<N;i++){ const t=i/(N-1),c=windColor(t*WIND_RANGE); a.push(`rgb(${c[0]},${c[1]},${c[2]}) ${Math.round(t*100)}%`);} return `linear-gradient(90deg,${a.join(",")})`; }
+  let _lgPainted=false;
+  function setLegendSection(which,on){ const id=which==="rain"?"lgRain":which==="acc"?"lgAcc":"lgWind"; const el=document.getElementById(id); if(el)el.style.display=on?"block":"none"; }
+
+  /* ============ ĐỒNG HỒ CHỦ — thanh trượt thời gian dùng chung ============ */
+  const TimeCtl=(function(){
+    const PROV={}; let tNow=null, playing=false, six=1, raf=null, last=0, bar=null, E={};
+    const SPEEDS=[0.5,1,2,4], FULL=34000;   // 1× chạy hết dải union trong ~34s (êm hơn; smooth nhờ nội suy/cross-fade)
+    function union(){ let lo=Infinity,hi=-Infinity; for(const k in PROV){ const r=PROV[k].range&&PROV[k].range(); if(r&&isFinite(r[0])&&isFinite(r[1])){ if(r[0]<lo)lo=r[0]; if(r[1]>hi)hi=r[1]; } } return lo<=hi?[lo,hi]:null; }
+    function fmt(t){ const d=new Date(t+7*3600e3),q=n=>String(n).padStart(2,"0"); return `${q(d.getUTCDate())}/${q(d.getUTCMonth()+1)} ${q(d.getUTCHours())}:${q(d.getUTCMinutes())}`; }
+    function ensure(){ if(bar)return; bar=document.createElement("div"); bar.id="hnTimeBar";
+      bar.innerHTML=`<button id="hnPlay" title="Chạy / Dừng">▶</button><button id="hnSpeed" title="Tốc độ">1×</button><span id="hnScrubWrap"><input id="hnScrub" type="range" min="0" max="1000" value="1000" step="1"><i id="hnNowMark" title="Thời điểm hiện tại"></i></span><span id="hnClock">–</span><button id="hnNow" title="Về thời điểm hiện tại">now</button>`;
+      document.body.appendChild(bar);
+      E.play=bar.querySelector("#hnPlay"); E.speed=bar.querySelector("#hnSpeed"); E.scrub=bar.querySelector("#hnScrub"); E.clock=bar.querySelector("#hnClock"); E.now=bar.querySelector("#hnNow"); E.mark=bar.querySelector("#hnNowMark");
+      E.play.onclick=()=>tog(); E.speed.onclick=()=>{ six=(six+1)%SPEEDS.length; E.speed.textContent=SPEEDS[six]+"×"; };
+      E.now.onclick=()=>{ const r=union(); if(!r)return; pause(); tNow=Math.max(r[0],Math.min(r[1],Date.now())); applyAll(); setScrub(); clock(); paintNow(); };
+      setInterval(paintNow,20000);
+      E.scrub.oninput=e=>{ const r=union(); if(!r)return; pause(); tNow=r[0]+(r[1]-r[0])*(+e.target.value/1000); applyAll(); clock(); }; }
+    function clock(){ if(E.clock)E.clock.textContent=tNow!=null?fmt(tNow)+" (UTC+7)":"–"; }
+    function setScrub(){ const r=union(); if(!r||!E.scrub)return; const f=(tNow-r[0])/Math.max(1,r[1]-r[0]); E.scrub.value=Math.round(Math.max(0,Math.min(1,f))*1000); }
+    function paintNow(){ if(!E.mark)return; const r=union(); const now=Date.now(); if(!r||now<r[0]||now>r[1]){ E.mark.style.display="none"; return; } E.mark.style.display="block"; E.mark.style.left=((now-r[0])/Math.max(1,r[1]-r[0])*100)+"%"; }
+    function applyAll(){ const u=union(), span=u?(u[1]-u[0]):0;
+      for(const k in PROV){ const p=PROV[k]; let t=tNow;
+        if(!p.abs && span>0 && p.range){ const r=p.range(); if(r&&isFinite(r[0])&&isFinite(r[1])&&r[1]>r[0]){ const prog=(tNow-u[0])/span; t=r[0]+prog*(r[1]-r[0]); } }  // % tiến độ chung -> dải RIÊNG mỗi lớp (lớp abs=bão dùng thời gian tuyệt đối)
+        try{ p.apply&&p.apply(t); }catch(e){ console.warn("[time]",k,e); } } }
+    function refresh(){ const r=union(); if(!r){ if(bar)bar.style.display="none"; pause(); return; } ensure(); bar.style.display="flex"; if(tNow==null||tNow<r[0]||tNow>r[1]) tNow=Math.max(r[0],Math.min(r[1],Date.now())); setScrub(); clock(); applyAll(); paintNow(); }
+    function tick(ts){ if(!playing)return; if(!last)last=ts; const dt=ts-last; last=ts; const r=union(); if(!r){ pause(); return; } const span=r[1]-r[0]; tNow+=dt*(span/FULL)*SPEEDS[six]; if(tNow>=r[1])tNow=r[0]; applyAll(); setScrub(); clock(); paintNow(); raf=requestAnimationFrame(tick); }
+    function play(){ if(playing)return; const r=union(); if(!r)return; if(tNow==null||tNow>=r[1]-1) tNow=r[0]; playing=true; last=0; if(E.play)E.play.textContent="❚❚"; raf=requestAnimationFrame(tick); }
+    function pause(){ playing=false; if(raf)cancelAnimationFrame(raf); raf=null; if(E.play)E.play.textContent="▶"; }
+    function tog(){ playing?pause():play(); }
+    return { register(k,pv){ PROV[k]=pv; refresh(); }, unregister(k){ if(PROV[k]){ delete PROV[k]; refresh(); } }, refresh, get tNow(){ return tNow; } };
+  })();
+
+  function syncLegend(){
+    const on=k=>layers[k]&&map.hasLayer(layers[k]);
+    const fcstOn=(typeof fcstState!=="undefined")&&fcstState.frames&&fcstState.frames.length>0;
+    const rain=on("radar")||on("rainfall")||fcstOn, wind=on("wind"), acc=on("stations")&&!rain;
+    { const rc=document.querySelector("#lgRain .hn-lg-cap"); if(rc)rc.textContent=(fcstOn&&!on("radar")&&!on("rainfall"))?"Mưa dự báo — cường độ (mm/h)":"Mưa / Radar — cường độ (mm/h)"; }
+    if(!_lgPainted){ const rb=document.getElementById("lgRainBar"),ab=document.getElementById("lgAccBar"),wb=document.getElementById("lgWindBar");
+      if(rb)rb.style.background=rampSmoothCss(); if(ab)ab.style.background=rampSmoothCss(); if(wb)wb.style.background=windCss(); _lgPainted=true; }
+    const cap=document.getElementById("lgAccCap"); if(cap){ let w="24h — trực tiếp"; try{ if(typeof accWindow!=="undefined"&&accWindow){ if(accWindow.from&&accWindow.to)w=accWindow.from+"→"+accWindow.to+" — cố định"; else if(accWindow.hours)w=accWindow.hours+"h — trực tiếp"; } }catch(e){} cap.textContent="Mưa tích lũy "+w+" (mm)"; }
+    setLegendSection("rain",rain); setLegendSection("acc",acc); setLegendSection("wind",wind);
+    hnLegend.style.display=(rain||wind||acc)?"block":"none";
+  }
+  const TIME_LAYERS=new Set(["storm","radar","rainfall","forecast","wind","satellite"]);
+  function toggle(name,on,cb){
+    if(!on){ if(layers[name])map.removeLayer(layers[name]); if(name==="satellite")satRemoveAll(); if(name==="forecast")fcstRemove(); if(TIME_LAYERS.has(name)){ TimeCtl.unregister(name); delete layers[name]; } if(name==="stations")_histExitLive(); if(name==="wind"){ WindFX.remove(); _windShowFx(false); } syncLegend(); return; }
+    // radar · mưa phân tích · mưa dự báo: cùng là trường mưa, KHÁC trường thời gian -> LOẠI TRỪ trong nhóm (tránh lẫn quá khứ/tương lai)
+    { const GRP=["radar","rainfall","forecast"]; if(GRP.indexOf(name)>=0){ GRP.forEach(o=>{ if(o===name)return; const ocb=document.querySelector('input[data-wx="'+o+'"]'); if(ocb&&ocb.checked){ ocb.checked=false; toggle(o,false,ocb); } }); } }
+    if(layers[name]){ layers[name].addTo(map); syncLegend(); return; }
+    const fn={stations:loadStations,hydro:loadHydro,storm:loadStorm,satellite:loadSatellite,radar:()=>loadScalar("radar"),rainfall:()=>loadScalar("rainfall"),forecast:loadForecast,wind:loadWind}[name];
+    cb.disabled=true;
+    Promise.resolve().then(fn).then(syncLegend)
+      .catch(err=>{alert("Lỗi tải "+name+": "+err.message+"\n(kiểm tra URL/key/CORS)");cb.checked=false;})
+      .finally(()=>cb.disabled=false);
+  }
+
+  /* ============ RADAR / MƯA / GIÓ (qua đồng hồ chủ) ============ */
+  function frameTime(f){ const v=f&&(f.timestamp??f.time??f.t??f.valid_time); const d=new Date(typeof v==="number"?v:String(v)); return isNaN(d)?NaN:d.getTime(); }
+  function windFrameTime(f){ if(!f)return NaN; const v=f.timestamp??f.valid_time??f.time; if(v!=null){ const d=new Date(typeof v==="number"?v:String(v)); if(!isNaN(d))return d.getTime(); }
+    const m=String(f.date||"").match(/(\d{4})\D?(\d{2})\D?(\d{2})/); const cyc=parseInt(f.cycle,10)||0, fh=parseInt(f.forecastHour,10)||0; return m?Date.UTC(+m[1],+m[2]-1,+m[3],cyc+fh,0):NaN; }
+  function pickPair(frames,t,getT){ if(!frames.length)return null;
+    if(t==null){ const L=frames.length-1; return {a:frames[L],b:frames[L],f:0}; }
+    let ia=0; for(let i=0;i<frames.length;i++){ if(getT(frames[i])<=t)ia=i; else break; }
+    const ib=Math.min(frames.length-1,ia+1), ta=getT(frames[ia]), tb=getT(frames[ib]);
+    let f=(tb>ta)?(t-ta)/(tb-ta):0; if(f<0)f=0; if(f>1)f=1; return {a:frames[ia],b:frames[ib],f}; }
+  function pickFrame(frames,t,getT){ if(!frames.length)return null; if(t==null)return frames[frames.length-1];
+    let best=null,bt=Infinity; for(const f of frames){ const ft=getT(f); if(!isFinite(ft))continue; if(ft<=t&&(t-ft)<bt){ bt=t-ft; best=f; } }
+    if(best)return best; let e=frames[0],et=Infinity; for(const f of frames){ const ft=getT(f); if(isFinite(ft)&&ft<et){ et=ft; e=f; } } return e; }
+  const scalarState={radar:{frames:[],layer:null,key:null},rainfall:{frames:[],layer:null,key:null}};
+  function applyScalar(type,t){ const st=scalarState[type]; if(!st.frames.length)return;
+    // ngoài cửa sổ dữ liệu (union bị lớp khác nới rộng) -> ẨN hẳn, không treo khung cũ
+    if(t!=null){ const t0=frameTime(st.frames[0]), t1=frameTime(st.frames[st.frames.length-1]);
+      if(t<t0||t>t1){ if(st.layer){map.removeLayer(st.layer);st.layer=null;delete layers[type];} st.key=null; return; } }
+    const f=pickFrame(st.frames,t,frameTime); if(!f)return;
+    const k=String(f.timestamp??f.time??frameTime(f)); if(k===st.key&&st.layer)return; st.key=k;
+    const old=st.layer;
+    const nl=new DecodedGrid({pane:"wx-tiles",opacity:.72,tileSize:256,minNativeZoom:type==="radar"?5:3,maxNativeZoom:type==="radar"?13:9,decode:decodeScalar,readEnc:scalarEnc(type),urlFor:c=>scalarTileUrl(type,f,c)});
+    st.layer=nl; layers[type]=nl; nl.addTo(map);
+    const dropOld=()=>{ if(old&&old!==st.layer&&map.hasLayer(old))map.removeLayer(old); };
+    try{ nl.once("load",dropOld); }catch(e){}
+    setTimeout(dropOld,1500);   // GIỮ frame cũ tới khi tile mới tải xong -> hết chớp/giật
+  }
+  async function loadScalar(type){ const st=scalarState[type]; const hours=type==="radar"?6:24;
+    const tl=await (await fetch(`${res()}/api/${type}/timeline?hours=${hours}`)).json();
+    const frames=(tl.frames||[]).filter(f=>f&&f.available!==false); if(!frames.length)throw new Error("timeline rỗng");
+    frames.sort((a,b)=>frameTime(a)-frameTime(b)); st.frames=frames; st.key=null;
+    applyScalar(type,TimeCtl.tNow);
+    TimeCtl.register(type,{range:()=>st.frames.length?[frameTime(st.frames[0]),frameTime(st.frames[st.frames.length-1])]:null, apply:t=>applyScalar(type,t)}); }
+  const windState={frames:[],layer:null,key:null};
+  let _windFxOn=true, _windMode="particles", _fcstNet="square";
+  function _windShowFx(v){ const el=document.getElementById("windFx"); if(el)el.hidden=!v; }
+  /* ===== ANIMATION HẠT GIÓ (canvas overlay; giải u/v từ chính tile gió) ===== */
+  const WindFX=(function(){
+    let canvas=null,ctx=null,raf=null,particles=[],field=null,frame=null,on=false,mode="particles",building=false,paused=false,W=0,H=0,_lastBuild=0,_pendBuild=null;
+    const STEP=4;
+    function VS(){ const m=parseFloat((window.HYDRO_SETTINGS||{}).windSpeedScale); return (isFinite(m)&&m>0)?m:0.12; }   // m/s -> px/khung (chỉnh được)
+    function MAXAGE(){ return mode==="streams"?240:90; }
+    function ensure(){
+      if(canvas)return;
+      if(!map.getPane("wx-windfx")){ map.createPane("wx-windfx"); const p=map.getPane("wx-windfx"); p.style.zIndex=390; p.style.pointerEvents="none"; }
+      canvas=document.createElement("canvas"); canvas.style.pointerEvents="none";
+      map.getPane("wx-windfx").appendChild(canvas); ctx=canvas.getContext("2d");
+      sizeCanvas();
+      map.on("movestart zoomstart",_pause); map.on("moveend zoomend resize",_resume);
+    }
+    function sizeCanvas(){ const s=map.getSize(); W=s.x;H=s.y; canvas.width=W;canvas.height=H; place(); }
+    function place(){ if(canvas)L.DomUtil.setPosition(canvas, map.containerPointToLayerPoint([0,0])); }
+    function _pause(){ paused=true; if(ctx)ctx.clearRect(0,0,W,H); }
+    function _resume(){ paused=false; if(canvas){ sizeCanvas(); buildField(); } }
+    async function buildField(){
+      if(!frame||!canvas)return; if(building)return;
+      const _now=(window.performance&&performance.now)?performance.now():Date.now();
+      if(_now-_lastBuild<900){ if(!_pendBuild)_pendBuild=setTimeout(()=>{ _pendBuild=null; buildField(); }, 900-(_now-_lastBuild)); return; }  // GIỚI HẠN: tải tile + getImageData rất nặng -> tối đa ~1/giây
+      _lastBuild=_now; building=true;
+      try{
+        const z=Math.max(2,Math.min(9,Math.round(map.getZoom()))), ts=256, b=map.getBounds();
+        const pNW=map.project(b.getNorthWest(),z), pSE=map.project(b.getSouthEast(),z);
+        const x0=Math.floor(pNW.x/ts),x1=Math.floor(pSE.x/ts),y0=Math.floor(pNW.y/ts),y1=Math.floor(pSE.y/ts);
+        const off=document.createElement("canvas"); off.width=W;off.height=H; const octx=off.getContext("2d",{willReadFrequently:true});
+        const jobs=[];
+        for(let tx=x0;tx<=x1;tx++)for(let ty=y0;ty<=y1;ty++){
+          const url=windTileUrl(frame,{x:tx,y:ty,z});
+          jobs.push(new Promise(rz=>{ const img=new Image(); img.crossOrigin="anonymous";
+            img.onload=()=>{ try{ const a=map.latLngToContainerPoint(map.unproject(L.point(tx*ts,ty*ts),z)); const c=map.latLngToContainerPoint(map.unproject(L.point((tx+1)*ts,(ty+1)*ts),z)); octx.drawImage(img,a.x,a.y,c.x-a.x,c.y-a.y); }catch(e){} rz(); };
+            img.onerror=()=>rz(); img.src=url; }));
+        }
+        await Promise.all(jobs);
+        let id; try{ id=octx.getImageData(0,0,W,H); }catch(e){ building=false; return; }
+        const d=id.data, fw=Math.ceil(W/STEP), fh=Math.ceil(H/STEP), f=new Array(fh);
+        for(let yy=0;yy<fh;yy++){ const row=new Array(fw); for(let xx=0;xx<fw;xx++){ const px=Math.min(W-1,xx*STEP),py=Math.min(H-1,yy*STEP),i=(py*W+px)*4; if(d[i+3]<8){row[xx]=null;continue;} row[xx]=[(d[i]/255*2-1)*32,(d[i+1]/255*2-1)*32]; } f[yy]=row; }
+        field={d:f,fw,fh};
+      } finally{ building=false; }
+      if(on&&!raf) loop();
+    }
+    function sample(x,y){ if(!field)return null; const xx=Math.round(x/STEP),yy=Math.round(y/STEP),row=field.d[yy]; return row?(row[xx]||null):null; }
+    function spawn(){ const n=Math.max(500,Math.min(8000,Math.round(W*H*0.0022))); particles=new Array(n); for(let i=0;i<n;i++)particles[i]={x:Math.random()*W,y:Math.random()*H,age:Math.random()*MAXAGE()}; }
+    function loop(){
+      raf=requestAnimationFrame(loop); if(paused||!ctx)return;
+      place(); if(!particles.length)spawn();
+      ctx.globalCompositeOperation="destination-out"; ctx.fillStyle="rgba(0,0,0,"+(mode==="streams"?0.04:0.10)+")"; ctx.fillRect(0,0,W,H);
+      ctx.globalCompositeOperation="source-over";
+      ctx.beginPath(); ctx.lineWidth=mode==="streams"?1.0:1.5; ctx.strokeStyle=mode==="streams"?"rgba(255,255,255,0.5)":"rgba(255,255,255,0.82)";
+      const vs=VS(), ma=MAXAGE();
+      for(const p of particles){ if(p.age>ma){p.x=Math.random()*W;p.y=Math.random()*H;p.age=0;}
+        const v=sample(p.x,p.y);
+        if(v){ const nx=p.x+v[0]*vs, ny=p.y-v[1]*vs; ctx.moveTo(p.x,p.y); ctx.lineTo(nx,ny); p.x=nx;p.y=ny; } else p.age=ma;
+        p.age++; }
+      ctx.stroke();
+    }
+    return {
+      setFrame(f){ frame=f; if(on){ ensure(); buildField(); } },
+      setOn(v){ on=v; if(v){ ensure(); spawn(); if(frame)buildField(); if(!raf)loop(); } else { if(raf){cancelAnimationFrame(raf);raf=null;} if(ctx)ctx.clearRect(0,0,W,H); } },
+      setMode(m){ mode=m; if(on)spawn(); },
+      remove(){ if(raf){cancelAnimationFrame(raf);raf=null;} if(canvas){ try{map.off("movestart zoomstart",_pause); map.off("moveend zoomend resize",_resume);}catch(e){} canvas.remove(); } canvas=null;ctx=null;particles=[];field=null;frame=null;on=false; }
+    };
+  })();
+  function applyWind(t){ const st=windState; if(!st.frames.length)return; const f=pickFrame(st.frames,t,windFrameTime); if(!f)return;
+    const k=f.date+"/"+f.cycle+"/"+f.forecastHour; if(k===st.key&&st.layer)return; st.key=k;
+    if(st.layer)map.removeLayer(st.layer);
+    st.layer=new DecodedGrid({pane:"wx-tiles",opacity:.6,tileSize:256,minNativeZoom:2,maxNativeZoom:10,decode:decodeWind,urlFor:c=>windTileUrl(f,c)});
+    st.layer.addTo(map); layers.wind=st.layer; WindFX.setFrame(f); }
+  async function loadWind(){ const tl=await (await fetch(`${res()}/api/wind/noaa-gfs/timeline`)).json(); const frames=tl.frames||[]; if(!frames.length)throw new Error("wind timeline rỗng");
+    frames.sort((a,b)=>windFrameTime(a)-windFrameTime(b)); windState.frames=frames; windState.key=null;
+    applyWind(TimeCtl.tNow);
+    TimeCtl.register("wind",{range:()=>windState.frames.length?[windFrameTime(windState.frames[0]),windFrameTime(windState.frames[windState.frames.length-1])]:null, apply:applyWind});
+    WindFX.setMode(_windMode); _windShowFx(true); if(_windFxOn) WindFX.setOn(true); }
+
+  /* ============ HYETOGRAPH TRẠM MƯA ============ */
+  async function fetchSeries(s, startStr, endStr){
+    if(!rmaAuthOK()){ throw new Error("cần API key RMA"); }
+    const payload={ type:s.type, station_code:s.station_code, sensor_port:s.sensor_port, start_time:startStr, end_time:endStr };
+    const r=await fetch(rmaBaseU()+"/api/map/station/fromto",
+      {method:"POST",headers:rmaHdr(1),body:JSON.stringify(payload)});
+    if(r.status===401||r.status===403) throw new Error("API key sai/thiếu quyền");
+    if(!r.ok) throw new Error("HTTP "+r.status);
+    const body=await r.json();
+    const rec=Array.isArray(body)?body:Object.values((body&&body.data)||body||{});
+    return rec.map(it=>({t:it.date_string??it.time??it.timestamp, v:Number(it.value)})).filter(d=>d.t&&isFinite(d.v));
+  }
+  async function fetchStationSeries(s, fromDate, toDate){ return fetchSeries(s, fromDate+" 00:00:00", toDate+" 23:59:59"); }
+  function fmtLocal(d){ const p=n=>String(n).padStart(2,"0"); return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}:00`; }
+  async function pool(items,conc,fn){ let i=0; const run=async()=>{ while(i<items.length){ const k=i++; await fn(items[k],k); } }; await Promise.all(Array.from({length:Math.min(conc,items.length||1)},run)); }
+  function niceMax(v){ if(v<=1)return 1; const p=Math.pow(10,Math.floor(Math.log10(v))); const f=v/p; const nf=f<=1?1:f<=2?2:f<=5?5:10; return nf*p; }
+  function _niceNum(x,round){ if(x<=0)return 1; const e=Math.floor(Math.log10(x)), f=x/Math.pow(10,e); let nf; if(round){ nf=f<1.5?1:f<3?2:f<7?5:10; } else { nf=f<=1?1:f<=2?2:f<=5?5:10; } return nf*Math.pow(10,e); }
+  function niceTicks(lo,hi,count){ if(!(hi>lo))hi=lo+1; const range=_niceNum(hi-lo,false); const step=_niceNum(range/Math.max(1,(count-1)),true); return {lo:Math.floor(lo/step)*step, hi:Math.ceil(hi/step)*step, step}; }
+  function shortT(t){ const m=String(t).match(/(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})/); return m?`${m[3]}/${m[2]} ${m[4]}h`:String(t).slice(5,16); }
+  function _pp(n){return String(n).padStart(2,"0");}
+  function parseT(s){ const m=String(s).match(/(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})/); return m?new Date(+m[1],+m[2]-1,+m[3],+m[4],+m[5]):new Date(s); }
+  function smartTimeAxis(data,mL,mR,bw,W,H,color){
+    const n=data.length; if(!n) return "";
+    const t0=parseT(data[0].t), t1=parseT(data[n-1].t), spanH=Math.max(0,(t1-t0)/3600e3);
+    let fmt,labW;
+    if(spanH<=30){ fmt=d=>_pp(d.getHours())+"h"; labW=30; }
+    else if(spanH<=96){ fmt=d=>_pp(d.getDate())+"/"+_pp(d.getMonth()+1)+" "+_pp(d.getHours())+"h"; labW=62; }
+    else if(spanH<=24*20){ fmt=d=>_pp(d.getDate())+"/"+_pp(d.getMonth()+1); labW=40; }
+    else { fmt=d=>_pp(d.getDate())+"/"+_pp(d.getMonth()+1)+"/"+String(d.getFullYear()).slice(2); labW=54; }
+    const plotW=W-mL-mR, maxLab=Math.max(2,Math.min(8,Math.floor(plotW/labW)));
+    let out="";
+    for(let k=0;k<maxLab;k++){ const i=Math.round((n-1)*k/(maxLab-1)), x=mL+(i+.5)*bw, anchor=k===0?"start":(k===maxLab-1?"end":"middle");
+      out+=`<text x="${x.toFixed(1)}" y="${H-7}" text-anchor="${anchor}" font-size="8" fill="${color}">${fmt(parseT(data[i].t))}</text>`; }
+    return out;
+  }
+  function hyetoSVG(data,unit,W,H){
+    if(!data.length) return `<div class="hy-empty">Không có dữ liệu trong khoảng này.</div>`;
+    W=W||420; H=H||180;
+    const gridC="#33414b", xlC="#6e757e";
+    const mL=32,mR=36,mT=14,mB=26, pw=W-mL-mR, ph=H-mT-mB;
+    const n=data.length, bw=pw/n;
+    let run=0; const cum=data.map(d=>(run+=d.v));
+    // Trục trái (mm/h) nice-ticks; trục phải (tích lũy) dùng CÙNG số khoảng nInt -> lưới ngang trùng nhau, cả hai trục đều số tròn
+    const ntL=niceTicks(0,Math.max(1,...data.map(d=>d.v)),5), yMax=ntL.hi, stepL=ntL.step;
+    const nInt=Math.max(1,Math.round(yMax/stepL));
+    const stepR=_niceNum(Math.max(1,run)/nInt,false), cMax=stepR*nInt;
+    const decL=stepL>=1?0:(stepL>=0.1?1:2), decR=stepR>=1?0:1;
+    let bars="";
+    data.forEach((d,i)=>{ const x=mL+i*bw, bh=ph*(d.v/yMax), y=mT+ph-bh;
+      bars+=`<rect class="bar" x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${Math.max(.6,bw-.4).toFixed(1)}" height="${Math.max(0,bh).toFixed(1)}" fill="#1d6fb8"><title>${shortT(d.t)}: ${d.v} ${unit}</title></rect>`; });
+    const pts=cum.map((c,i)=>{ const x=mL+(i+.5)*bw, y=mT+ph-ph*(c/cMax); return `${x.toFixed(1)},${y.toFixed(1)}`; }).join(" ");
+    const line=`<polyline points="${pts}" fill="none" stroke="#e0791e" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/>`;
+    let grid="",yl="",yr="";
+    for(let k=0;k<=nInt;k++){ const y=mT+ph-ph*k/nInt;
+      grid+=`<line x1="${mL}" y1="${y.toFixed(1)}" x2="${W-mR}" y2="${y.toFixed(1)}" stroke="${gridC}"/>`;
+      yl+=`<text x="${mL-4}" y="${(y+3).toFixed(1)}" text-anchor="end" font-size="8.5" fill="#1d6fb8">${(stepL*k).toFixed(decL)}</text>`;
+      yr+=`<text x="${W-mR+4}" y="${(y+3).toFixed(1)}" text-anchor="start" font-size="8.5" fill="#e0791e">${(stepR*k).toFixed(decR)}</text>`; }
+    const xl=smartTimeAxis(data,mL,mR,bw,W,H,xlC);
+    return `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" style="display:block">${grid}${bars}${line}${yl}${yr}${xl}</svg>`;
+  }
+  function downloadSeriesCSV(s,data){
+    let run=0; const head="thoi_gian,mua_mm,tich_luy_mm\n";
+    const body=data.map(d=>{run+=d.v; return `${d.t},${d.v},${run.toFixed(1)}`;}).join("\n");
+    const blob=new Blob(["\ufeff"+head+body],{type:"text/csv;charset=utf-8"});
+    const a=document.createElement("a"); a.href=URL.createObjectURL(blob);
+    a.download=`mua_${s.station_code||"tram"}_${data.length}gio.csv`; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),0);
+  }
+  function hyetoPopupHtml(s){
+    const name=s.station_name??s.name??s.station_code??"Trạm", code=s.station_code??s.code??"";
+    return `<div class="hyeto">
+      <div class="hy-head"><span class="hy-name">${name}</span>${code?`<span class="hy-code">mã ${code}</span>`:""}</div>
+      <div class="hy-row">
+        <label>Từ<input type="date" class="hy-from"></label>
+        <label>Đến<input type="date" class="hy-to"></label>
+        <button class="hy-load">Xem mưa</button>
+      </div>
+      <div class="hy-chart"><div class="hy-empty">Chọn khoảng ngày rồi bấm “Xem mưa”.</div></div>
+      <div class="hy-legend"><span class="lg-bar"></span>mm/giờ<span class="lg-line"></span>Tích lũy (mm)</div>
+      <div class="hy-foot"><span class="hy-total"></span><button class="hy-csv" disabled>Tải CSV</button></div>
+      <div class="hy-resize" title="Kéo để đổi kích thước"></div>
+    </div>`;
+  }
+  function wireHyeto(popup,s){
+    if(!popup) return;
+    const el=popup.getElement(); if(!el) return;
+    const q=c=>el.querySelector(c);
+    const box=q(".hyeto"),fromEl=q(".hy-from"),toEl=q(".hy-to"),loadBtn=q(".hy-load"),csvBtn=q(".hy-csv"),chart=q(".hy-chart"),totalEl=q(".hy-total"),handle=q(".hy-resize");
+    const iso=d=>{const p=n=>String(n).padStart(2,"0");return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}`;};
+    // mặc định theo cửa sổ "Mưa tích lũy" đang chọn — DÙNG ĐÚNG MỐC GIỜ để khớp với giọt nước
+    let winStart=null, winEnd=null;
+    if(accWindow&&accWindow.from&&accWindow.to){ winStart=accWindow.from+" 00:00:00"; winEnd=accWindow.to+" 23:59:59"; fromEl.value=accWindow.from; toEl.value=accWindow.to; }
+    else { const hrs=(accWindow&&accWindow.hours)||72, to=new Date(), from=new Date(Date.now()-hrs*3600e3); winStart=fmtLocal(from); winEnd=fmtLocal(to); fromEl.value=iso(from); toEl.value=iso(to); }
+    const defFrom=fromEl.value, defTo=toEl.value;
+    const unit=(s.type===1||s.type==="1")?"mm":"";
+    let cur=[];
+    function redraw(){
+      if(!cur.length) return;
+      const W=Math.max(280,Math.round(chart.clientWidth-12)), H=Math.max(110,Math.round(chart.clientHeight-12));
+      chart.innerHTML=hyetoSVG(cur,unit||"mm",W,H);
+    }
+    async function doLoad(){
+      loadBtn.disabled=true; loadBtn.textContent="Đang tải…"; chart.innerHTML=`<div class="hy-empty">Đang tải…</div>`;
+      try{
+        let startStr,endStr;
+        if(winStart && fromEl.value===defFrom && toEl.value===defTo){ startStr=winStart; endStr=winEnd; }
+        else { startStr=fromEl.value+" 00:00:00"; endStr=toEl.value+" 23:59:59"; }
+        cur=await fetchSeries(s,startStr,endStr);
+        if(cur.length) redraw(); else chart.innerHTML=`<div class="hy-empty">Không có dữ liệu trong khoảng này.</div>`;
+        const tot=cur.reduce((a,d)=>a+d.v,0);
+        totalEl.textContent=cur.length?`Tổng: ${tot.toFixed(1)} mm · ${cur.length} giờ`:"";
+        csvBtn.disabled=!cur.length;
+      }catch(e){ cur=[]; chart.innerHTML=`<div class="hy-empty">Lỗi: ${e.message}</div>`; totalEl.textContent=""; csvBtn.disabled=true; }
+      finally{ loadBtn.disabled=false; loadBtn.textContent="Xem mưa"; }
+    }
+    loadBtn.onclick=doLoad;
+    csvBtn.onclick=()=>{ if(cur.length) downloadSeriesCSV(s,cur); };
+    if(window.ResizeObserver){ const ro=new ResizeObserver(()=>redraw()); ro.observe(chart); map.once("popupclose",()=>{try{ro.disconnect();}catch(e){}}); }
+    // kéo dãn kích thước thủ công — ổn định, không làm mất popup
+    if(handle&&box){
+      const startResize=ev=>{ ev.preventDefault();
+        const p=ev.touches?ev.touches[0]:ev, r=box.getBoundingClientRect(), sx=p.clientX,sy=p.clientY,sw=r.width,sh=r.height;
+        const move=e=>{ const w=e.touches?e.touches[0]:e;
+          box.style.width=Math.min(860,Math.max(320,sw+(w.clientX-sx)))+"px";
+          box.style.height=Math.min(640,Math.max(260,sh+(w.clientY-sy)))+"px";
+          redraw(); if(popup._updateLayout){popup._updateLayout();popup._updatePosition();}
+          if(e.cancelable)e.preventDefault();
+        };
+        const end=()=>{ document.removeEventListener("mousemove",move);document.removeEventListener("mouseup",end);document.removeEventListener("touchmove",move);document.removeEventListener("touchend",end); };
+        document.addEventListener("mousemove",move);document.addEventListener("mouseup",end);
+        document.addEventListener("touchmove",move,{passive:false});document.addEventListener("touchend",end);
+      };
+      handle.addEventListener("mousedown",e=>{e.stopPropagation();startResize(e);});
+      handle.addEventListener("touchstart",e=>{e.stopPropagation();startResize(e);},{passive:false});
+      if(L.DomEvent)L.DomEvent.disableClickPropagation(handle);
+    }
+    doLoad();   // tự tải cho thời đoạn đang chọn
+  }
+
+  /* ============ MƯA TÍCH LŨY ============ */
+  let accWindow={hours:24};      // {hours} | {from,to} — luôn bật để giọt nước có màu
+  let accValues={};              // station_code -> mm
+  let accTimes={};               // station_code -> ms mẫu mưa mới nhất (trong cửa sổ)
+  let accLast={};                // station_code -> {v:last_data, at:last_data_at(ms)} — sức khỏe trạm (chế độ trực tiếp)
+  let accShowVal=true;           // hiện số mm trên trạm hay không
+  let _silent=false;             // true khi đang refresh nền: chặn alert/busy
+  let _lastUpd=0;                // ms lần cập nhật gần nhất
+  // THANG MÀU CHUNG — một ngôn ngữ màu cho radar/mưa/tích lũy. Tích lũy dùng ĐÚNG
+  // họ màu mưa RAINFALL (xanh→tím→đỏ→cam→vàng→trắng) để cùng cảm quan cường độ↔tích lũy.
+  // Ngưỡng mm theo phân cấp mưa ngày VN: vừa≥16 · to≥50 · rất to≥100, mở rộng mức lũ.
+  // [CHỈNH] đổi mốc mm ở đây nếu cần khớp đúng tiêu chuẩn KTTV.
+  // tích lũy: 8 nấc = đúng RAMP8, neo theo phân cấp mưa ngày VN (vừa≥16·to≥50·rất to≥100) + mức lũ. [CHỈNH mm]
+  const ACC_STOPS=[[0,[176,221,250]],[16,[84,134,234]],[50,[118,91,197]],[100,[247,114,106]],[200,[249,193,71]],[300,[252,251,110]],[400,[253,253,151]],[500,[255,255,255]]];
+  function accRGB(mm){ const s=ACC_STOPS; if(mm<=s[0][0])return s[0][1].slice();
+    for(let k=0;k<s.length-1;k++){ if(mm<=s[k+1][0]){ const f=(mm-s[k][0])/((s[k+1][0]-s[k][0])||1); return s[k][1].map((v,j)=>Math.round(v+(s[k+1][1][j]-v)*f)); } }
+    return s[s.length-1][1].slice(); }
+  function accColor(mm){ const c=accRGB(mm); return `rgb(${c[0]},${c[1]},${c[2]})`; }
+  function accTextCol(mm){ const c=accRGB(mm), lum=0.299*c[0]+0.587*c[1]+0.114*c[2]; return lum>150?"#15324a":"#fff"; }
+  function pinSVG(fill,txt,txtcol){
+    return `<svg width="24" height="30" viewBox="0 0 24 30"><path d="M12 29C12 29 21 16.8 21 11A9 9 0 1 0 3 11C3 16.8 12 29 12 29Z" fill="${fill}" stroke="#fff" stroke-width="1.3"/>${txt!==""?`<text x="12" y="14.5" text-anchor="middle" font-size="8.2" font-weight="700" fill="${txtcol}">${txt}</text>`:""}</svg>`;
+  }
+  function dropIcon(mm,state){
+    if(state==="error"){   // last_data null -> giọt RỖNG + ✕ đỏ + nét đứt
+      const html=`<svg width="24" height="30" viewBox="0 0 24 30"><path d="M12 29C12 29 21 16.8 21 11A9 9 0 1 0 3 11C3 16.8 12 29 12 29Z" fill="#f1f4f7" stroke="#9aa3ad" stroke-width="1.3" stroke-dasharray="2.4 1.9"/><path d="M9.2 8.2 L14.8 13.8 M14.8 8.2 L9.2 13.8" stroke="#e0322f" stroke-width="1.8" stroke-linecap="round"/></svg>`;
+      return L.divIcon({html,className:"drop-icon drop-error",iconSize:[24,30],iconAnchor:[12,29],popupAnchor:[0,-27]});
+    }
+    if(state==="nodata") return dropIconPlain("#e2e7ec");
+    const fill=accColor(mm), tcol=accTextCol(mm), txt=accShowVal?(mm>=10?String(Math.round(mm)):mm.toFixed(1)):"";
+    if(state==="late"){    // VẪN lên màu = tổng đến lúc gián đoạn; viền NÉT ĐỨT + đồng hồ
+      const html=`<svg width="24" height="30" viewBox="0 0 24 30"><path d="M12 29C12 29 21 16.8 21 11A9 9 0 1 0 3 11C3 16.8 12 29 12 29Z" fill="${fill}" stroke="#fff" stroke-width="1.3" stroke-dasharray="2.4 1.9"/><circle cx="18.2" cy="6.4" r="4.7" fill="#fff" stroke="#d98a14" stroke-width="1.1"/><path d="M18.2 6.4 L18.2 3.9 M18.2 6.4 L19.9 7.3" stroke="#b46a00" stroke-width="1.1" stroke-linecap="round"/>${txt!==""?`<text x="11" y="15" text-anchor="middle" font-size="8" font-weight="700" fill="${tcol}">${txt}</text>`:""}</svg>`;
+      return L.divIcon({html,className:"drop-icon drop-late",iconSize:[24,30],iconAnchor:[12,29],popupAnchor:[0,-27]});
+    }
+    return L.divIcon({html:pinSVG(fill,txt,tcol),className:"drop-icon",iconSize:[24,30],iconAnchor:[12,29],popupAnchor:[0,-27]});  // ok
+  }
+  function dropIconPlain(color){
+    return L.divIcon({html:pinSVG(color,"",""),className:"drop-icon",iconSize:[24,30],iconAnchor:[12,29],popupAnchor:[0,-27]});
+  }
+  function setAccBusy(msg){ const el=document.getElementById("accBusy"); if(el){ el.textContent=msg; el.style.display=msg?"block":"none"; } }
+  async function computeAccumulation(){
+    if(!rawStations) await loadStations();
+    let from,to;
+    if(accWindow.hours){ to=new Date(); from=new Date(Date.now()-accWindow.hours*3600e3); }
+    else { from=new Date(accWindow.from+"T00:00:00"); to=new Date(accWindow.to+"T23:59:59"); }
+    const list=(rawStations||[]).filter(s=>{ if(!(s.type===1||s.type==="1"))return false; const lat=Number(s.latitude??s.lat),lon=Number(s.longitude??s.lon); return isFinite(lat)&&isFinite(lon)&&inHoaDuyet(lat,lon); });
+    if(!list.length){ if(!_silent) alert("Không có trạm mưa nào trong lưu vực Hòa Duyệt để tính."); return; }
+    const st=fmtLocal(from), en=fmtLocal(to); accValues={}; accTimes={}; accLast={}; let done=0;
+    if(accWindow.hours){ try{ accLast=await fetchStationStatus(st,en); }catch(e){} }   // sức khỏe trạm (chỉ chế độ trực tiếp)
+    if(!_silent) setAccBusy(`Đang tính… 0/${list.length}`);
+    await pool(list,5,async s=>{ try{ const ser=await fetchSeries(s,st,en); accValues[s.station_code]=ser.reduce((a,d)=>a+d.v,0); accTimes[s.station_code]=ser.length?parseT(ser[ser.length-1].t).getTime():null; }catch(e){} done++; if(!_silent) setAccBusy(`Đang tính… ${done}/${list.length}`); });
+    setAccBusy(""); _lastUpd=Date.now(); updLastUpd();
+    if(layers.stations&&layers.stations._marks) paintStations(); else renderStations();
+  }
+
+  /* ===== AN TOÀN: tránh bỏ quên ở chế độ LỊCH mà tưởng đang xem realtime ===== */
+  let _histIdleTimer=null,_histDeadline=0,_histTick=null;
+  function isHistMode(){ return !!(accWindow && (accWindow.from||accWindow.to)); }
+  function updateHistCountdown(){
+    const cd=document.getElementById("histCountdown"); if(!cd) return;
+    if(!_histDeadline){ cd.style.display="none"; return; }
+    let s=Math.max(0,Math.round((_histDeadline-Date.now())/1000)); const m=Math.floor(s/60); s=s%60;
+    cd.style.display=""; cd.textContent=m+":"+String(s).padStart(2,"0");
+  }
+  function idleRevertMs(){ const m=parseFloat((window.HYDRO_SETTINGS||{}).idleRevertMin); return (isFinite(m)&&m>=0?m:10)*60000; }  // phút; 0 = TẮT auto-revert
+  function showHistBanner(on){
+    let el=document.getElementById("histBanner");
+    if(!el){
+      el=document.createElement("div"); el.id="histBanner";
+      el.style.cssText="position:fixed;top:12px;left:50%;transform:translateX(-50%);z-index:9999;display:none;align-items:center;gap:12px;background:#b45309;color:#fff;padding:8px 14px;border-radius:10px;box-shadow:0 4px 14px rgba(0,0,0,.32);font:600 13px/1.2 system-ui,Segoe UI,sans-serif";
+      const sp=document.createElement("span"); sp.id="histBannerTxt"; sp.textContent="⏸ Đang xem quá khứ mưa trạm";
+      const bt=document.createElement("button"); bt.id="histLiveBtn"; bt.title="Bấm để về ngay; nếu không, tự chuyển khi đếm về 0:00"; bt.style.cssText="display:flex;align-items:center;gap:7px;background:#fff;color:#7c2d12;border:none;border-radius:7px;padding:5px 9px;font:700 12px system-ui;cursor:pointer"; bt.addEventListener("click",()=>revertToLive());
+      bt.innerHTML='<span>Về thời gian thực</span><span id="histCountdown" style="display:none;min-width:36px;text-align:center;background:#7c2d12;color:#fff;border-radius:5px;padding:2px 6px;font-variant-numeric:tabular-nums"></span>';
+      el.appendChild(sp); el.appendChild(bt); document.body.appendChild(el);
+    }
+    el.style.display = on ? "flex" : "none";
+    if(on) updateHistCountdown();
+  }
+  function armHistIdle(){ clearTimeout(_histIdleTimer); _histIdleTimer=null; const ms=idleRevertMs();
+    if(isHistMode()&&ms>0){ _histDeadline=Date.now()+ms; _histIdleTimer=setTimeout(()=>revertToLive(),ms); if(!_histTick)_histTick=setInterval(updateHistCountdown,1000); }
+    else { _histDeadline=0; if(_histTick){clearInterval(_histTick);_histTick=null;} }
+    updateHistCountdown(); }
+  function bumpHistIdle(){ if(isHistMode()&&_histIdleTimer) armHistIdle(); }   // mọi tương tác -> reset đồng hồ bỏ quên
+  function _histExitLive(){ clearTimeout(_histIdleTimer); _histIdleTimer=null; _histDeadline=0; if(_histTick){clearInterval(_histTick);_histTick=null;} showHistBanner(false); }
+  async function revertToLive(){
+    clearTimeout(_histIdleTimer); _histIdleTimer=null; _histDeadline=0; if(_histTick){clearInterval(_histTick);_histTick=null;}
+    accWindow={hours:24};
+    const box=document.getElementById("accBox");
+    if(box){ box.querySelectorAll(".acc-chip").forEach(x=>x.classList.remove("on")); const c=box.querySelector('.acc-chip[data-h="24"]'); if(c)c.classList.add("on"); }
+    const cal=document.getElementById("accCal"); if(cal)cal.style.display="none";
+    showHistBanner(false);
+    if(rawStations) await computeAccumulation();
+  }
+  document.addEventListener("pointerdown",bumpHistIdle,true);
+  document.addEventListener("keydown",bumpHistIdle,true);
+  document.addEventListener("wheel",bumpHistIdle,{capture:true,passive:true});
+  try{ map.on("movestart zoomstart",bumpHistIdle); }catch(e){}
+
+  /* ===== MƯA DỰ BÁO (mô hình GMOS, gateway RMA x-api-key) — render ô lưới + LOG chẩn đoán ===== */
+  const fcstState={model:"NIMBUS",bounds:null,session:null,frames:[]};
+  function gwBase(){ return rmaBaseU(); }
+  async function gwGet(path){ const u=gwBase()+path; console.info("[wx] forecast GET", u); const r=await fetch(u,{headers:rmaHdr()}); console.info("[wx]    ->", r.status, r.statusText); if(!r.ok)throw new Error("GET "+r.status+" "+u); return r.json(); }
+  async function gwPost(path,body){ const u=gwBase()+path; console.info("[wx] forecast POST", u, JSON.stringify(body)); const r=await fetch(u,{method:"POST",headers:rmaHdr(1),body:JSON.stringify(body)}); console.info("[wx]    ->", r.status, r.statusText); if(!r.ok)throw new Error("POST "+r.status+" "+u); return r.json(); }
+  function fcstParseTime(s){ const m=/^(\d{1,2}):(\d{2})(?::\d{2})?\s+(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(String(s)); if(m)return Date.UTC(+m[5],+m[4]-1,+m[3],+m[1],+m[2]); const d=new Date(s); return isNaN(d)?NaN:d.getTime(); }
+  function buildFcstFrames(data){
+    if(!data||typeof data!=="object")return [];
+    const by=Object.create(null);
+    for(const cellId of Object.keys(data)){ const vt=data[cellId]; if(!vt||typeof vt!=="object")continue;
+      for(const ts of Object.keys(vt)){ const v=Number(vt[ts]); if(!isFinite(v)||v<=0)continue; (by[ts]||(by[ts]={}))[cellId]=v; } }
+    return Object.keys(by).map(ts=>({t:ts,ts:fcstParseTime(ts),cells:by[ts]})).filter(f=>isFinite(f.ts)).sort((a,b)=>a.ts-b.ts);
+  }
+  // màu: dùng RAMP8 (đồng bộ mưa/radar) qua RAIN_LUT cường độ (idx = mm/200)
+  function fcstColorRGBA(mm){ const t=Math.min(1,Math.max(0,mm/200)), idx=Math.min(PW-1,Math.round(t*(PW-1)))*4; const a=RAIN_LUT[idx+3]; return [RAIN_LUT[idx],RAIN_LUT[idx+1],RAIN_LUT[idx+2], a?Math.max(110,a):150]; }
+  const FcstCanvas=(function(){
+    let canvas=null,ctx=null,A=null,B=null,F=0,pairIds=null,pairKey="",W=0,H=0,net="square";
+    let _geom=null,_dirtyGeom=true,_lastDraw=0,_mini=null,_mc=null,_img=null;
+    function ensure(){ if(canvas)return;
+      if(!map.getPane("wx-fcst")){ map.createPane("wx-fcst"); const p=map.getPane("wx-fcst"); p.style.zIndex=382; p.style.pointerEvents="none"; }
+      canvas=document.createElement("canvas"); canvas.style.pointerEvents="none"; map.getPane("wx-fcst").appendChild(canvas); ctx=canvas.getContext("2d");
+      sizeCanvas(); map.on("resize",onResize); map.on("moveend zoomend",onGeom); map.on("move zoom",place);
+    }
+    function sizeCanvas(){ const s=map.getSize(); W=s.x;H=s.y; canvas.width=W;canvas.height=H; place(); }   // CHỈ gọi khi đổi kích thước (đắt)
+    function onResize(){ sizeCanvas(); _dirtyGeom=true; draw(); }
+    function onGeom(){ _dirtyGeom=true; draw(); }
+    function place(){ if(canvas)L.DomUtil.setPosition(canvas, map.containerPointToLayerPoint([0,0])); }
+    function gridSize(){ const dx=(fcstState.bounds&&fcstState.bounds.dx)||5000; return dx/100000||0.05; }
+    function buildPairIds(a,b){ const s=Object.create(null); if(a&&a.cells)for(const id in a.cells)s[id]=1; if(b&&b.cells)for(const id in b.cells)s[id]=1; return Object.keys(s); }
+    function val(id){ const va=(A&&A.cells[id])||0, vb=(B&&B.cells[id])||0; return va+(vb-va)*F; }
+    function rebuildGeom(){   // bbox lưới + ô đích trên màn hình; chỉ tính khi đổi frame/bản đồ
+      const gs=gridSize(),half=gs/2,ids=pairIds||[];
+      let minLon=Infinity,maxLon=-Infinity,minLat=Infinity,maxLat=-Infinity,cnt=0;
+      for(let q=0;q<ids.length;q++){ const n=Number(ids[q]); if(!isFinite(n))continue; const li=Math.floor(n/100000),lj=n%100000; if(lj<minLon)minLon=lj; if(lj>maxLon)maxLon=lj; if(li<minLat)minLat=li; if(li>maxLat)maxLat=li; cnt++; }
+      if(!isFinite(minLon)||!cnt){ _geom=null; return; }
+      const gw=maxLon-minLon+1, gh=maxLat-minLat+1;
+      if(gw<1||gh<1||gw>4000||gh>4000){ _geom=null; return; }
+      const north=maxLat*gs-90+half, south=minLat*gs-90-half, west=minLon*gs-180-half, east=maxLon*gs-180+half;
+      const nw=map.latLngToContainerPoint([north,west]), se=map.latLngToContainerPoint([south,east]);
+      _geom={minLon,maxLon,minLat,maxLat,gw,gh,dx:nw.x,dy:nw.y,dw:Math.max(1,se.x-nw.x),dh:Math.max(1,se.y-nw.y)};
+      if(!_mini||_mini.width!==gw||_mini.height!==gh){ _mini=document.createElement("canvas"); _mini.width=gw; _mini.height=gh; _mc=_mini.getContext("2d"); _img=_mc.createImageData(gw,gh); }
+    }
+    function draw(){ if(!ctx)return; ctx.clearRect(0,0,W,H); if(!pairIds||!pairIds.length)return;
+      if(_dirtyGeom||!_geom){ rebuildGeom(); _dirtyGeom=false; }
+      if(!_geom||!_img)return;
+      const g=_geom, ids=pairIds, d=_img.data; d.fill(0);   // tô lưới 1px/ô (ghi mảng, KHÔNG fillRect/chiếu từng ô)
+      for(let q=0;q<ids.length;q++){ const id=ids[q], n=Number(id); if(!isFinite(n))continue; const li=Math.floor(n/100000),lj=n%100000;
+        const v=val(id); if(v<=0.04)continue; const o=((g.maxLat-li)*g.gw+(lj-g.minLon))*4, c=fcstColorRGBA(v); d[o]=c[0];d[o+1]=c[1];d[o+2]=c[2];d[o+3]=c[3]; }
+      _mc.putImageData(_img,0,0);
+      ctx.imageSmoothingEnabled=(net==="smooth"); if(net==="smooth")ctx.imageSmoothingQuality="high";   // mịn = nội suy; ô lưới = pixel cứng
+      try{ ctx.drawImage(_mini, g.dx, g.dy, g.dw, g.dh); }catch(e){}
+      if(!draw._lg){draw._lg=1; console.info("[wx] forecast render mini-grid:", g.gw+"x"+g.gh, "ô:", ids.length, "mode:", net);}
+    }
+    return {
+      setBlend(fa,fb,fr){ const key=((fa&&fa.t)||"")+"|"+((fb&&fb.t)||""); if(key!==pairKey){ pairKey=key; A=fa; B=fb; pairIds=buildPairIds(fa,fb); _dirtyGeom=true; } F=fr; ensure();
+        const now=(window.performance&&performance.now)?performance.now():Date.now();
+        if(_dirtyGeom || now-_lastDraw>=33){ _lastDraw=now; draw(); }   // ~30fps; mỗi khung rất rẻ (1 drawImage)
+      },
+      setNet(n){ net=n; if(ctx)draw(); },
+      remove(){ if(canvas){ try{map.off("resize",onResize); map.off("moveend zoomend",onGeom); map.off("move zoom",place);}catch(e){} canvas.remove(); } canvas=null;ctx=null;A=null;B=null;pairIds=null;pairKey="";_geom=null;_mini=null;_mc=null;_img=null; } };
+  })();
+
+  /* ===== MƯA DỰ BÁO trên GPU (WebGL) — nội suy 2 frame + tô màu trong shader, gần 0% CPU (mô hình RMA) ===== */
+  const FcstGL=(function(){
+    const VS="precision mediump float;attribute vec2 a_clip;attribute vec2 a_uv;varying vec2 v_uv;void main(){v_uv=a_uv;gl_Position=vec4(a_clip,0.0,1.0);}";
+    const FS="precision mediump float;uniform sampler2D u_a;uniform sampler2D u_b;uniform sampler2D u_pal;uniform float u_mix;uniform float u_op;varying vec2 v_uv;void main(){vec4 da=texture2D(u_a,v_uv);vec4 db=texture2D(u_b,v_uv);float idx=mix(da.r,db.r,u_mix);float mask=mix(da.a,db.a,u_mix);if(mask<0.02||idx<=0.0003)discard;vec4 c=texture2D(u_pal,vec2(idx,0.5));float a=c.a*u_op;gl_FragColor=vec4(c.rgb*a,a);}";
+    let canvas=null,gl=null,prog=null,inited=false,useCanvas=false;
+    let A=null,B=null,F=0,pairKey="",pairIds=null,net="square";
+    let texA=null,texB=null,texPal=null,posBuf=null,uvBuf=null,_bbox=null,_dirtyData=true,_dirtyGeom=true,W=0,H=0;
+    let aClip,aUv,uMix,uA,uB,uPal,uOp;
+    function gridSize(){ const dx=(fcstState.bounds&&fcstState.bounds.dx)||5000; return dx/100000||0.05; }
+    function buildPairIds(a,b){ const s=Object.create(null); if(a&&a.cells)for(const id in a.cells)s[id]=1; if(b&&b.cells)for(const id in b.cells)s[id]=1; return Object.keys(s); }
+    function compile(type,srcStr){ const sh=gl.createShader(type); gl.shaderSource(sh,srcStr); gl.compileShader(sh); if(!gl.getShaderParameter(sh,gl.COMPILE_STATUS)){ console.warn("[wx] fcst shader:",gl.getShaderInfoLog(sh)); gl.deleteShader(sh); return null; } return sh; }
+    function makeProgram(){ const vs=compile(gl.VERTEX_SHADER,VS), fs=compile(gl.FRAGMENT_SHADER,FS); if(!vs||!fs)return null; const p=gl.createProgram(); gl.attachShader(p,vs); gl.attachShader(p,fs); gl.linkProgram(p); if(!gl.getProgramParameter(p,gl.LINK_STATUS)){ console.warn("[wx] fcst link:",gl.getProgramInfoLog(p)); return null; } return p; }
+    function makePalette(){ const N=256, arr=new Uint8Array(N*4); for(let i=0;i<N;i++){ const mm=i/(N-1)*200, c=fcstColorRGBA(mm); arr[i*4]=c[0];arr[i*4+1]=c[1];arr[i*4+2]=c[2];arr[i*4+3]=c[3]; }
+      const t=gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D,t); gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,N,1,0,gl.RGBA,gl.UNSIGNED_BYTE,arr);
+      gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR); gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);
+      gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE); return t; }
+    function place(){ if(canvas)L.DomUtil.setPosition(canvas, map.containerPointToLayerPoint([0,0])); }
+    function sizeCanvas(){ const s=map.getSize(); W=s.x;H=s.y; canvas.width=W;canvas.height=H; if(gl)gl.viewport(0,0,W,H); place(); }
+    function onResize(){ sizeCanvas(); _dirtyGeom=true; draw(); }
+    function onGeom(){ _dirtyGeom=true; draw(); }
+    function initGL(){
+      if(inited)return; inited=true;
+      if(!map.getPane("wx-fcst")){ map.createPane("wx-fcst"); const p=map.getPane("wx-fcst"); p.style.zIndex=382; p.style.pointerEvents="none"; }
+      canvas=document.createElement("canvas"); canvas.style.pointerEvents="none"; map.getPane("wx-fcst").appendChild(canvas);
+      try{ gl=canvas.getContext("webgl",{premultipliedAlpha:true,alpha:true,antialias:false,depth:false})||canvas.getContext("experimental-webgl"); }catch(e){ gl=null; }
+      if(!gl){ canvas.remove(); canvas=null; useCanvas=true; console.warn("[wx] forecast: WebGL không khả dụng -> fallback canvas"); return; }
+      prog=makeProgram(); if(!prog){ canvas.remove(); canvas=null; gl=null; useCanvas=true; console.warn("[wx] forecast: shader lỗi -> fallback canvas"); return; }
+      gl.useProgram(prog);
+      aClip=gl.getAttribLocation(prog,"a_clip"); aUv=gl.getAttribLocation(prog,"a_uv");
+      uMix=gl.getUniformLocation(prog,"u_mix"); uA=gl.getUniformLocation(prog,"u_a"); uB=gl.getUniformLocation(prog,"u_b"); uPal=gl.getUniformLocation(prog,"u_pal"); uOp=gl.getUniformLocation(prog,"u_op");
+      posBuf=gl.createBuffer(); uvBuf=gl.createBuffer(); texPal=makePalette(); texA=gl.createTexture(); texB=gl.createTexture();
+      gl.disable(gl.DEPTH_TEST); gl.enable(gl.BLEND); gl.blendFunc(gl.ONE,gl.ONE_MINUS_SRC_ALPHA);
+      sizeCanvas(); map.on("resize",onResize); map.on("moveend zoomend",onGeom); map.on("move zoom",place);
+      console.info("[wx] forecast: WebGL OK (GPU)");
+    }
+    function computeBbox(){ const ids=pairIds||[]; let minLon=Infinity,maxLon=-Infinity,minLat=Infinity,maxLat=-Infinity,cnt=0;
+      for(let q=0;q<ids.length;q++){ const n=Number(ids[q]); if(!isFinite(n))continue; const li=Math.floor(n/100000),lj=n%100000; if(lj<minLon)minLon=lj; if(lj>maxLon)maxLon=lj; if(li<minLat)minLat=li; if(li>maxLat)maxLat=li; cnt++; }
+      if(!isFinite(minLon)||!cnt){ _bbox=null; return; } const gw=maxLon-minLon+1, gh=maxLat-minLat+1; if(gw<1||gh<1||gw>4096||gh>4096){ _bbox=null; return; } _bbox={minLon,maxLon,minLat,maxLat,gw,gh}; }
+    function applyFilter(tex){ const f=(net==="smooth")?gl.LINEAR:gl.NEAREST; gl.bindTexture(gl.TEXTURE_2D,tex); gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,f); gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,f); gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE); }
+    function fillTex(tex,frame){ const bb=_bbox; if(!bb)return; const gw=bb.gw, gh=bb.gh, arr=new Uint8Array(gw*gh*4);
+      if(frame&&frame.cells){ for(const id in frame.cells){ const n=Number(id); if(!isFinite(n))continue; const li=Math.floor(n/100000),lj=n%100000;
+        if(li<bb.minLat||li>bb.maxLat||lj<bb.minLon||lj>bb.maxLon)continue; const r=li-bb.minLat, c=lj-bb.minLon, o=(r*gw+c)*4; let idx=frame.cells[id]/200; if(idx>1)idx=1; if(idx<0)idx=0; arr[o]=Math.round(idx*255); arr[o+3]=255; } }
+      gl.bindTexture(gl.TEXTURE_2D,tex); gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL,false); gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gw,gh,0,gl.RGBA,gl.UNSIGNED_BYTE,arr); applyFilter(tex); }
+    function updateQuad(){ const bb=_bbox; if(!bb)return; const gs=gridSize(),half=gs/2;
+      const south=bb.minLat*gs-90-half, north=bb.maxLat*gs-90+half, west=bb.minLon*gs-180-half, east=bb.maxLon*gs-180+half;
+      const pSW=map.latLngToContainerPoint([south,west]),pSE=map.latLngToContainerPoint([south,east]),pNW=map.latLngToContainerPoint([north,west]),pNE=map.latLngToContainerPoint([north,east]);
+      const cx=p=>(p.x/W)*2-1, cy=p=>1-(p.y/H)*2;
+      const pos=new Float32Array([cx(pSW),cy(pSW),cx(pSE),cy(pSE),cx(pNW),cy(pNW), cx(pSE),cy(pSE),cx(pNE),cy(pNE),cx(pNW),cy(pNW)]);
+      const uv=new Float32Array([0,0, 1,0, 0,1, 1,0, 1,1, 0,1]);   // r=0 (south) -> v=0
+      gl.bindBuffer(gl.ARRAY_BUFFER,posBuf); gl.bufferData(gl.ARRAY_BUFFER,pos,gl.DYNAMIC_DRAW);
+      gl.bindBuffer(gl.ARRAY_BUFFER,uvBuf); gl.bufferData(gl.ARRAY_BUFFER,uv,gl.STATIC_DRAW); }
+    function draw(){ if(!gl)return; gl.clearColor(0,0,0,0); gl.clear(gl.COLOR_BUFFER_BIT); if(!_bbox||!pairIds||!pairIds.length)return;
+      if(_dirtyData){ fillTex(texA,A); fillTex(texB,B); _dirtyData=false; }
+      if(_dirtyGeom){ updateQuad(); _dirtyGeom=false; }
+      gl.useProgram(prog);
+      gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D,texA); gl.uniform1i(uA,0);
+      gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D,texB); gl.uniform1i(uB,1);
+      gl.activeTexture(gl.TEXTURE2); gl.bindTexture(gl.TEXTURE_2D,texPal); gl.uniform1i(uPal,2);
+      gl.uniform1f(uMix,F); gl.uniform1f(uOp,0.85);
+      gl.bindBuffer(gl.ARRAY_BUFFER,posBuf); gl.enableVertexAttribArray(aClip); gl.vertexAttribPointer(aClip,2,gl.FLOAT,false,0,0);
+      gl.bindBuffer(gl.ARRAY_BUFFER,uvBuf); gl.enableVertexAttribArray(aUv); gl.vertexAttribPointer(aUv,2,gl.FLOAT,false,0,0);
+      gl.drawArrays(gl.TRIANGLES,0,6);
+      if(!draw._lg){draw._lg=1; console.info("[wx] forecast GPU vẽ:", _bbox.gw+"x"+_bbox.gh, "ô:", pairIds.length, "mode:", net);}
+    }
+    return {
+      setBlend(fa,fb,fr){ initGL(); if(useCanvas)return FcstCanvas.setBlend(fa,fb,fr);
+        const key=((fa&&fa.t)||"")+"|"+((fb&&fb.t)||""); if(key!==pairKey){ pairKey=key; A=fa; B=fb; pairIds=buildPairIds(fa,fb); computeBbox(); _dirtyData=true; _dirtyGeom=true; } F=fr; draw(); },
+      setNet(n){ net=n; if(useCanvas)return FcstCanvas.setNet(n); if(gl&&texA){ applyFilter(texA); applyFilter(texB); draw(); } },
+      remove(){ if(useCanvas)return FcstCanvas.remove();
+        if(canvas){ try{map.off("resize",onResize); map.off("moveend zoomend",onGeom); map.off("move zoom",place);}catch(e){} canvas.remove(); }
+        canvas=null;gl=null;prog=null;inited=false;A=null;B=null;pairIds=null;pairKey="";_bbox=null; } };
+  })();
+  const FcstFX=FcstGL;
+
+  function applyForecast(t){ if(!fcstState.frames.length)return; const pr=pickPair(fcstState.frames,t,f=>f.ts); if(!pr)return;
+    FcstFX.setBlend(pr.a,pr.b,pr.f); layers.forecast={_fcst:true,addTo(){},remove(){}}; }
+  function fcstRemove(){ FcstFX.remove(); fcstState.frames=[]; applyForecast._t=null; delete layers.forecast; const s=document.getElementById("fcstSub"); if(s)s.textContent=""; const c=document.getElementById("fcstCtl"); if(c)c.hidden=true; }
+  const fcstNameOf=m=>String((m&&(m.name||m.model||m.code))||m);
+  const FCST_MODELS=["GFS","ECMWF","NIMBUS"];   // CHỈ 3 nguồn này cho người dùng
+  function fcstFilterModels(mlist){ const out=[]; FCST_MODELS.forEach(kw=>{
+    let m=mlist.find(x=>fcstNameOf(x).toUpperCase()===kw);                 // ưu tiên TRÙNG KHỚP (vd "NIMBUS")
+    if(!m)m=mlist.find(x=>fcstNameOf(x).toUpperCase().indexOf(kw)>=0);     // rồi mới tới tên CHỨA (vd "..._GFS")
+    if(m)out.push({label:kw,value:fcstNameOf(m)}); }); return out; }
+  const fcstSOf=s=>(s&&(s.session||s.id||s.value||s.time))||s;
+  function fcstSTime(s){ const m=/^(\d{4})\/(\d{1,2})\/(\d{1,2})[ T](\d{1,2}):(\d{2})/.exec(String(fcstSOf(s))); return m?Date.UTC(+m[1],+m[2]-1,+m[3],+m[4],+m[5]):NaN; }
+  function fcstFillSelect(sel,items,labelFn,valFn,cur){ if(!sel)return; sel.innerHTML=items.map(it=>{const v=String(valFn(it)),l=String(labelFn(it)); return '<option value="'+v.replace(/"/g,"&quot;")+'"'+(v===String(cur)?" selected":"")+">"+l+"</option>";}).join(""); }
+  async function fcstFetchFrames(model,session){
+    const data=await gwPost("/api/weather/GetRainForecastDataBySession",{model,session});
+    let grid=data; if(data && data.status!==undefined) grid=data.data||data.result||data.value||data.rain||data.forecast||data.grid||data.cells||grid;
+    return buildFcstFrames(grid);
+  }
+  function fcstShow(frames){
+    // CHIA ĐỀU: mỗi frame một khoảng play bằng nhau (theo chỉ số), bỏ phụ thuộc khoảng cách/đột biến epoch
+    if(frames.length>=2){ const t0=frames[0].ts, t1=frames[frames.length-1].ts, step=(t1-t0)/(frames.length-1);
+      for(let i=0;i<frames.length;i++){ if(frames[i].realTs==null)frames[i].realTs=frames[i].ts; frames[i].ts=t0+i*step; } }
+    fcstState.frames=frames; applyForecast._t=null; FcstFX.setNet(_fcstNet);
+    if(frames.length){ console.info("[wx] forecast:", frames.length, "frame, chia đều", new Date(frames[0].ts).toISOString(),"->",new Date(frames[frames.length-1].ts).toISOString()); }
+    applyForecast(TimeCtl.tNow);
+    TimeCtl.register("forecast",{range:()=>fcstState.frames.length?[fcstState.frames[0].ts,fcstState.frames[fcstState.frames.length-1].ts]:null, apply:applyForecast});
+    const sub=document.getElementById("fcstSub"); if(sub)sub.textContent=" "+fcstState.model+" · "+frames.length+" giờ";
+  }
+  async function fcstAutoSession(model){    // nạp phiên + tự lấy phiên MỚI NHẤT có >=2 giờ
+    const sess=await gwPost("/api/weather/GetRainForecastSession",{model});
+    let slist=Array.isArray(sess)?sess:(sess&&(sess.data||sess.sessions||sess.result))||[];
+    slist=slist.slice().sort((a,b)=>fcstSTime(b)-fcstSTime(a)).slice(0,12);   // CHỈ 12 phiên gần nhất
+    fcstFillSelect(document.getElementById("fcstSession"),slist,s=>fcstSOf(s),s=>fcstSOf(s),null);
+    console.info("[wx] forecast SESSIONS:", slist.length, "| mới nhất:", fcstSOf(slist[0]));
+    let chosen=null, frames=[];
+    for(let k=0;k<slist.length;k++){ const s=fcstSOf(slist[k]); const fr=await fcstFetchFrames(model,s);
+      console.info("[wx] forecast thử phiên", s, "->", fr.length, "giờ"); if(!chosen){chosen=s;frames=fr;} if(fr.length>=2){chosen=s;frames=fr;break;} }
+    const sSel=document.getElementById("fcstSession"); if(sSel&&chosen)sSel.value=chosen;
+    return {chosen,frames};
+  }
+  async function loadForecast(){
+    const ctl=document.getElementById("fcstCtl"); if(ctl)ctl.hidden=false;
+    const sub=document.getElementById("fcstSub"); if(sub)sub.textContent=" …đang tải";
+    console.info("[wx] forecast gateway =", gwBase(), "| auth =", rmaKey()?("x-api-key("+rmaKey().length+")"):"KHÔNG CÓ KEY");
+    try{
+      const models=await gwGet("/api/map/rain-models/getall");
+      const mlist=Array.isArray(models)?models:(models&&(models.data||models.models||models.result))||[];
+      console.info("[wx] forecast TẤT CẢ model:", mlist.map(fcstNameOf));   // để đối chiếu tên GFS/ECMWF thật
+      const allowed=fcstFilterModels(mlist);
+      console.info("[wx] forecast model CHO PHÉP:", allowed.map(a=>a.label+"="+a.value).join(", "));
+      const def=allowed.find(a=>a.label==="NIMBUS")||allowed[0]||{value:"NIMBUS"};
+      fcstState.model=def.value; fcstState.bounds=null;
+      fcstFillSelect(document.getElementById("fcstModel"),allowed,a=>a.label,a=>a.value,fcstState.model);
+      const r=await fcstAutoSession(fcstState.model); fcstState.session=r.chosen;
+      console.info("[wx] forecast DÙNG phiên:", r.chosen, "·", r.frames.length, "giờ");
+      if(!r.frames.length) throw new Error("phiên không có dữ liệu (xem log)");
+      fcstShow(r.frames);
+    }catch(err){ console.error("[wx] forecast LỖI:", err && err.message, err); if(sub)sub.textContent=" ⚠ lỗi (mở Console)"; }
+  }
+  async function fcstOnModelChange(model){
+    const sub=document.getElementById("fcstSub"); if(sub)sub.textContent=" …đang tải";
+    try{ fcstState.model=model; const r=await fcstAutoSession(model); fcstState.session=r.chosen; if(r.frames.length)fcstShow(r.frames); else if(sub)sub.textContent=" (không có dữ liệu)"; }
+    catch(err){ console.error("[wx] forecast LỖI model:", err); if(sub)sub.textContent=" ⚠ lỗi"; }
+  }
+  async function fcstOnSessionChange(session){
+    const sub=document.getElementById("fcstSub"); if(sub)sub.textContent=" …đang tải";
+    try{ fcstState.session=session; const fr=await fcstFetchFrames(fcstState.model,session);
+      console.info("[wx] forecast phiên chọn", session, "->", fr.length, "giờ");
+      if(fr.length)fcstShow(fr); else if(sub)sub.textContent=" (phiên rỗng)"; }
+    catch(err){ console.error("[wx] forecast LỖI phiên:", err); if(sub)sub.textContent=" ⚠ lỗi"; }
+  }
+
+  /* ============ TRẠM ============ */
+  // last_data / last_data_at cho toàn mạng -> phân trạng thái trạm (POST /api/map/station/status)
+  async function fetchStationStatus(stStr,enStr){
+    if(!rmaAuthOK()) return {};
+    let r; try{ r=await fetch(rmaBaseU()+"/api/map/station/status",{method:"POST",headers:rmaHdr(1),body:JSON.stringify({from:stStr,to:enStr})}); }catch(e){ return {}; }
+    if(!r.ok) return {};
+    let data; try{ data=await r.json(); }catch(e){ return {}; }
+    const arr=data.data||data.result||(Array.isArray(data)?data:[]), m={};
+    for(const s of arr){ const code=s.station_code; if(code==null)continue; const at=s.last_data_at?new Date(s.last_data_at).getTime():null; m[code]={v:(s.last_data!=null?Number(s.last_data):null), at:(isFinite(at)?at:null)}; }
+    return m;
+  }
+  async function ensureStations(){
+    if(rawStations) return;
+    if(!rmaAuthOK()){ throw new Error("cần API key RMA (RMA_API_KEY trong secret.local.js)"); }
+    console.info("[wx] RMA auth = x-api-key | base =", rmaBaseU());
+    const r=await fetch(rmaBaseU()+"/api/setting/station/getall",{headers:rmaHdr()});
+    if(r.status===401||r.status===403) throw new Error("API key sai/thiếu quyền (HTTP "+r.status+")");
+    if(!r.ok) throw new Error("HTTP "+r.status);
+    const data=await r.json();
+    rawStations = data.data||data.result||data.stations||(Array.isArray(data)?data:[]);
+  }
+  async function loadStations(){ await ensureStations(); renderStations(); computeAccumulation(); }
+  async function loadHydro(){ await ensureStations(); renderHydro(); computeHydroLevels(); }
+  function inHoaDuyet(lat,lon){
+    const poly=window.HOADUYET; if(!poly||!window.turf) return true;
+    try{ const g=poly.type==="FeatureCollection"?poly.features[0]:poly; return turf.booleanPointInPolygon([lon,lat],g); }catch(e){ return true; }
+  }
+  let _basinBuf=null,_basinBufDone=false;
+  function inHoaDuyetBuf(lat,lon){
+    if(!window.turf||!window.HOADUYET) return inHoaDuyet(lat,lon);
+    if(!_basinBufDone){ _basinBufDone=true; try{ const poly=window.HOADUYET, g=poly.type==="FeatureCollection"?poly.features[0]:poly; _basinBuf=turf.buffer(g,2.5,{units:"kilometers"}); }catch(e){ _basinBuf=null; } }
+    if(!_basinBuf) return inHoaDuyet(lat,lon);
+    try{ return turf.booleanPointInPolygon([lon,lat],_basinBuf); }catch(e){ return inHoaDuyet(lat,lon); }
+  }
+  function lateMs(){ const m=parseFloat((window.HYDRO_SETTINGS||{}).lateMin); return (isFinite(m)&&m>0?m:120)*60000; }  // ngưỡng "trễ" = setting, mặc định 2h
+  function stationState(code){
+    // TRỰC TIẾP: trạng thái theo last_data/last_data_at (API station/status)
+    if(!(accWindow && (accWindow.from||accWindow.to))){
+      const L=accLast[code];
+      if(!L || L.v==null || L.at==null) return "error";   // last_data null / không có -> LỖI
+      if(Date.now()-L.at >= lateMs()) return "late";        // quá ngưỡng -> TRỄ (vẫn lên màu tổng tích lũy)
+      return "ok";
+    }
+    return (accTimes[code]!=null) ? "ok" : "nodata";        // LỊCH: theo có/không mẫu trong cửa sổ
+  }
+  function renderStations(){
+    if(layers.stations) map.removeLayer(layers.stations);
+    const grp=L.layerGroup([],{pane:"wx-station"}); grp._marks={}; grp._meta={}; let n=0;
+    for(const s of (rawStations||[])){
+      if(!(s.type===1||s.type==="1")) continue;
+      const lat=Number(s.latitude??s.lat??s.Lat??s.y), lon=Number(s.longitude??s.lon??s.lng??s.x);
+      if(!isFinite(lat)||!isFinite(lon)) continue;
+      if(!inHoaDuyet(lat,lon)) continue;
+      const code=s.station_code, name=s.station_name??s.name??code??"trạm";
+      let icon,tip; const v=accValues[code], state=stationState(code);
+      if(state==="error"){ icon=dropIcon(0,"error"); tip=`${name}: trạm lỗi / không có dữ liệu (last_data null)`; }
+      else if(state==="nodata"){ icon=dropIcon(0,"nodata"); tip=`${name}: không có dữ liệu trong cửa sổ`; }
+      else if(v!==undefined){ icon=dropIcon(v,state); tip=(state==="late")?`${name}: ${v.toFixed(1)} mm — TRỄ (≥${Math.round(lateMs()/60000)} phút không có dữ liệu mới)`:`${name}: ${v.toFixed(1)} mm`; }
+      else { icon=dropIconPlain("#e2e7ec"); tip=name; }
+      const mk=L.marker([lat,lon],{pane:"wx-station",icon});
+      mk.bindTooltip(tip,{direction:"top"});
+      mk.bindPopup(()=>hyetoPopupHtml(s),{minWidth:320,maxWidth:900,className:"hy-popup",closeOnClick:false});
+      mk.on("popupopen",ev=>wireHyeto(ev.popup,s));
+      mk.addTo(grp); grp._marks[code]=mk; grp._meta[code]={name}; n++;
+    }
+    layers.stations=grp.addTo(map);
+    const cb=document.querySelector('input[data-wx="stations"]'); if(cb)cb.checked=true;
+    if(!n&&!_silent) alert("Không có trạm đo mưa nào trong lưu vực Hòa Duyệt (kiểm tra dữ liệu trạm / ranh giới).");
+  }
+  function paintStations(){
+    const grp=layers.stations; if(!grp||!grp._marks) return;
+    for(const code in grp._marks){ const mk=grp._marks[code], meta=grp._meta[code]; if(!mk||!meta) continue;
+      const v=accValues[code], state=stationState(code), setTip=(t)=>{const tt=mk.getTooltip(); if(tt) tt.setContent(t);};
+      if(state==="error"){ mk.setIcon(dropIcon(0,"error")); setTip(`${meta.name}: trạm lỗi / không có dữ liệu`); }
+      else if(state==="nodata"){ mk.setIcon(dropIcon(0,"nodata")); setTip(`${meta.name}: không có dữ liệu trong cửa sổ`); }
+      else if(v!==undefined){ mk.setIcon(dropIcon(v,state)); setTip((state==="late")?`${meta.name}: ${v.toFixed(1)} mm — TRỄ`:`${meta.name}: ${v.toFixed(1)} mm`); }
+    }
+  }
+
+  /* ============ TRẠM THỦY VĂN (type 2 — mực nước) ============ */
+  let hydroLevels={};   // station_code -> mực nước mới nhất (m)
+  function triIcon(color,lvText,stale){
+    const tri=`<svg width="24" height="22" viewBox="0 0 24 22" style="display:block"><path d="M2 3 H22 L12 20 Z" fill="${stale?"#9aa1a9":color}" stroke="#fff" stroke-width="1.6" stroke-linejoin="round"/></svg>`;
+    const lab=(lvText!=null&&lvText!=="")?`<span class="tri-val${stale?" tri-val-stale":""}">${lvText}</span>`:"";
+    return L.divIcon({html:`<div class="tri-wrap">${lab}${tri}</div>`,className:"tri-icon",iconSize:[56,38],iconAnchor:[28,34],popupAnchor:[0,-32]});
+  }
+  function fmtLevel(lv){ return (lv!=null&&isFinite(lv))?lv.toFixed(2):"–"; }
+  let hydroTimes={};   // station_code -> ms mực nước mới nhất
+  function hydroStale(code){ const t=hydroTimes[code]; return t?(Date.now()-t>staleMs()):false; }
+  function stationAlarms(s){
+    const code=s.station_code;
+    const ov=(window.HYDRO_SETTINGS&&window.HYDRO_SETTINGS.alarms&&window.HYDRO_SETTINGS.alarms[code])||null;
+    if(ov){ const o={bd1:+ov.bd1,bd2:+ov.bd2,bd3:+ov.bd3}; if(isFinite(o.bd1)||isFinite(o.bd2)||isFinite(o.bd3)) return o; }
+    if(Array.isArray(s.alarms)&&s.alarms.length){ const t=s.alarms.map(a=>+(a.threshold)).filter(isFinite).sort((a,b)=>a-b); return {bd1:t[0],bd2:t[1],bd3:t[2]}; }
+    return {bd1:NaN,bd2:NaN,bd3:NaN};
+  }
+  function alarmColor(lv,th){
+    if(lv==null||!isFinite(lv)) return "#9aa1a9";
+    if(isFinite(th.bd3)&&lv>=th.bd3) return "#e2261c";
+    if(isFinite(th.bd2)&&lv>=th.bd2) return "#f4c021";
+    if(isFinite(th.bd1)&&lv>=th.bd1) return "#3ea845";
+    return "#5b8fbf";
+  }
+  function alarmLabel(lv,th){
+    if(lv==null||!isFinite(lv)) return "—";
+    let tag="dưới BĐ1";
+    if(isFinite(th.bd3)&&lv>=th.bd3)tag="BĐ3"; else if(isFinite(th.bd2)&&lv>=th.bd2)tag="BĐ2"; else if(isFinite(th.bd1)&&lv>=th.bd1)tag="BĐ1";
+    return `${lv.toFixed(2)} m · ${tag}`;
+  }
+  function renderHydro(){
+    if(layers.hydro) map.removeLayer(layers.hydro);
+    const grp=L.layerGroup([],{pane:"wx-station"}); grp._marks={}; grp._meta={}; let n=0;
+    for(const s of (rawStations||[])){
+      if(s.type!==2&&s.type!=="2") continue;
+      const lat=Number(s.latitude??s.lat??s.Lat??s.y), lon=Number(s.longitude??s.lon??s.lng??s.x);
+      if(!isFinite(lat)||!isFinite(lon)) continue;
+      if(!inHoaDuyetBuf(lat,lon)) continue;
+      const code=s.station_code, name=s.station_name??s.name??code??"trạm";
+      const th=stationAlarms(s), lv=hydroLevels[code], stale=hydroStale(code);
+      const mk=L.marker([lat,lon],{pane:"wx-station",icon:triIcon(alarmColor(lv,th),fmtLevel(lv),stale)});
+      mk.bindTooltip(`${name}: ${alarmLabel(lv,th)}`,{direction:"top"});
+      mk.bindPopup(()=>hydroPopupHtml(s),{minWidth:320,maxWidth:900,className:"hy-popup",closeOnClick:false});
+      mk.on("popupopen",ev=>wireHydro(ev.popup,s));
+      mk.addTo(grp); grp._marks[code]=mk; grp._meta[code]={th,name}; n++;
+    }
+    layers.hydro=grp.addTo(map);
+    const cb=document.querySelector('input[data-wx="hydro"]'); if(cb)cb.checked=true;
+    if(!n&&!_silent) alert("Không có trạm thủy văn (mực nước) trong lưu vực Hòa Duyệt từ API.");
+  }
+  function paintHydro(){
+    const grp=layers.hydro; if(!grp||!grp._marks) return;
+    for(const code in grp._marks){ const mk=grp._marks[code], meta=grp._meta[code]; if(!mk||!meta) continue;
+      const lv=hydroLevels[code], stale=hydroStale(code), th=meta.th;
+      mk.setIcon(triIcon(alarmColor(lv,th),fmtLevel(lv),stale));
+      const tt=mk.getTooltip(); if(tt) tt.setContent(`${meta.name}: ${alarmLabel(lv,th)}`);
+    }
+  }
+  async function computeHydroLevels(){
+    await ensureStations();
+    const list=(rawStations||[]).filter(s=>{ if(s.type!==2&&s.type!=="2")return false; const lat=Number(s.latitude??s.lat),lon=Number(s.longitude??s.lon); return isFinite(lat)&&isFinite(lon)&&inHoaDuyetBuf(lat,lon); });
+    if(!list.length){ if(!(layers.hydro&&layers.hydro._marks)) renderHydro(); return; }
+    const to=new Date(), from=new Date(Date.now()-24*3600e3), st=fmtLocal(from), en=fmtLocal(to);
+    await pool(list,5,async s=>{ try{ const ser=await fetchSeries(s,st,en); if(ser.length){ hydroLevels[s.station_code]=ser[ser.length-1].v; hydroTimes[s.station_code]=parseT(ser[ser.length-1].t).getTime(); } }catch(e){} });
+    _lastUpd=Date.now(); updLastUpd();
+    if(layers.hydro&&layers.hydro._marks) paintHydro(); else renderHydro();
+  }
+
+  /* helpers dùng chung cho popup biểu đồ */
+  function defaultWindow(fromEl,toEl){
+    const iso=d=>{const p=n=>String(n).padStart(2,"0");return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}`;};
+    let winStart,winEnd;
+    if(accWindow&&accWindow.from&&accWindow.to){ winStart=accWindow.from+" 00:00:00"; winEnd=accWindow.to+" 23:59:59"; fromEl.value=accWindow.from; toEl.value=accWindow.to; }
+    else { const hrs=(accWindow&&accWindow.hours)||72,to=new Date(),from=new Date(Date.now()-hrs*3600e3); winStart=fmtLocal(from); winEnd=fmtLocal(to); fromEl.value=iso(from); toEl.value=iso(to); }
+    return {winStart,winEnd,defFrom:fromEl.value,defTo:toEl.value};
+  }
+  function attachChartResize(box,handle,chart,popup,redraw){
+    if(window.ResizeObserver){ const ro=new ResizeObserver(()=>redraw()); ro.observe(chart); map.once("popupclose",()=>{try{ro.disconnect();}catch(e){}}); }
+    if(handle&&box){
+      const startResize=ev=>{ ev.preventDefault();
+        const p=ev.touches?ev.touches[0]:ev, r=box.getBoundingClientRect(), sx=p.clientX,sy=p.clientY,sw=r.width,sh=r.height;
+        const move=e=>{ const w=e.touches?e.touches[0]:e;
+          box.style.width=Math.min(860,Math.max(320,sw+(w.clientX-sx)))+"px";
+          box.style.height=Math.min(640,Math.max(260,sh+(w.clientY-sy)))+"px";
+          redraw(); if(popup._updateLayout){popup._updateLayout();popup._updatePosition();}
+          if(e.cancelable)e.preventDefault();
+        };
+        const end=()=>{ document.removeEventListener("mousemove",move);document.removeEventListener("mouseup",end);document.removeEventListener("touchmove",move);document.removeEventListener("touchend",end); };
+        document.addEventListener("mousemove",move);document.addEventListener("mouseup",end);
+        document.addEventListener("touchmove",move,{passive:false});document.addEventListener("touchend",end);
+      };
+      handle.addEventListener("mousedown",e=>{e.stopPropagation();startResize(e);});
+      handle.addEventListener("touchstart",e=>{e.stopPropagation();startResize(e);},{passive:false});
+      if(L.DomEvent)L.DomEvent.disableClickPropagation(handle);
+    }
+  }
+  function hydroSVG(data,th,W,H){
+    if(!data.length) return `<div class="hy-empty">Không có dữ liệu trong khoảng này.</div>`;
+    W=W||420; H=H||180;
+    const gridC="#33414b", xlC="#6e757e";
+    const mL=38,mR=10,mT=14,mB=26, pw=W-mL-mR, ph=H-mT-mB;
+    const vals=data.map(d=>d.v); let dmin=Math.min(...vals), dmax=Math.max(...vals);
+    [th.bd1,th.bd2,th.bd3].forEach(t=>{ if(isFinite(t)){dmin=Math.min(dmin,t);dmax=Math.max(dmax,t);} });
+    if(dmax-dmin<0.5){dmax+=0.25;dmin-=0.25;}
+    const nt=niceTicks(dmin,dmax,5), lo=nt.lo, hi=nt.hi, step=nt.step, dec=step>=1?0:(step>=0.1?1:2);
+    const y=v=>mT+ph-ph*((v-lo)/((hi-lo)||1)), n=data.length, bw=pw/n;
+    let grid="",yl="";
+    for(let v=lo; v<=hi+1e-9; v+=step){ const yy=y(v);
+      grid+=`<line x1="${mL}" y1="${yy.toFixed(1)}" x2="${W-mR}" y2="${yy.toFixed(1)}" stroke="${gridC}"/>`;
+      yl+=`<text x="${mL-4}" y="${(yy+3).toFixed(1)}" text-anchor="end" font-size="8.5" fill="#1d6fb8">${v.toFixed(dec)}</text>`; }
+    let thl=""; [["bd1","#3ea845"],["bd2","#f4c021"],["bd3","#e2261c"]].forEach(([k,c])=>{ const v=th[k]; if(isFinite(v)&&v>=lo&&v<=hi){ const yy=y(v); thl+=`<line x1="${mL}" y1="${yy.toFixed(1)}" x2="${W-mR}" y2="${yy.toFixed(1)}" stroke="${c}" stroke-width="1.2" stroke-dasharray="4 3"/><text x="${(W-mR-2).toFixed(1)}" y="${(yy-2).toFixed(1)}" text-anchor="end" font-size="7.5" font-weight="700" fill="${c}">${k.toUpperCase()} ${v}</text>`; } });
+    const pts=data.map((d,i)=>`${(mL+(i+.5)*bw).toFixed(1)},${y(d.v).toFixed(1)}`).join(" ");
+    const line=`<polyline points="${pts}" fill="none" stroke="#1d6fb8" stroke-width="1.8" stroke-linejoin="round"/>`;
+    const xl=smartTimeAxis(data,mL,mR,bw,W,H,xlC);
+    return `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" style="display:block"><text x="3" y="${mT+4}" font-size="8" fill="#9aa1a9">m</text>${grid}${thl}${line}${yl}${xl}</svg>`;
+  }
+  function downloadLevelCSV(s,data){
+    const head="thoi_gian,muc_nuoc_m\n", body=data.map(d=>`${d.t},${d.v}`).join("\n");
+    const blob=new Blob(["\ufeff"+head+body],{type:"text/csv;charset=utf-8"});
+    const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=`mucnuoc_${s.station_code||"tram"}_${data.length}gio.csv`; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),0);
+  }
+  // Suy id module TRẠM từ tên: "Chu Lễ"->station.chule, "Hòa Duyệt"->station.hoaduyet
+  function stationModuleId(s){
+    const t=(s.station_name??s.name??"").normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/đ/g,"d").replace(/Đ/g,"D").toLowerCase();
+    if(t.indexOf("chu le")>=0) return "station.chule";
+    if(t.indexOf("hoa duyet")>=0) return "station.hoaduyet";
+    return "";
+  }
+  function hydroPopupHtml(s){
+    const name=s.station_name??s.name??s.station_code??"Trạm", code=s.station_code??s.code??"";
+    return `<div class="hyeto">
+      <div class="hy-head"><span class="hy-name">${name}</span>${code?`<span class="hy-code">mã ${code}</span>`:""}<button class="hy-watch" title="Mở màn hình theo dõi ở băng phải" style="align-self:center;margin-left:auto;appearance:none;border:0;cursor:pointer;background:#1f93e3;color:#fff;font:600 11px/1 'Be Vietnam Pro',system-ui,sans-serif;padding:6px 9px;border-radius:7px;white-space:nowrap">👁 Theo dõi</button></div>
+      <div class="hy-row">
+        <label>Từ<input type="date" class="hy-from"></label>
+        <label>Đến<input type="date" class="hy-to"></label>
+        <button class="hy-load">Xem mực nước</button>
+      </div>
+      <div class="hy-chart"><div class="hy-empty">Đang tải…</div></div>
+      <div class="al-row"><span class="al-lab">Mực nước báo động (m):</span>
+        <label class="al-f al-g">BĐ1<input type="number" step="0.01" class="al-1"></label>
+        <label class="al-f al-y">BĐ2<input type="number" step="0.01" class="al-2"></label>
+        <label class="al-f al-r">BĐ3<input type="number" step="0.01" class="al-3"></label>
+      </div>
+      <div class="hy-foot"><span class="hy-total"></span><button class="hy-csv" disabled>Tải CSV</button></div>
+      <div class="hy-resize" title="Kéo để đổi kích thước"></div>
+    </div>`;
+  }
+  function wireHydro(popup,s){
+    if(!popup) return; const el=popup.getElement(); if(!el) return;
+    const q=c=>el.querySelector(c);
+    const box=q(".hyeto"),fromEl=q(".hy-from"),toEl=q(".hy-to"),loadBtn=q(".hy-load"),csvBtn=q(".hy-csv"),chart=q(".hy-chart"),totalEl=q(".hy-total"),handle=q(".hy-resize"),b1=q(".al-1"),b2=q(".al-2"),b3=q(".al-3");
+    const dw=defaultWindow(fromEl,toEl);
+    const code=s.station_code, th0=stationAlarms(s);
+    if(isFinite(th0.bd1))b1.value=th0.bd1; if(isFinite(th0.bd2))b2.value=th0.bd2; if(isFinite(th0.bd3))b3.value=th0.bd3;
+    let cur=[];
+    const curTh=()=>({bd1:parseFloat(b1.value),bd2:parseFloat(b2.value),bd3:parseFloat(b3.value)});
+    function redraw(){ if(!cur.length)return; const W=Math.max(280,Math.round(chart.clientWidth-12)),H=Math.max(110,Math.round(chart.clientHeight-12)); chart.innerHTML=hydroSVG(cur,curTh(),W,H); }
+    function saveTh(){ const S=window.HYDRO_SETTINGS||{}; S.alarms=S.alarms||{}; S.alarms[code]=curTh(); window.HYDRO_SETTINGS=S; try{localStorage.setItem("hydronet_settings",JSON.stringify(S));}catch(e){} redraw(); renderHydro(); if(totalEl.textContent)totalEl.textContent="Mới nhất: "+alarmLabel(hydroLevels[code],curTh()); }
+    [b1,b2,b3].forEach(inp=>inp&&inp.addEventListener("change",saveTh));
+    async function doLoad(){
+      loadBtn.disabled=true; loadBtn.textContent="Đang tải…"; chart.innerHTML=`<div class="hy-empty">Đang tải…</div>`;
+      try{
+        let startStr,endStr;
+        if(dw.winStart && fromEl.value===dw.defFrom && toEl.value===dw.defTo){ startStr=dw.winStart; endStr=dw.winEnd; }
+        else { startStr=fromEl.value+" 00:00:00"; endStr=toEl.value+" 23:59:59"; }
+        cur=await fetchSeries(s,startStr,endStr);
+        if(cur.length){ redraw(); const last=cur[cur.length-1].v; hydroLevels[code]=last; totalEl.textContent="Mới nhất: "+alarmLabel(last,curTh()); }
+        else { chart.innerHTML=`<div class="hy-empty">Không có dữ liệu trong khoảng này.</div>`; totalEl.textContent=""; }
+        csvBtn.disabled=!cur.length;
+      }catch(e){ cur=[]; chart.innerHTML=`<div class="hy-empty">Lỗi: ${e.message}</div>`; totalEl.textContent=""; csvBtn.disabled=true; }
+      finally{ loadBtn.disabled=false; loadBtn.textContent="Xem mực nước"; }
+    }
+    loadBtn.onclick=doLoad; csvBtn.onclick=()=>{ if(cur.length) downloadLevelCSV(s,cur); };
+    const watchBtn=q(".hy-watch");
+    if(watchBtn) watchBtn.onclick=()=>{ const mid=stationModuleId(s); const H=window.HHTHost;
+      if(mid&&H&&H.byId&&H.byId[mid]){ H.openModule(mid); }
+      else{ alert("Màn hình theo dõi trạm chưa sẵn — sẽ mở ở băng phải khi có console trạm này."); } };
+    attachChartResize(box,handle,chart,popup,redraw);
+    doLoad();
+  }
+
+  /* ============ BÃO ============ */
+  /* ---------- BÃO: bóc trường + tô màu cường độ + nón + xoáy quay + bảng ---------- */
+  // ====== BÃO — bám schema API thật: storms[].track[] {date, coordinates[lon,lat], wind(kt), pressure, code, forecast, spline} + cone ring ======
+  function _gp(p,names){ if(!p) return undefined; const ks=Object.keys(p); for(const nm of names){ const k=ks.find(k=>k.toLowerCase()===nm); if(k!=null&&p[k]!=null&&p[k]!=="") return p[k]; } return undefined; }
+  function stormWindKt(p){ const v=_gp(p,["wind","wind_kt","windkt","max_wind","maxwind","vmax","intensity","mws"]); const n=Number(v); return isFinite(n)?n:NaN; }
+  // code thật của WP (B/D/S/SS/T/ST/VT/E) → nhãn quốc tế (JMA) + màu cầu vồng + tên loại (VN)
+  const STORM_CODE={
+    B :{intl:"LPA",c:"#8ec5f0",n:"Nhiễu động nhiệt đới"},
+    D :{intl:"TD", c:"#4f8ff0",n:"Áp thấp nhiệt đới"},
+    S :{intl:"TS", c:"#25b3a6",n:"Bão"},
+    SS:{intl:"STS",c:"#5cc24f",n:"Bão"},
+    T :{intl:"TY", c:"#f2c12e",n:"Bão"},
+    ST:{intl:"STY",c:"#ef7b18",n:"Bão mạnh"},
+    VT:{intl:"VTY",c:"#e02424",n:"Bão rất mạnh"},
+    E :{intl:"EX", c:"#9aa1a9",n:"Hậu nhiệt đới"}
+  };
+  function stormBadge(p){
+    const raw=String(_gp(p,["code","category","cat","grade"])||"").toUpperCase().replace(/[^A-Z]/g,"");
+    if(STORM_CODE[raw]) return {code:STORM_CODE[raw].intl,c:STORM_CODE[raw].c,n:STORM_CODE[raw].n};
+    const kt=stormWindKt(p);   // dự phòng: suy từ gió kt (ngưỡng JMA) khi không có mã
+    if(isFinite(kt)){ const cd= kt>=105?"VT":kt>=85?"ST":kt>=64?"T":kt>=48?"SS":kt>=34?"S":kt>=22?"D":"B"; return {code:STORM_CODE[cd].intl,c:STORM_CODE[cd].c,n:STORM_CODE[cd].n}; }
+    return {code:"",c:"#9aa1a9",n:""};
+  }
+  function stormColor(p){ return stormBadge(p).c; }
+  function windKmh(p){ const kmh=_gp(p,["wind_kmh","wind_kph","speed_kmh"]); if(kmh!=null&&isFinite(+kmh)) return Math.round(+kmh); const kt=stormWindKt(p); return isFinite(kt)?Math.round(kt*1.852):NaN; }
+  function gustKmh(p){ const k=_gp(p,["gust_kmh","gust_kph","giat_kmh"]); if(k!=null&&isFinite(+k))return Math.round(+k); const kt=_gp(p,["gust_kt","gust","wind_gust","giat"]); return (kt!=null&&isFinite(+kt))?Math.round(+kt*1.852):NaN; }
+  function stormTimeStr(p){ const t=_gp(p,["date","time","timestamp","datetime","valid_time","dtg"]); return t!=null?String(t):""; }
+  function stormEpoch(p){ const t=stormTimeStr(p); if(!t)return NaN; let d=new Date(t); if(isNaN(d)){ const m=String(t).match(/(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})/); if(m)d=new Date(Date.UTC(+m[1],+m[2]-1,+m[3],+m[4],+m[5])); } return isNaN(d)?NaN:d.getTime(); }
+  function stormDT(p){ const t=stormTimeStr(p); if(!t) return {date:"",time:""};
+    if(/[zZ]$|[+\-]\d\d:?\d\d$/.test(t)){ const dt=new Date(t); if(!isNaN(dt)){ const u=new Date(dt.getTime()+7*3600e3),P=n=>String(n).padStart(2,"0"); return {date:`${P(u.getUTCDate())}/${P(u.getUTCMonth()+1)}/${String(u.getUTCFullYear()).slice(2)}`,time:`${P(u.getUTCHours())}:${P(u.getUTCMinutes())}`}; } }
+    const m=t.match(/(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})/); if(m) return {date:`${m[3]}/${m[2]}/${m[1].slice(2)}`,time:`${m[4]}:${m[5]}`};
+    return {date:t.slice(0,10),time:t.slice(11,16)}; }
+  function vnCap(kmh){ if(!isFinite(kmh))return null; const T=[[0,0],[1,1],[6,2],[12,3],[20,4],[29,5],[39,6],[50,7],[62,8],[75,9],[89,10],[103,11],[118,12],[134,13],[150,14],[167,15],[184,16],[202,17],[221,18]]; let c=0; for(const[m,cc]of T){ if(kmh>=m)c=cc; } return c; }   // Beaufort VN (QĐ18/2021); 18=">17"
+  function vnClass(c){ if(c==null)return ""; if(c>=16)return "Siêu bão"; if(c>=12)return "Bão rất mạnh"; if(c>=10)return "Bão mạnh"; if(c>=8)return "Bão"; if(c>=6)return "ATNĐ"; return ""; }
+  function vnCapText(kmh){ const c=vnCap(kmh); if(c==null)return "–"; const num=c>=18?"&gt;17":String(c); const cl=vnClass(c); return cl?`<b>${num}</b> ${cl}`:`<b>${num}</b>`; }
+  function avgFactor(storm){ const a=String((storm&&(storm.agencies||storm.agency))||"").toUpperCase(); if(/JMA/.test(a))return 1.06; if(/JTWC|NHC/.test(a))return 0.93; return 1; }   // quy gió về 2 phút (chuẩn VN)
+  function hexA(hex,a){ const m=/^#?([0-9a-fA-F]{6})$/.exec(hex||""); if(!m)return hex; const n=parseInt(m[1],16); return `rgba(${(n>>16)&255},${(n>>8)&255},${n&255},${a})`; }
+  function ensureStormSpinCss(){ if(document.getElementById("hnStormSpinCss"))return;
+    const s=document.createElement("style"); s.id="hnStormSpinCss";
+    s.textContent="@keyframes hn-cyc-n{to{transform:rotate(-360deg)}} .hn-cyc-spin{display:block;width:40px;height:40px;transform-origin:50% 50%;animation:hn-cyc-n 2.8s linear infinite;will-change:transform} .hn-cyc{display:block;width:40px;height:40px;overflow:visible;filter:drop-shadow(0 0 1.4px rgba(7,12,20,.92)) drop-shadow(0 1.3px 2.4px rgba(0,0,0,.5))} .hn-cyc path{fill:currentColor}";
+    document.head.appendChild(s);
+  }
+  function stormIcon(color){
+    ensureStormSpinCss();   // xoáy thuận XOAY 2.8s/vòng, Bắc bán cầu ngược chiều kim đồng hồ
+    return L.divIcon({className:"hn-storm-ic",iconSize:[40,40],iconAnchor:[20,20],popupAnchor:[0,-19],
+      html:`<span class="hn-cyc-spin" style="color:${color}"><svg class="hn-cyc" viewBox="0 0 24 24"><path d="M18.3 3.25c-1.05.28-1.82.66-2.32 1.16-.48.48-.86 1.06-1.13 1.73 2.25.75 3.92 2.06 5 3.92 1.46 2.52 1.62 5.55.48 8.18-.3-1.08-.7-1.86-1.2-2.35-.48-.48-1.06-.86-1.73-1.13-.75 2.25-2.06 3.92-3.92 5-2.52 1.46-5.55 1.62-8.18.48 1.08-.3 1.86-.7 2.35-1.2.48-.48.86-1.06 1.13-1.73-2.25-.75-3.92-2.06-5-3.92-1.46-2.52-1.62-5.55-.48-8.18.3 1.08.7 1.86 1.2 2.35.48.48 1.06.86 1.73 1.13.75-2.25 2.06-3.92 3.92-5 2.52-1.46 5.48-1.62 8.18-.44Z"/></svg></span>`});
+  }
+  function parseStormFixes(storm){
+    const tr=Array.isArray(storm.track)?storm.track:[];
+    return tr.map(t=>{ const c=t.coordinates||t.coord||[]; return {lon:+c[0],lat:+c[1],p:t,fc:!!t.forecast,spline:Array.isArray(t.spline)?t.spline:[]}; }).filter(f=>isFinite(f.lat)&&isFinite(f.lon));
+  }
+  function renderOneStorm(storm,grp){
+    const name=storm.name||storm.title||storm.id||"Bão";
+    const fixes=parseStormFixes(storm); if(!fixes.length) return 0;
+    const fct=avgFactor(storm);
+    // NÓN bất định: ring [lon,lat] sẵn từ API → [lat,lon] cho Leaflet
+    if(Array.isArray(storm.cone)&&storm.cone.length>2){
+      try{ L.polygon(storm.cone.map(c=>[c[1],c[0]]),{pane:"wx-cone",color:"#8a93a3",weight:1,opacity:.45,fillColor:"#9aa1a9",fillOpacity:.26,interactive:false}).addTo(grp); }catch(e){}
+    }
+    // ĐOẠN nối: đường cong mượt theo spline, tô màu theo code; nét đứt nếu là dự báo
+    for(let i=1;i<fixes.length;i++){ const a=fixes[i-1],b=fixes[i],col=stormColor(b.p),fc=b.fc;
+      const pts=(b.spline&&b.spline.length>=2)?b.spline.map(c=>[c[1],c[0]]):[[a.lat,a.lon],[b.lat,b.lon]];
+      L.polyline(pts,{pane:"wx-storm",color:col,weight:fc?2.4:3.4,opacity:.95,dashArray:fc?"5 5":null}).addTo(grp); }
+    // ĐIỂM mỗi fix
+    fixes.forEach(f=>{ const col=stormColor(f.p); const mk=L.circleMarker([f.lat,f.lon],{pane:"wx-storm",radius:f.fc?3.2:4.2,color:"#fff",weight:1.3,fillColor:col,fillOpacity:1});
+      mk.bindPopup(()=>stormTable(name,f.p,fct),{className:"hn-storm-wrap",closeOnClick:false}); mk.addTo(grp); });
+    // ICON xoáy tại vị trí hiện tại = điểm quan trắc cuối (forecast=false)
+    let cur=null; for(const f of fixes){ if(!f.fc) cur=f; } if(!cur) cur=fixes[0];
+    const ic=L.marker([cur.lat,cur.lon],{pane:"wx-storm",icon:stormIcon(stormColor(cur.p)),zIndexOffset:1000});
+    ic.bindTooltip(name,{direction:"top",offset:[0,-14],permanent:true,className:"hn-storm-tt"});
+    ic.bindPopup(()=>stormFullTable(storm,fixes,cur,fct),{className:"hn-storm-wrap",minWidth:360,maxWidth:760,closeOnClick:false});
+    ic.on("click",()=>ic.openPopup()); ic.addTo(grp);
+    const _T=fixes.map(f=>({t:stormEpoch(f.p),lat:f.lat,lon:f.lon,p:f.p})).filter(x=>isFinite(x.t)).sort((a,b)=>a.t-b.t);
+    if(_T.length) stormAnim.push({ic,T:_T,color:stormColor(cur.p),obsT:stormEpoch(cur.p)});  // obsT = mốc quan trắc cuối
+    return 1;
+  }
+  function stormTable(name,p,fct){
+    fct=fct||1; const dt=stormDT(p),b=stormBadge(p),w=Math.round(stormWindKt(p)*fct*1.852),pr=_gp(p,["pressure","mslp","pres"]),vn=vnCapText(w);
+    const r=[]; const add=(l,v)=>{ if(v!=null&&v!=="") r.push(`<tr><td>${l}</td><td>${v}</td></tr>`); };
+    add("Thời gian",`${dt.date} ${dt.time}`.trim());
+    add("Cấp quốc tế",b.code?`<span class="hn-bdg" style="background:${b.c}">${b.code}</span> ${b.n||""}`:null);
+    add("Cấp Việt Nam",vn!=="–"?`<b style="color:${b.c}">${vn}</b>`:null);
+    add("Tốc độ gió",isFinite(w)?`${w} km/h`:null);
+    add("Áp suất tâm",pr!=null?`${pr} hPa`:null);
+    return `<div class="hn-storm-pop"><div class="hn-sp-h">Bão ${name}</div><table class="hn-sp-t">${r.join("")||'<tr><td>—</td><td></td></tr>'}</table></div>`;
+  }
+  function stormFullTable(storm,fixes,cur,fct){
+    fct=fct||1; const name=storm.name||storm.title||"Bão"; const agency=storm.agencies||storm.agency||storm.source||""; const place=storm.place||"";
+    const w2=p=>Math.round(stormWindKt(p)*fct*1.852);   // gió quy về 2 phút (km/h)
+    const capTxt=c=>(c==null?"–":(c>=18?"&gt;17":String(c)));
+    const rowFor=f=>{ const dt=stormDT(f.p),b=stormBadge(f.p),w=w2(f.p),pr=_gp(f.p,["pressure","mslp","pres","central_pressure"]),cap=vnCap(w),cl=vnClass(cap);
+      const isCur=(f===cur),st=isCur?` style="background:${hexA(b.c,.22)}"`:"";
+      return `<tr class="${isCur?"hn-tr-cur":""}"${st}>`+
+        `<td class="hn-dt">${dt.date} ${dt.time}</td>`+
+        `<td>${cap!=null?`<span class="hn-cap-box" style="background:${b.c}">${capTxt(cap)}</span>`:"–"}</td>`+
+        `<td class="hn-vn" style="color:${b.c}">${cl||"–"}</td>`+
+        `<td>${b.code?`<span class="hn-bdg" style="background:${b.c}">${b.code}</span>`:"–"}</td>`+
+        `<td class="hn-num">${isFinite(w)?w:"–"}</td>`+
+        `<td class="hn-num">${pr!=null&&pr!==""?pr:"–"}</td></tr>`; };
+    const rows=fixes.map(rowFor).join("");
+    // chân bảng — TÂM BÃO HIỆN TẠI: ô màu Cấp · thời gian · VN · JMA · gió · áp suất
+    const cdt=stormDT(cur.p),cb=stormBadge(cur.p),cw=w2(cur.p),cpr=_gp(cur.p,["pressure","mslp","pres","central_pressure"]),ccap=vnCap(cw),ccl=vnClass(ccap);
+    const foot=`<div class="hn-tb-foot"><span class="hn-foot-lbl">Tâm bão hiện tại</span>`+
+      `<span class="hn-cap-box" style="background:${cb.c}">${capTxt(ccap)}</span>`+
+      `<span class="hn-foot-i">${cdt.date} ${cdt.time}</span>`+
+      `${ccl?`<span class="hn-foot-i" style="color:${cb.c};font-weight:700">${ccl}</span>`:""}`+
+      `${cb.code?`<span class="hn-bdg" style="background:${cb.c}">${cb.code}</span>`:""}`+
+      `${isFinite(cw)?`<span class="hn-foot-i">${cw} km/h</span>`:""}`+
+      `${cpr!=null?`<span class="hn-foot-i">${cpr} hPa</span>`:""}</div>`;
+    const factTxt= fct===0.93?"JTWC/NHC 1′ ×0.93" : fct===1.06?"JMA 10′ ×1.06" : "giữ nguyên";
+    const note=`<div class="hn-tb-note">Gió quy về trung bình 2 phút (chuẩn VN) — ${factTxt}. Kéo góc dưới-phải để dãn bảng.</div>`;
+    return `<div class="hn-storm-pop hn-storm-tbl"><div class="hn-tb-h"><div class="hn-tb-name">Bão ${name}</div>${agency?`<div class="hn-tb-src">Nguồn: ${agency}${place?" · "+place:""}</div>`:""}</div>`+
+      `<div class="hn-tb-wrap"><table class="hn-tb"><thead>`+
+      `<tr><th rowspan="2" class="hn-th-dt">THỜI GIAN<small>UTC+7</small></th><th colspan="3" class="hn-grp">CẤP BÃO</th><th rowspan="2">TỐC ĐỘ GIÓ<small>km/h</small></th><th rowspan="2">ÁP SUẤT TÂM<small>hPa</small></th></tr>`+
+      `<tr><th class="hn-sub">Cấp</th><th class="hn-sub">Việt Nam</th><th class="hn-sub">JMA</th></tr>`+
+      `</thead><tbody>${rows||'<tr><td colspan="6">—</td></tr>'}</tbody></table></div>${note}${foot}</div>`;
+  }
+  const STORM_BOX={lonMin:99,lonMax:173,latMin:0,latMax:30};   // vùng quan tâm: Biển Đông + biển Philippines → tới quần đảo Marshall (~171°E)
+  function stormInBox(st){ const tr=(st&&st.track)||[]; return tr.some(t=>{ const c=t.coordinates||[]; const lon=+c[0],lat=+c[1]; return isFinite(lon)&&isFinite(lat)&&lon>=STORM_BOX.lonMin&&lon<=STORM_BOX.lonMax&&lat>=STORM_BOX.latMin&&lat<=STORM_BOX.latMax; }); }
+  function stormInterp(T,t){ if(t<=T[0].t)return T[0]; const L2=T.length; if(t>=T[L2-1].t)return T[L2-1]; let i=0; while(i<L2-1&&T[i+1].t<t)i++; const a=T[i],b=T[i+1],f=(t-a.t)/Math.max(1,b.t-a.t); return {lat:a.lat+(b.lat-a.lat)*f,lon:a.lon+(b.lon-a.lon)*f,p:b.p}; }
+  const stormProvider={
+    abs:true,   // BÃO = thời gian TUYỆT ĐỐI (vật thể), KHÔNG map theo % tiến độ như lớp vòng-lặp frame
+    range:()=>{ let lo=Infinity,hi=-Infinity; for(const s of stormAnim){ if(!s.T.length)continue; if(s.T[0].t<lo)lo=s.T[0].t; const top=isFinite(s.obsT)?s.obsT:s.T[s.T.length-1].t; if(top>hi)hi=top; } return lo<=hi?[lo,hi]:null; },   // chỉ tới mốc QUAN TRẮC cuối -> đồng hồ không bị fix dự báo kéo vào tương lai
+    apply:t=>{ if(t==null)return; for(const s of stormAnim){ const T=s.T; if(!T.length)continue;
+      const el=s.ic.getElement(); const tip=s.ic.getTooltip&&s.ic.getTooltip(); const tel=tip&&tip.getElement&&tip.getElement();
+      const inWin=(t>=T[0].t);                                                                         // chỉ ẩn khi CHƯA hình thành; sau đó luôn hiện (kẹp ở quan trắc cuối)
+      if(!inWin){ if(el)el.style.display="none"; if(tel)tel.style.display="none"; continue; }       // chưa hình thành → ẩn tâm
+      if(el)el.style.display=""; if(tel)tel.style.display="";
+      const tEff=isFinite(s.obsT)?Math.min(t,s.obsT):t;   // không cho marker chạy quá điểm quan trắc cuối (dự báo đã có nét đứt + nón)
+      const q=stormInterp(T,tEff); const col=stormColor(q.p);
+      if(col!==s.color){ s.ic.setIcon(stormIcon(col)); s.color=col; }                                  // chỉ dựng lại icon khi ĐỔI CẤP → giữ vòng quay
+      s.ic.setLatLng([q.lat,q.lon]);
+    } }
+  };
+  async function loadStorm(){
+    const base=WX.stormBase.replace(/\/+$/,"")+"/api/storms";
+    let data; try{ data=await (await fetch(base+"/latest")).json(); }catch(e){ if(!_silent) alert("Không tải được dữ liệu bão: "+e.message); return; }
+    const arr=(data&&data.storms)||(Array.isArray(data)?data:[])||[];
+    if(layers.storm) map.removeLayer(layers.storm);
+    stormAnim=[];
+    const grp=L.layerGroup([],{pane:"wx-storm"}); let n=0;
+    for(const st of arr){ if(st&&st.active===false) continue; if(!stormInBox(st)) continue; try{ n+=renderOneStorm(st,grp); }catch(e){ console.warn("[storm]",st&&st.id,e); } }
+    layers.storm=grp.addTo(map);
+    console.info("[storm] cơn vẽ:",n,"| cơn animate:",stormAnim.length);
+    TimeCtl.register("storm",stormProvider);
+    const cb=document.querySelector('input[data-wx="storm"]'); if(cb)cb.checked=true;
+    _lastUpd=Date.now(); updLastUpd();
+    if(!n&&!_silent) alert(arr.length?"Có dữ liệu bão nhưng không vẽ được track.":"Hiện không có bão đang hoạt động.");
+  }
+
+
+  /* ============ VỆ TINH ============ */
+  function frameParts(fr){const p=n=>String(n).padStart(2,"0"); let d=null;
+    if(fr&&typeof fr==="object"){
+      const v=fr.timestamp??fr.valid_time??fr.validTime??fr.t;          // ĐỌC timestamp TRƯỚC (KHÔNG dùng fr.time vì là "HHmm")
+      if(v!=null) d=(typeof v==="number")?new Date(v):new Date(String(v));
+      if((!d||isNaN(d.getTime()))&&fr.date){ const tt=String(fr.time||"0000").padStart(4,"0"); d=new Date(fr.date+"T"+tt.slice(0,2)+":"+tt.slice(2,4)+":00Z"); } // dự phòng: date(YYYY-MM-DD)+time(HHmm)
+    } else d=(typeof fr==="number")?new Date(fr):new Date(String(fr));
+    if(!d||isNaN(d.getTime())) return {yyyy:NaN,MM:"NaN",dd:"NaN",HH:"NaN",mm:"NaN"};
+    return{yyyy:d.getUTCFullYear(),MM:p(d.getUTCMonth()+1),dd:p(d.getUTCDate()),HH:p(d.getUTCHours()),mm:p(d.getUTCMinutes())};}
+  // ===== vệ tinh: ĐỆM KÉP chống chớp — giữ ảnh cũ tới khi ảnh mới tải xong, cache vài frame =====
+  const SAT_CACHE=10;
+  function satTpl(i){const p=frameParts(satState.frames[i]); return `${res()}/api/satellite/himawari/${p.yyyy}/${p.MM}/${p.dd}/${p.HH}/${p.mm}/{z}/{x}/{y}.jpg`;}
+  let _satPrev=-1;
+  function satActivate(i){
+    const r=satState.layers[i]; if(!r)return;
+    for(const k in satState.layers){ const rr=satState.layers[k]; if(!rr)continue; if(+k!==i && +k!==_satPrev) rr.layer.setOpacity(0); } // dọn lớp cũ hơn ngay
+    r.layer.setOpacity(1);                       // ảnh mới đục dần 0->1 PHỦ LÊN ảnh cũ vẫn đầy -> độ phủ không đổi
+    const prev=_satPrev;
+    if(prev!==-1 && prev!==i) setTimeout(()=>{ const rp=satState.layers[prev]; if(rp && satState.idx!==prev) rp.layer.setOpacity(0); }, 460);  // bỏ ảnh cũ SAU khi mới hiện xong
+    _satPrev=i; satState.idx=i; layers.satellite=r.layer;
+  }
+  function satEvict(){
+    let guard=0;
+    while(satState.order.length>SAT_CACHE && guard++<50){
+      const old=satState.order.shift();
+      if(old===satState.idx||old===satState.pending){ satState.order.push(old); continue; }
+      const r=satState.layers[old]; if(r){ map.removeLayer(r.layer); delete satState.layers[old]; }
+    }
+  }
+  function satEnsurePane(){
+    if(!map.getPane("wx-sat")){ map.createPane("wx-sat"); const p=map.getPane("wx-sat"); p.style.zIndex=378; p.style.opacity="0.85"; p.style.pointerEvents="none"; }  // .85 đặt trên CẢ pane
+    if(!document.getElementById("wxSatFadeCss")){ const s=document.createElement("style"); s.id="wxSatFadeCss"; s.textContent=".wx-sat-fade{transition:opacity .18s linear}"; document.head.appendChild(s); }
+  }
+  function satMakeLayer(i){
+    const tpl=satTpl(i); satEnsurePane();
+    if(!satMakeLayer._lg){satMakeLayer._lg=1; console.info("[wx] sat tile template:", tpl);}
+    const lyr=L.tileLayer(tpl,{pane:"wx-sat",className:"wx-sat-fade",opacity:0,maxNativeZoom:7,maxZoom:18,keepBuffer:6,updateWhenZooming:false,attribution:"Himawari © WeatherPlus"});
+    const rec={layer:lyr,loaded:false};
+    lyr.on("load",()=>{ rec.loaded=true; applySat(TimeCtl.tNow); });
+    lyr.on("tileerror",e=>{ if(!satMakeLayer._te){satMakeLayer._te=1; console.warn("[wx] sat TILEERROR src=",e&&e.tile&&e.tile.src);} });
+    lyr.addTo(map);
+    satState.layers[i]=rec; satState.order.push(i); satEvict();
+    return rec;
+  }
+  function showSatFrame(i){
+    satState.pending=i;
+    const rec=satState.layers[i]||satMakeLayer(i);
+    if(rec.loaded) satActivate(i);   // đã sẵn -> cross-fade ngay; chưa thì giữ ảnh cũ tới sự kiện 'load'
+    const N=satState.frames.length;  // NẠP TRƯỚC hàng xóm để play không khựng
+    if(i+1<N && !satState.layers[i+1]) satMakeLayer(i+1);
+    if(i-1>=0 && !satState.layers[i-1]) satMakeLayer(i-1);
+  }
+  function satRemoveAll(){ for(const k in satState.layers){ const r=satState.layers[k]; if(r)map.removeLayer(r.layer); } satState.layers={}; satState.order=[]; satState.idx=-1; satState.pending=-1; _satPrev=-1; _satWarmTok++; delete layers.satellite; }
+  // ===== NẠP SẴN tile mọi frame trong vùng đang xem -> play đều nhịp, không khựng =====
+  let _satWarmTok=0;
+  function satTileRange(){ const z=Math.max(2,Math.min(7,Math.round(map.getZoom()))), ts=256, b=map.getBounds(); const a=map.project(b.getNorthWest(),z), c=map.project(b.getSouthEast(),z); return {z,x0:Math.floor(a.x/ts),x1:Math.floor(c.x/ts),y0:Math.floor(a.y/ts),y1:Math.floor(c.y/ts)}; }
+  function satPrewarm(){
+    if(!satState.frames.length) return;
+    const tok=++_satWarmTok, rg=satTileRange(), jobs=[];
+    for(let fi=0; fi<satState.frames.length; fi++){ const p=frameParts(satState.frames[fi]); if(isNaN(p.yyyy))continue;
+      const base=`${res()}/api/satellite/himawari/${p.yyyy}/${p.MM}/${p.dd}/${p.HH}/${p.mm}/${rg.z}`;
+      for(let x=rg.x0;x<=rg.x1;x++)for(let y=rg.y0;y<=rg.y1;y++) jobs.push(`${base}/${x}/${y}.jpg`); }
+    let k=0; const BATCH=8;
+    (function pump(){ if(tok!==_satWarmTok) return;                       // viewport đổi/tắt -> huỷ đợt cũ
+      for(let n=0;n<BATCH && k<jobs.length;n++,k++){ const im=new Image(); im.src=jobs[k]; }
+      if(k<jobs.length) setTimeout(pump,120); else console.info("[wx] sat prewarm xong:",jobs.length,"ô / "+satState.frames.length+" frame"); })();
+  }
+  function satFrameTime(f){ const p=frameParts(f); return Date.UTC(p.yyyy,+p.MM-1,+p.dd,+p.HH,+p.mm); }
+  function applySat(t){ if(!satState.frames.length)return; const pr=pickPair(satState.frames,t,satFrameTime); if(!pr)return;
+    const ia=satState.frames.indexOf(pr.a), ib=satState.frames.indexOf(pr.b); if(ia<0)return; satBlend(ia,ib,pr.f); }
+  function satBlend(ia,ib,f){
+    const ra=satState.layers[ia]||satMakeLayer(ia);
+    const rb=(ib!==ia)?(satState.layers[ib]||satMakeLayer(ib)):ra;
+    if(ib+1<satState.frames.length && !satState.layers[ib+1]) satMakeLayer(ib+1);   // nạp trước hàng xóm
+    if(ia-1>=0 && !satState.layers[ia-1]) satMakeLayer(ia-1);
+    const bOk=rb.loaded;
+    for(const k in satState.layers){ const rr=satState.layers[k]; if(!rr)continue; const ik=+k;
+      if(ik===ia) rr.layer.setOpacity(1);                 // khung A: nền đầy
+      else if(ik===ib) rr.layer.setOpacity(bOk?f:0);      // khung B: đục dần theo f -> mây hoà chuyển liên tục
+      else rr.layer.setOpacity(0); }
+    satState.idx=ia; satState.pending=ia; layers.satellite=ra.layer; }
+  async function loadSatellite(){
+    const tlUrl=`${res()}/api/satellite/timeline?lon=${WX.center.lon}&lat=${WX.center.lat}&hours=24`;
+    const r=await fetch(tlUrl); console.info("[wx] sat timeline:", r.status, tlUrl);
+    if(!r.ok) throw new Error("timeline HTTP "+r.status);
+    const tl=await r.json();
+    let frames=(tl.frames||tl.data||tl||[]).filter(f=>f&&f.available!==false);
+    console.info("[wx] sat frames:", frames.length, "| mẫu cuối:", frames.length?JSON.stringify(frames[frames.length-1]):"-");
+    if(!frames.length) throw new Error("timeline rỗng");
+    frames=frames.slice().sort((a,b)=>satFrameTime(a)-satFrameTime(b)); satState.frames=frames; satState.idx=-1; satState.pending=-1;
+    applySat(TimeCtl.tNow);
+    TimeCtl.register("satellite",{range:()=>satState.frames.length?[satFrameTime(satState.frames[0]),satFrameTime(satState.frames[satState.frames.length-1])]:null, apply:applySat});
+    satPrewarm();
+    if(!loadSatellite._wb){ loadSatellite._wb=1; let wt=null; map.on("moveend zoomend",()=>{ if(satState.frames.length&&layers.satellite){ clearTimeout(wt); wt=setTimeout(satPrewarm,400); } }); }
+  }
+
+  /* ============ ĐỘNG CƠ THỜI GIAN THỰC (mưa + mực nước) ============ */
+  function refreshMin(){ const m=parseFloat((window.HYDRO_SETTINGS||{}).refreshMin); return (isFinite(m)&&m>0)?Math.max(5,m):15; }   // realtime mặc định 15 phút (Dev team)
+  function staleMs(){ return Math.max(2*refreshMin(),75)*60000; }   // "cũ" nếu mẫu mới nhất quá ngưỡng này (>=1 nhịp lỡ với trạm giờ)
+  function updLastUpd(){ const el=document.getElementById("wxLastUpd"); if(el){ const d=new Date(_lastUpd||Date.now()), p=n=>String(n).padStart(2,"0"); el.textContent="Cập nhật "+p(d.getHours())+":"+p(d.getMinutes()); } }
+  let _refreshTimer=null, _refreshing=false;
+  function msToNextBoundary(m){ const now=new Date(); const mins=now.getHours()*60+now.getMinutes()+now.getSeconds()/60+now.getMilliseconds()/60000; const next=Math.ceil((mins+1e-6)/m)*m; return Math.max(1000,(next-mins)*60000); }
+  async function runRefresh(reason){
+    if(_refreshing) return;
+    if(document.hidden && reason==="auto") return;      // tab ẩn: bỏ nhịp tự động, sẽ bắt lại khi focus
+    _refreshing=true; _silent=(reason!=="manual");
+    try{
+      const jobs=[];
+      if(layers.stations && map.hasLayer(layers.stations) && accWindow && accWindow.hours) jobs.push(computeAccumulation());  // chỉ trượt cửa sổ trailing; chế độ "Lịch…" giữ nguyên
+      if(layers.hydro && map.hasLayer(layers.hydro)) jobs.push(computeHydroLevels());
+      if(layers.storm && map.hasLayer(layers.storm)) jobs.push(loadStorm());
+      if(!jobs.length){ _lastUpd=Date.now(); updLastUpd(); }
+      else await Promise.all(jobs);
+    }catch(e){} finally{ _silent=false; _refreshing=false; }
+  }
+  function scheduleRefresh(){ clearTimeout(_refreshTimer); _refreshTimer=setTimeout(async()=>{ await runRefresh("auto"); scheduleRefresh(); }, msToNextBoundary(refreshMin())); }
+  document.addEventListener("visibilitychange",()=>{ if(!document.hidden){ runRefresh("visible"); scheduleRefresh(); } });
+  window.addEventListener("hydronet:settings",()=>scheduleRefresh());
+  updLastUpd(); scheduleRefresh();
+})();

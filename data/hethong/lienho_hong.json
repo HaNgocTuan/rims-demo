@@ -1,0 +1,77 @@
+{
+ "schema": "rims.hethong.lienho/v0.1",
+ "he_thong": "hong",
+ "ten": "Hệ thống liên hồ chứa lưu vực sông Hồng",
+ "quyet_dinh": "QĐ 740/QĐ-TTg (2019), sửa đổi QĐ 922/QĐ-TTg (2025)",
+ "cap_nhat": "2026-09-07",
+ "nguon": {
+  "danh_muc_ho": "DB luật SEHO (WP_SEHO_Legal_Master_v2.6) — MD10, Điều 1 QTVH liên hồ",
+  "ten_ban_do + toa_do": "data/congtrinh/*.geojson (khớp tên; bỏ tiền tố TĐ., 'bậc'→'b', alias tên rút gọn)"
+ },
+ "nguyen_tac": "Thành viên theo Điều 1 QTVH luật định. Vẽ marker theo lon/lat đã chốt. tren_ban_do=false = hồ luật định CHƯA có trong geojson nền (chưa xây / đập dâng / thiếu bản ghi).",
+ "ho": [
+  {
+   "ten": "Sơn La",
+   "ten_ban_do": "Sơn La",
+   "tren_ban_do": true,
+   "loai": "Thủy điện",
+   "anqg": false,
+   "lon": 103.995593,
+   "lat": 21.496624
+  },
+  {
+   "ten": "Hòa Bình",
+   "ten_ban_do": "Hòa Bình",
+   "tren_ban_do": true,
+   "loai": "Thủy điện",
+   "anqg": false,
+   "lon": 105.326232,
+   "lat": 20.806412
+  },
+  {
+   "ten": "Thác Bà",
+   "ten_ban_do": "Thác Bà",
+   "tren_ban_do": true,
+   "loai": "Thủy điện",
+   "anqg": false,
+   "lon": 105.022797,
+   "lat": 21.747124
+  },
+  {
+   "ten": "Tuyên Quang",
+   "ten_ban_do": "Tuyên Quang",
+   "tren_ban_do": true,
+   "loai": "Thủy điện",
+   "anqg": false,
+   "lon": 105.396259,
+   "lat": 22.362457
+  },
+  {
+   "ten": "Lai Châu",
+   "ten_ban_do": "Lai Châu",
+   "tren_ban_do": true,
+   "loai": "Thủy điện",
+   "anqg": false,
+   "lon": 102.983889,
+   "lat": 22.138056
+  },
+  {
+   "ten": "Bản Chát",
+   "ten_ban_do": "Bản Chát",
+   "tren_ban_do": true,
+   "loai": "Thủy điện",
+   "anqg": false,
+   "lon": 103.828611,
+   "lat": 21.861111
+  },
+  {
+   "ten": "Huội Quảng",
+   "ten_ban_do": "Huội Quảng",
+   "tren_ban_do": true,
+   "loai": "Thủy điện",
+   "anqg": false,
+   "lon": 103.8775,
+   "lat": 21.696389
+  }
+ ]
+}

@@ -1,0 +1,83 @@
+{
+  "schema": "rims.reservoirs/v0.1",
+  "cap_nhat": "2026-08-15",
+  "nguon": {
+    "tank_project + flv_km2 + tieu_luu_vuc": "TankModel API — app/services/tank/tank_projects.json (nguồn xác thực, đọc từ hệ thống WP)",
+    "ten + phan_nhom": "Yêu cầu kỹ thuật xây dựng nền tảng DSS hồ chứa, 07/8/2026",
+    "thong_so_cong_trinh": "CHƯA NHẬP — phải lấy từ VN-WIS / hồ sơ công trình / đơn vị quản lý khai thác"
+  },
+  "nguyen_tac": "Cờ trung thực: trường chưa có nguồn xác thực để null, KHÔNG điền số phỏng đoán. Mã định danh ho_id phải thống nhất với VN-WIS khi có kết nối.",
+
+  "ho": [
+    {
+      "ho_id": null,
+      "ma_tam": "CUADAT",
+      "ten": "Hồ Cửa Đạt",
+      "tinh": "Thanh Hóa",
+      "song": "Sông Chu",
+      "nhom": "DSS_DAY_DU",
+      "anqg": true,
+      "tank_project": "CuaDatWPE",
+      "flv_km2": 5938.0,
+      "tieu_luu_vuc": ["HuaNa_Basin1", "HuaNa_Basin2", "HuaNa_Basin3", "CuaDat_Basin1"],
+      "mndbt_m": null, "mnc_m": null, "mndgc_m": null,
+      "w_toanbo_trieu_m3": null, "w_phonglu_trieu_m3": null,
+      "so_cua_van": null, "z_f_w": null, "quy_trinh_van_hanh": null,
+      "ghi_chu": "Ưu tiên cao nhất: đầu bài yêu cầu cấu hình và chạy thử DSS trong mùa lũ 2026."
+    },
+    {
+      "ho_id": null,
+      "ma_tam": "NGANTRUOI",
+      "ten": "Hồ Ngàn Trươi",
+      "tinh": "Hà Tĩnh",
+      "song": "Sông Ngàn Trươi (lưu vực Ngàn Sâu)",
+      "nhom": "DSS_DAY_DU",
+      "anqg": true,
+      "tank_project": "NganTruoiWPE",
+      "flv_km2": 408.0,
+      "tieu_luu_vuc": ["NganTruoi_Basin1", "NganTruoi_Basin2", "NganTruoi_Basin3"],
+      "mndbt_m": null, "mnc_m": null, "mndgc_m": null,
+      "w_toanbo_trieu_m3": null, "w_phonglu_trieu_m3": null,
+      "so_cua_van": null, "z_f_w": null, "quy_trinh_van_hanh": null,
+      "ghi_chu": "HydroNet Hà Tĩnh đã có console Ngàn Trươi (console_ntr.html) — tham chiếu khi dựng console RIMS. CẦN XÁC NHẬN hiện trạng vận hành HNT tại hồ này trước khi nêu trong hồ sơ."
+    },
+    {
+      "ho_id": null,
+      "ma_tam": "TATRACH",
+      "ten": "Hồ Tả Trạch",
+      "tinh": "Thành phố Huế",
+      "song": "Sông Hữu Trạch (lưu vực sông Hương)",
+      "nhom": "DSS_DAY_DU",
+      "anqg": true,
+      "tank_project": "TaTrachWPE",
+      "flv_km2": 667.0,
+      "tieu_luu_vuc": ["TaTrach_basin1", "TaTrach_basin2", "TaTrach_basin3"],
+      "mndbt_m": null, "mnc_m": null, "mndgc_m": null,
+      "w_toanbo_trieu_m3": null, "w_phonglu_trieu_m3": null,
+      "so_cua_van": null, "z_f_w": null, "quy_trinh_van_hanh": null,
+      "ghi_chu": null
+    },
+    {
+      "ho_id": null,
+      "ma_tam": "DAUTIENG",
+      "ten": "Hồ Dầu Tiếng",
+      "tinh": "Tây Ninh",
+      "song": "Sông Sài Gòn",
+      "nhom": "DSS_DAY_DU",
+      "anqg": true,
+      "tank_project": null,
+      "flv_km2": null,
+      "tieu_luu_vuc": [],
+      "mndbt_m": null, "mnc_m": null, "mndgc_m": null,
+      "w_toanbo_trieu_m3": null, "w_phonglu_trieu_m3": null,
+      "so_cua_van": null, "z_f_w": null, "quy_trinh_van_hanh": null,
+      "ghi_chu": "⚠ CHƯA có project trong TankModel. Đây là khoảng trống lớn nhất trong 04 hồ: phải dựng mô hình mưa–dòng chảy mới cho lưu vực sông Sài Gòn (bao gồm thu thập dữ liệu hiệu chỉnh) trước khi có Q đến dự báo."
+    }
+  ],
+
+  "nhom_231_ho": {
+    "trang_thai": "CHƯA LẬP DANH SÁCH",
+    "can_lam": "Lấy danh mục 231 hồ có cửa van còn lại từ VN-WIS / Cục Quản lý và Xây dựng Công trình Thủy lợi; đối chiếu với 61 project sẵn có trong TankModel để xác định hồ nào đã có mô hình, hồ nào phải dựng mới.",
+    "so_project_tank_hien_co": 61
+  }
+}

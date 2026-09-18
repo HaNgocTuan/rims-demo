@@ -1,0 +1,2148 @@
+{
+ "dung_luc": "2026-09-04T16:15:57",
+ "nguong_bao_phu": 0.9,
+ "luu_vuc": [
+  {
+   "ma": "chikhe",
+   "ten": "Chi Khê",
+   "cap": 0,
+   "cha": null,
+   "dt_km2": 15130.7
+  },
+  {
+   "ma": "trungson",
+   "ten": "Trung Sơn",
+   "cap": 0,
+   "cha": null,
+   "dt_km2": 14753.5
+  },
+  {
+   "ma": "trian",
+   "ten": "Trị An",
+   "cap": 0,
+   "cha": null,
+   "dt_km2": 14693.0
+  },
+  {
+   "ma": "khebo",
+   "ten": "Thủy điện Khe Bố",
+   "cap": 1,
+   "cha": "chikhe",
+   "dt_km2": 14002.4
+  },
+  {
+   "ma": "tuyenquang",
+   "ten": "Tuyên Quang",
+   "cap": 0,
+   "cha": null,
+   "dt_km2": 13404.3
+  },
+  {
+   "ma": "baha",
+   "ten": "Ba Ha",
+   "cap": 0,
+   "cha": null,
+   "dt_km2": 10155.0
+  },
+  {
+   "ma": "namnon",
+   "ten": "Nậm Nơn",
+   "cap": 2,
+   "cha": "khebo",
+   "dt_km2": 8738.9
+  },
+  {
+   "ma": "banve",
+   "ten": "Bản Vẽ",
+   "cap": 3,
+   "cha": "namnon",
+   "dt_km2": 8578.7
+  },
+  {
+   "ma": "daksrong3b",
+   "ten": "Đăk Srông 3B",
+   "cap": 1,
+   "cha": "baha",
+   "dt_km2": 7626.2
+  },
+  {
+   "ma": "daksrong3a",
+   "ten": "Dak Srong 3A",
+   "cap": 2,
+   "cha": "daksrong3b",
+   "dt_km2": 7516.1
+  },
+  {
+   "ma": "ialy",
+   "ten": "Ialy",
+   "cap": 0,
+   "cha": null,
+   "dt_km2": 7004.8
+  },
+  {
+   "ma": "xuanminh",
+   "ten": "Xuân Minh",
+   "cap": 0,
+   "cha": null,
+   "dt_km2": 6490.6
+  },
+  {
+   "ma": "thacba",
+   "ten": "Thác Bà",
+   "cap": 0,
+   "cha": null,
+   "dt_km2": 5998.1
+  },
+  {
+   "ma": "dongnai5",
+   "ten": "Đồng Nai 5",
+   "cap": 1,
+   "cha": "trian",
+   "dt_km2": 5985.9
+  },
+  {
+   "ma": "cuadat",
+   "ten": "Hồ Cửa Đạt",
+   "cap": 1,
+   "cha": "xuanminh",
+   "dt_km2": 5809.5
+  },
+  {
+   "ma": "namna3",
+   "ten": "Nậm Na 3",
+   "cap": 0,
+   "cha": null,
+   "dt_km2": 5806.3
+  },
+  {
+   "ma": "namna2",
+   "ten": "Nậm Na 2",
+   "cap": 1,
+   "cha": "namna3",
+   "dt_km2": 5332.5
+  },
+  {
+   "ma": "huana",
+   "ten": "Hủa Na",
+   "cap": 2,
+   "cha": "cuadat",
+   "dt_km2": 5142.8
+  },
+  {
+   "ma": "namna1",
+   "ten": "Nậm Na 1",
+   "cap": 2,
+   "cha": "namna2",
+   "dt_km2": 4496.3
+  },
+  {
+   "ma": "phuclong",
+   "ten": "Phúc Long",
+   "cap": 1,
+   "cha": "thacba",
+   "dt_km2": 4479.0
+  },
+  {
+   "ma": "dongnai4",
+   "ten": "Đồng Nai 4",
+   "cap": 2,
+   "cha": "dongnai5",
+   "dt_km2": 4376.7
+  },
+  {
+   "ma": "dongnai3",
+   "ten": "Đồng Nai 3",
+   "cap": 3,
+   "cha": "dongnai4",
+   "dt_km2": 4212.6
+  },
+  {
+   "ma": "sprokphumieng",
+   "ten": "Sprok Phu Mieng",
+   "cap": 0,
+   "cha": null,
+   "dt_km2": 4201.5
+  },
+  {
+   "ma": "nhoque2",
+   "ten": "Nho Quế 2",
+   "cap": 1,
+   "cha": "tuyenquang",
+   "dt_km2": 3918.2
+  },
+  {
+   "ma": "namluc",
+   "ten": "Nậm Lúc",
+   "cap": 2,
+   "cha": "phuclong",
+   "dt_km2": 3842.6
+  },
+  {
+   "ma": "nhoque1",
+   "ten": "Nho Quế 1",
+   "cap": 2,
+   "cha": "nhoque2",
+   "dt_km2": 3824.3
+  },
+  {
+   "ma": "xekaman1",
+   "ten": "Xe Ka Man 1",
+   "cap": 0,
+   "cha": null,
+   "dt_km2": 3720.4
+  },
+  {
+   "ma": "dongnai2",
+   "ten": "Đồng Nai 2",
+   "cap": 4,
+   "cha": "dongnai3",
+   "dt_km2": 3625.3
+  },
+  {
+   "ma": "baonhai2",
+   "ten": "Bao Nhai 2",
+   "cap": 3,
+   "cha": "namluc",
+   "dt_km2": 3499.7
+  },
+  {
+   "ma": "bosinh",
+   "ten": "Bó Sinh",
+   "cap": 1,
+   "cha": "trungson",
+   "dt_km2": 3441.0
+  },
+  {
+   "ma": "hanoi",
+   "ten": "Ha Noi",
+   "cap": 0,
+   "cha": null,
+   "dt_km2": 3375.4
+  },
+  {
+   "ma": "baonhai1",
+   "ten": "Bao Nhai 1",
+   "cap": 4,
+   "cha": "baonhai2",
+   "dt_km2": 3342.9
+  },
+  {
+   "ma": "bacha",
+   "ten": "Bắc Hà",
+   "cap": 5,
+   "cha": "baonhai1",
+   "dt_km2": 3296.3
+  },
+  {
+   "ma": "dongnai1",
+   "ten": "Dong Nai 1",
+   "cap": 5,
+   "cha": "dongnai2",
+   "dt_km2": 3279.7
+  },
+  {
+   "ma": "pleikrong",
+   "ten": "Plei Krông",
+   "cap": 1,
+   "cha": "ialy",
+   "dt_km2": 3215.3
+  },
+  {
+   "ma": "trungthu",
+   "ten": "Trung Thu",
+   "cap": 0,
+   "cha": null,
+   "dt_km2": 3098.9
+  },
+  {
+   "ma": "daksrong2a",
+   "ten": "Đăk Srông 2A",
+   "cap": 3,
+   "cha": "daksrong3a",
+   "dt_km2": 2898.2
+  },
+  {
+   "ma": "daksrong2",
+   "ten": "Đăk Srông 2",
+   "cap": 4,
+   "cha": "daksrong2a",
+   "dt_km2": 2894.1
+  },
+  {
+   "ma": "banmong",
+   "ten": "Ban Mong",
+   "cap": 0,
+   "cha": null,
+   "dt_km2": 2799.8
+  },
+  {
+   "ma": "dautieng",
+   "ten": "Hồ Dầu Tiếng",
+   "cap": 0,
+   "cha": null,
+   "dt_km2": 2654.5
+  },
+  {
+   "ma": "thacxang",
+   "ten": "Thác Xăng",
+   "cap": 0,
+   "cha": null,
+   "dt_km2": 2564.0
+  },
+  {
+   "ma": "bannhung",
+   "ten": "Ban Nhung",
+   "cap": 0,
+   "cha": null,
+   "dt_km2": 2413.7
+  },
+  {
+   "ma": "dapdangcauson",
+   "ten": "Đập Cầu Sơn",
+   "cap": 0,
+   "cha": null,
+   "dt_km2": 2410.1
+  },
+  {
+   "ma": "songbung5",
+   "ten": "Sông Bung 5",
+   "cap": 0,
+   "cha": null,
+   "dt_km2": 2402.0
+  },
+  {
+   "ma": "songhuong",
+   "ten": "Song Huong",
+   "cap": 0,
+   "cha": null,
+   "dt_km2": 2315.6
+  },
+  {
+   "ma": "songbung4a",
+   "ten": "Sông Bung 4A",
+   "cap": 1,
+   "cha": "songbung5",
+   "dt_km2": 2304.8
+  },
+  {
+   "ma": "nammuc",
+   "ten": "Nậm Mức",
+   "cap": 1,
+   "cha": "trungthu",
+   "dt_km2": 2229.4
+  },
+  {
+   "ma": "thacmo",
+   "ten": "Thác Mơ",
+   "cap": 1,
+   "cha": "sprokphumieng",
+   "dt_km2": 2214.6
+  },
+  {
+   "ma": "daksrong",
+   "ten": "Dak Srong",
+   "cap": 5,
+   "cha": "daksrong2",
+   "dt_km2": 2116.4
+  },
+  {
+   "ma": "songmien6",
+   "ten": "Sông Miện 6",
+   "cap": 0,
+   "cha": null,
+   "dt_km2": 2099.1
+  },
+  {
+   "ma": "langau",
+   "ten": "La Ngâu",
+   "cap": 1,
+   "cha": "trian",
+   "dt_km2": 2050.4
+  },
+  {
+   "ma": "longtao",
+   "ten": "Long Tạo",
+   "cap": 2,
+   "cha": "nammuc",
+   "dt_km2": 2034.8
+  },
+  {
+   "ma": "songmien5a",
+   "ten": "Sông Miện",
+   "cap": 1,
+   "cha": "songmien6",
+   "dt_km2": 2003.4
+  },
+  {
+   "ma": "dakbla",
+   "ten": "Đăk Bla",
+   "cap": 1,
+   "cha": "ialy",
+   "dt_km2": 1968.7
+  },
+  {
+   "ma": "somgmien5",
+   "ten": "Somg Mien 5",
+   "cap": 2,
+   "cha": "songmien5a",
+   "dt_km2": 1963.1
+  },
+  {
+   "ma": "thuanhoa",
+   "ten": "Thuận Hoà",
+   "cap": 3,
+   "cha": "somgmien5",
+   "dt_km2": 1912.0
+  },
+  {
+   "ma": "thaian",
+   "ten": "Thái An",
+   "cap": 4,
+   "cha": "thuanhoa",
+   "dt_km2": 1892.0
+  },
+  {
+   "ma": "daininh",
+   "ten": "Đại Ninh",
+   "cap": 6,
+   "cha": "dongnai1",
+   "dt_km2": 1887.3
+  },
+  {
+   "ma": "hoaduyet",
+   "ten": "Hoa Duyet",
+   "cap": 0,
+   "cha": null,
+   "dt_km2": 1870.3
+  },
+  {
+   "ma": "khanhkhe",
+   "ten": "Khánh Khê",
+   "cap": 1,
+   "cha": "bannhung",
+   "dt_km2": 1743.6
+  },
+  {
+   "ma": "huoivang",
+   "ten": "Huổi Vang",
+   "cap": 3,
+   "cha": "longtao",
+   "dt_km2": 1727.2
+  },
+  {
+   "ma": "baithuong",
+   "ten": "Đập Bái Thượng",
+   "cap": 1,
+   "cha": "xuanminh",
+   "dt_km2": 1705.9
+  },
+  {
+   "ma": "dakpoco",
+   "ten": "Đăk Pô Cô",
+   "cap": 2,
+   "cha": "pleikrong",
+   "dt_km2": 1665.1
+  },
+  {
+   "ma": "ayunha",
+   "ten": "Hồ Ayun Hạ",
+   "cap": 3,
+   "cha": "daksrong3a",
+   "dt_km2": 1655.5
+  },
+  {
+   "ma": "songma3",
+   "ten": "Sông Mã 3",
+   "cap": 2,
+   "cha": "bosinh",
+   "dt_km2": 1620.3
+  },
+  {
+   "ma": "songtranh4",
+   "ten": "Sông Tranh 4",
+   "cap": 0,
+   "cha": null,
+   "dt_km2": 1616.5
+  },
+  {
+   "ma": "dakbla1",
+   "ten": "Đắk Bla 1",
+   "cap": 2,
+   "cha": "dakbla",
+   "dt_km2": 1534.0
+  },
+  {
+   "ma": "songmien",
+   "ten": "Sông Miện",
+   "cap": 5,
+   "cha": "thaian",
+   "dt_km2": 1530.1
+  },
+  {
+   "ma": "songbung4",
+   "ten": "Sông Bung 4",
+   "cap": 2,
+   "cha": "songbung4a",
+   "dt_km2": 1496.9
+  },
+  {
+   "ma": "namhoa1",
+   "ten": "Nậm Hóa 1",
+   "cap": 2,
+   "cha": "bosinh",
+   "dt_km2": 1487.7
+  },
+  {
+   "ma": "myson",
+   "ten": "Mỹ Sơn",
+   "cap": 0,
+   "cha": null,
+   "dt_km2": 1418.3
+  },
+  {
+   "ma": "thoonggot",
+   "ten": "Thoong Gót",
+   "cap": 0,
+   "cha": null,
+   "dt_km2": 1349.4
+  },
+  {
+   "ma": "pleikan",
+   "ten": "Plei Kần",
+   "cap": 3,
+   "cha": "dakpoco",
+   "dt_km2": 1313.1
+  },
+  {
+   "ma": "hamthuan",
+   "ten": "HAMTHUAN",
+   "cap": 1,
+   "cha": "trian",
+   "dt_km2": 1290.4
+  },
+  {
+   "ma": "kimlu",
+   "ten": "Kim Lu",
+   "cap": 1,
+   "cha": "thacxang",
+   "dt_km2": 1238.0
+  },
+  {
+   "ma": "ankhe",
+   "ten": "An Khê",
+   "cap": 6,
+   "cha": "daksrong",
+   "dt_km2": 1226.2
+  },
+  {
+   "ma": "vanchan",
+   "ten": "Văn Chấn",
+   "cap": 0,
+   "cha": null,
+   "dt_km2": 1222.9
+  },
+  {
+   "ma": "pake",
+   "ten": "Pa Ke",
+   "cap": 6,
+   "cha": "bacha",
+   "dt_km2": 1202.8
+  },
+  {
+   "ma": "dadang2",
+   "ten": "Dadang 2",
+   "cap": 6,
+   "cha": "dongnai1",
+   "dt_km2": 1178.2
+  },
+  {
+   "ma": "thacmobasin3",
+   "ten": "Thac Mo Basin 3",
+   "cap": 2,
+   "cha": "thacmo",
+   "dt_km2": 1142.7
+  },
+  {
+   "ma": "dakmi4a",
+   "ten": "Đăk Mi 4A",
+   "cap": 0,
+   "cha": null,
+   "dt_km2": 1136.5
+  },
+  {
+   "ma": "dinhbinh2",
+   "ten": "Dinh Binh 2",
+   "cap": 0,
+   "cha": null,
+   "dt_km2": 1120.6
+  },
+  {
+   "ma": "songtranh2",
+   "ten": "Sông Tranh 2",
+   "cap": 1,
+   "cha": "songtranh4",
+   "dt_km2": 1112.5
+  },
+  {
+   "ma": "baoloc",
+   "ten": "Thủy điện Bảo Lộc",
+   "cap": 2,
+   "cha": "hamthuan",
+   "dt_km2": 1109.7
+  },
+  {
+   "ma": "songchay6",
+   "ten": "Sông Chảy 6",
+   "cap": 7,
+   "cha": "pake",
+   "dt_km2": 1001.1
+  },
+  {
+   "ma": "phiengcon",
+   "ten": "Phiêng Côn",
+   "cap": 0,
+   "cha": null,
+   "dt_km2": 989.8
+  },
+  {
+   "ma": "daibinh",
+   "ten": "Đại Bình",
+   "cap": 3,
+   "cha": "baoloc",
+   "dt_km2": 982.9
+  },
+  {
+   "ma": "krongno3",
+   "ten": "Krông Nô 3",
+   "cap": 0,
+   "cha": null,
+   "dt_km2": 933.4
+  },
+  {
+   "ma": "phiengluc",
+   "ten": "Phiêng Lúc",
+   "cap": 0,
+   "cha": null,
+   "dt_km2": 927.1
+  },
+  {
+   "ma": "pleikeo",
+   "ten": "Pleikeo",
+   "cap": 4,
+   "cha": "ayunha",
+   "dt_km2": 924.3
+  },
+  {
+   "ma": "sapviet",
+   "ten": "Sập Việt",
+   "cap": 1,
+   "cha": "phiengcon",
+   "dt_km2": 907.9
+  },
+  {
+   "ma": "chule",
+   "ten": "Chu Le",
+   "cap": 1,
+   "cha": "hoaduyet",
+   "dt_km2": 900.0
+  },
+  {
+   "ma": "hchan",
+   "ten": "Hchan",
+   "cap": 5,
+   "cha": "pleikeo",
+   "dt_km2": 872.7
+  },
+  {
+   "ma": "chauthang",
+   "ten": "Châu Thắng",
+   "cap": 1,
+   "cha": "banmong",
+   "dt_km2": 851.7
+  },
+  {
+   "ma": "ayuntrung",
+   "ten": "Ayun Trung",
+   "cap": 6,
+   "cha": "hchan",
+   "dt_km2": 842.9
+  },
+  {
+   "ma": "krongno2",
+   "ten": "Krông Nô 2",
+   "cap": 1,
+   "cha": "krongno3",
+   "dt_km2": 831.6
+  },
+  {
+   "ma": "dakrong_2",
+   "ten": "Đakrông 2",
+   "cap": 0,
+   "cha": null,
+   "dt_km2": 767.0
+  },
+  {
+   "ma": "suoichan2",
+   "ten": "Suối Chăn 2",
+   "cap": 0,
+   "cha": null,
+   "dt_km2": 759.6
+  },
+  {
+   "ma": "namcong4",
+   "ten": "Nậm Công 4",
+   "cap": 1,
+   "cha": "trungson",
+   "dt_km2": 759.6
+  },
+  {
+   "ma": "songchay5",
+   "ten": "Sông Chảy 5",
+   "cap": 8,
+   "cha": "songchay6",
+   "dt_km2": 756.5
+  },
+  {
+   "ma": "dakpsi6",
+   "ten": "Đăk Psi 6",
+   "cap": 2,
+   "cha": "pleikrong",
+   "dt_km2": 749.9
+  },
+  {
+   "ma": "namcong3",
+   "ten": "Nậm Công 3",
+   "cap": 2,
+   "cha": "namcong4",
+   "dt_km2": 737.1
+  },
+  {
+   "ma": "huongdien",
+   "ten": "Hương Điền",
+   "cap": 1,
+   "cha": "songhuong",
+   "dt_km2": 713.6
+  },
+  {
+   "ma": "avuong",
+   "ten": "TĐ. A Vương",
+   "cap": 2,
+   "cha": "songbung4a",
+   "dt_km2": 683.7
+  },
+  {
+   "ma": "taco",
+   "ten": "Tà Cọ",
+   "cap": 3,
+   "cha": "namcong3",
+   "dt_km2": 682.2
+  },
+  {
+   "ma": "xekaman3",
+   "ten": "Xekaman 3",
+   "cap": 1,
+   "cha": "xekaman1",
+   "dt_km2": 678.8
+  },
+  {
+   "ma": "tatrach",
+   "ten": "Hồ Tả Trạch",
+   "cap": 1,
+   "cha": "songhuong",
+   "dt_km2": 670.8
+  },
+  {
+   "ma": "ayunthuong1a",
+   "ten": "Ayun Thượng 1A",
+   "cap": 7,
+   "cha": "ayuntrung",
+   "dt_km2": 663.7
+  },
+  {
+   "ma": "dakglun2",
+   "ten": "Dakglun 2",
+   "cap": 2,
+   "cha": "thacmo",
+   "dt_km2": 660.5
+  },
+  {
+   "ma": "naan",
+   "ten": "Na An",
+   "cap": 1,
+   "cha": "phiengluc",
+   "dt_km2": 657.1
+  },
+  {
+   "ma": "thacmobasin1",
+   "ten": "Thac Mo Basin 1",
+   "cap": 3,
+   "cha": "dakglun2",
+   "dt_km2": 646.2
+  },
+  {
+   "ma": "dakglun",
+   "ten": "Dakglun",
+   "cap": 4,
+   "cha": "thacmobasin1",
+   "dt_km2": 645.6
+  },
+  {
+   "ma": "dakpsi5",
+   "ten": "Đăk Psi 5",
+   "cap": 3,
+   "cha": "dakpsi6",
+   "dt_km2": 637.6
+  },
+  {
+   "ma": "tddakmi3",
+   "ten": "Đak Mi 3",
+   "cap": 1,
+   "cha": "dakmi4a",
+   "dt_km2": 615.6
+  },
+  {
+   "ma": "dakmi3",
+   "ten": "Đak Mi 3",
+   "cap": 2,
+   "cha": "tddakmi3",
+   "dt_km2": 615.1
+  },
+  {
+   "ma": "paccap",
+   "ten": "Paccap",
+   "cap": 2,
+   "cha": "kimlu",
+   "dt_km2": 600.4
+  },
+  {
+   "ma": "sontay",
+   "ten": "Thượng Sơn Tây",
+   "cap": 0,
+   "cha": null,
+   "dt_km2": 597.6
+  },
+  {
+   "ma": "thacgieng",
+   "ten": "Thac Gieng",
+   "cap": 0,
+   "cha": null,
+   "dt_km2": 562.9
+  },
+  {
+   "ma": "nhanhac",
+   "ten": "Nhạn Hạc",
+   "cap": 2,
+   "cha": "chauthang",
+   "dt_km2": 562.5
+  },
+  {
+   "ma": "zahung",
+   "ten": "Za Hung",
+   "cap": 3,
+   "cha": "avuong",
+   "dt_km2": 540.8
+  },
+  {
+   "ma": "dakdoa",
+   "ten": "Đăk Đoa",
+   "cap": 1,
+   "cha": "ialy",
+   "dt_km2": 509.1
+  },
+  {
+   "ma": "binhdien",
+   "ten": "Bình Điền",
+   "cap": 1,
+   "cha": "songhuong",
+   "dt_km2": 507.8
+  },
+  {
+   "ma": "an_phuoc",
+   "ten": "An Ph ư ớc",
+   "cap": 7,
+   "cha": "dadang2",
+   "dt_km2": 487.6
+  },
+  {
+   "ma": "sontra1c",
+   "ten": "Sơn Trà 1C",
+   "cap": 0,
+   "cha": null,
+   "dt_km2": 484.6
+  },
+  {
+   "ma": "tathang",
+   "ten": "Tà Thàng",
+   "cap": 0,
+   "cha": null,
+   "dt_km2": 468.3
+  },
+  {
+   "ma": "krongbukha",
+   "ten": "Hồ Krông Buk hạ",
+   "cap": 0,
+   "cha": null,
+   "dt_km2": 462.0
+  },
+  {
+   "ma": "dakmi2",
+   "ten": "Đăk Mi 2",
+   "cap": 3,
+   "cha": "dakmi3",
+   "dt_km2": 450.0
+  },
+  {
+   "ma": "hochualahieng2",
+   "ten": "Hồ chứa La Hiêng 2",
+   "cap": 0,
+   "cha": null,
+   "dt_km2": 449.4
+  },
+  {
+   "ma": "easoupthuong",
+   "ten": "Ea Soup Thuong",
+   "cap": 0,
+   "cha": null,
+   "dt_km2": 445.5
+  },
+  {
+   "ma": "vinhson5",
+   "ten": "Vĩnh Sơn 5",
+   "cap": 1,
+   "cha": "dinhbinh2",
+   "dt_km2": 444.7
+  },
+  {
+   "ma": "muongkim2",
+   "ten": "Mường Kim",
+   "cap": 0,
+   "cha": null,
+   "dt_km2": 437.0
+  },
+  {
+   "ma": "namchien2",
+   "ten": "Nậm Chiến",
+   "cap": 0,
+   "cha": null,
+   "dt_km2": 433.6
+  },
+  {
+   "ma": "muongkim",
+   "ten": "Mường Kim",
+   "cap": 1,
+   "cha": "muongkim2",
+   "dt_km2": 430.0
+  },
+  {
+   "ma": "sontra1a",
+   "ten": "Son Tra 1A",
+   "cap": 1,
+   "cha": "sontra1c",
+   "dt_km2": 421.0
+  },
+  {
+   "ma": "sontra1b",
+   "ten": "Son Tra 1B",
+   "cap": 1,
+   "cha": "sontra1c",
+   "dt_km2": 421.0
+  },
+  {
+   "ma": "thacmobasin2",
+   "ten": "Thac Mo Basin 2",
+   "cap": 2,
+   "cha": "thacmo",
+   "dt_km2": 418.0
+  },
+  {
+   "ma": "ngoiphat",
+   "ten": "Ngòi Phát",
+   "cap": 0,
+   "cha": null,
+   "dt_km2": 412.2
+  },
+  {
+   "ma": "aluoi",
+   "ten": "A Lưới",
+   "cap": 1,
+   "cha": "songhuong",
+   "dt_km2": 406.5
+  },
+  {
+   "ma": "bachdang",
+   "ten": "Bạch Đằng",
+   "cap": 0,
+   "cha": null,
+   "dt_km2": 406.1
+  },
+  {
+   "ma": "namcun",
+   "ten": "Nậm Củn",
+   "cap": 1,
+   "cha": "tathang",
+   "dt_km2": 404.3
+  },
+  {
+   "ma": "dainga",
+   "ten": "Đại Nga",
+   "cap": 2,
+   "cha": "langau",
+   "dt_km2": 396.8
+  },
+  {
+   "ma": "minhluong",
+   "ten": "Minh Lương Thượng",
+   "cap": 1,
+   "cha": "suoichan2",
+   "dt_km2": 389.1
+  },
+  {
+   "ma": "camson",
+   "ten": "Hồ Cấm Sơn",
+   "cap": 1,
+   "cha": "dapdangcauson",
+   "dt_km2": 387.9
+  },
+  {
+   "ma": "hungloi1",
+   "ten": "Hùng Lợi 1",
+   "cap": 0,
+   "cha": null,
+   "dt_km2": 387.0
+  },
+  {
+   "ma": "minhluongthuong",
+   "ten": "Minh Lương Thượng",
+   "cap": 2,
+   "cha": "minhluong",
+   "dt_km2": 383.9
+  },
+  {
+   "ma": "songchay3",
+   "ten": "Sông Chảy 3",
+   "cap": 9,
+   "cha": "songchay5",
+   "dt_km2": 380.2
+  },
+  {
+   "ma": "dakpsi4",
+   "ten": "Đăk Psi 4",
+   "cap": 4,
+   "cha": "dakpsi5",
+   "dt_km2": 378.0
+  },
+  {
+   "ma": "ngantruoi",
+   "ten": "Hồ Ngàn Trươi",
+   "cap": 1,
+   "cha": "hoaduyet",
+   "dt_km2": 372.0
+  },
+  {
+   "ma": "tanloc",
+   "ten": "Tân Lộc",
+   "cap": 4,
+   "cha": "daibinh",
+   "dt_km2": 370.7
+  },
+  {
+   "ma": "namxe2a",
+   "ten": "Nam Xe 2A",
+   "cap": 2,
+   "cha": "namna2",
+   "dt_km2": 368.4
+  },
+  {
+   "ma": "dakpsi3",
+   "ten": "Đăk Psi 3",
+   "cap": 0,
+   "cha": null,
+   "dt_km2": 362.3
+  },
+  {
+   "ma": "muonghum",
+   "ten": "Mường Hum",
+   "cap": 1,
+   "cha": "ngoiphat",
+   "dt_km2": 358.2
+  },
+  {
+   "ma": "nampong",
+   "ten": "Nam Pong",
+   "cap": 1,
+   "cha": "banmong",
+   "dt_km2": 355.4
+  },
+  {
+   "ma": "songchung",
+   "ten": "Sông Chừng (sông con 2)",
+   "cap": 0,
+   "cha": null,
+   "dt_km2": 336.5
+  },
+  {
+   "ma": "songbung2",
+   "ten": "TĐ Sông Bung 2",
+   "cap": 3,
+   "cha": "songbung4",
+   "dt_km2": 335.7
+  },
+  {
+   "ma": "namcum4",
+   "ten": "Nậm Củm 4",
+   "cap": 0,
+   "cha": null,
+   "dt_km2": 331.4
+  },
+  {
+   "ma": "ngoihut1",
+   "ten": "Ngòi Hút 1",
+   "cap": 0,
+   "cha": null,
+   "dt_km2": 329.9
+  },
+  {
+   "ma": "khethoi",
+   "ten": "Khe Thơi",
+   "cap": 1,
+   "cha": "chikhe",
+   "dt_km2": 302.6
+  },
+  {
+   "ma": "daknong2",
+   "ten": "Đắk Nông 2",
+   "cap": 0,
+   "cha": null,
+   "dt_km2": 299.8
+  },
+  {
+   "ma": "hoho",
+   "ten": "Hố Hô",
+   "cap": 2,
+   "cha": "chule",
+   "dt_km2": 294.6
+  },
+  {
+   "ma": "banho",
+   "ten": "Bản Hồ",
+   "cap": 2,
+   "cha": "namcun",
+   "dt_km2": 293.6
+  },
+  {
+   "ma": "daknong",
+   "ten": "Đăk Nông 1",
+   "cap": 2,
+   "cha": "dongnai5",
+   "dt_km2": 287.8
+  },
+  {
+   "ma": "songbac",
+   "ten": "Sông Bạc",
+   "cap": 0,
+   "cha": null,
+   "dt_km2": 281.9
+  },
+  {
+   "ma": "khaomangthuong",
+   "ten": "Khao Mang Thượng",
+   "cap": 2,
+   "cha": "muongkim",
+   "dt_km2": 273.0
+  },
+  {
+   "ma": "suoisap3",
+   "ten": "Suối Sập 3",
+   "cap": 0,
+   "cha": null,
+   "dt_km2": 269.7
+  },
+  {
+   "ma": "krongpachthuong",
+   "ten": "Krong Pach Thuong",
+   "cap": 0,
+   "cha": null,
+   "dt_km2": 262.2
+  },
+  {
+   "ma": "dakrung1",
+   "ten": "Đăk Rung 1",
+   "cap": 2,
+   "cha": "dongnai5",
+   "dt_km2": 262.0
+  },
+  {
+   "ma": "namhe",
+   "ten": "Nậm He",
+   "cap": 0,
+   "cha": null,
+   "dt_km2": 258.4
+  },
+  {
+   "ma": "hoathuan",
+   "ten": "Hòa Thuận",
+   "cap": 0,
+   "cha": null,
+   "dt_km2": 247.8
+  },
+  {
+   "ma": "cocdam",
+   "ten": "Cốc Đàm",
+   "cap": 3,
+   "cha": "namluc",
+   "dt_km2": 246.0
+  },
+  {
+   "ma": "xuanminhhg",
+   "ten": "Xuan Minh HG",
+   "cap": 1,
+   "cha": "songbac",
+   "dt_km2": 240.2
+  },
+  {
+   "ma": "xoongcon",
+   "ten": "Xoong Con",
+   "cap": 2,
+   "cha": "khebo",
+   "dt_km2": 238.8
+  },
+  {
+   "ma": "dakpsi2b",
+   "ten": "Đăk Psi 2B",
+   "cap": 1,
+   "cha": "dakpsi3",
+   "dt_km2": 237.7
+  },
+  {
+   "ma": "suoisap1",
+   "ten": "Suối Sập 1",
+   "cap": 1,
+   "cha": "suoisap3",
+   "dt_km2": 229.7
+  },
+  {
+   "ma": "dambri",
+   "ten": "Đam Bri 1",
+   "cap": 1,
+   "cha": "trian",
+   "dt_km2": 217.2
+  },
+  {
+   "ma": "dadang",
+   "ten": "Đa dâng",
+   "cap": 8,
+   "cha": "an_phuoc",
+   "dt_km2": 217.2
+  },
+  {
+   "ma": "namsiluong4",
+   "ten": "Nậm Sì Lường 4",
+   "cap": 0,
+   "cha": null,
+   "dt_km2": 216.8
+  },
+  {
+   "ma": "namphang",
+   "ten": "Nậm Phàng B",
+   "cap": 4,
+   "cha": "cocdam",
+   "dt_km2": 216.5
+  },
+  {
+   "ma": "baccuong",
+   "ten": "Bắc Cuông",
+   "cap": 6,
+   "cha": "bacha",
+   "dt_km2": 216.3
+  },
+  {
+   "ma": "kamishiiba",
+   "ten": "Kamishiiba",
+   "cap": 0,
+   "cha": null,
+   "dt_km2": 211.5
+  },
+  {
+   "ma": "kego",
+   "ten": "Hồ Kẻ Gỗ",
+   "cap": 0,
+   "cha": null,
+   "dt_km2": 209.5
+  },
+  {
+   "ma": "tramtau",
+   "ten": "Trạm Tấu",
+   "cap": 1,
+   "cha": "vanchan",
+   "dt_km2": 206.1
+  },
+  {
+   "ma": "namgion",
+   "ten": "Nậm Giôn",
+   "cap": 0,
+   "cha": null,
+   "dt_km2": 205.9
+  },
+  {
+   "ma": "dakrung",
+   "ten": "Đăk Rung",
+   "cap": 3,
+   "cha": "dakrung1",
+   "dt_km2": 204.6
+  },
+  {
+   "ma": "namphangb",
+   "ten": "Nậm Phàng B",
+   "cap": 5,
+   "cha": "namphang",
+   "dt_km2": 204.3
+  },
+  {
+   "ma": "namxayluong",
+   "ten": "Nậm Xây Luông",
+   "cap": 3,
+   "cha": "minhluongthuong",
+   "dt_km2": 201.6
+  },
+  {
+   "ma": "songong",
+   "ten": "Thượng sông ông 1",
+   "cap": 1,
+   "cha": "myson",
+   "dt_km2": 201.4
+  },
+  {
+   "ma": "nammo3",
+   "ten": "Nammo 3",
+   "cap": 0,
+   "cha": null,
+   "dt_km2": 196.3
+  },
+  {
+   "ma": "thuongsongong",
+   "ten": "Thượng sông ông 1",
+   "cap": 2,
+   "cha": "songong",
+   "dt_km2": 194.1
+  },
+  {
+   "ma": "namsiluong3",
+   "ten": "Nậm Sì Lường 3",
+   "cap": 1,
+   "cha": "namsiluong4",
+   "dt_km2": 179.8
+  },
+  {
+   "ma": "canan1",
+   "ten": "Ca Nan 1",
+   "cap": 2,
+   "cha": "khebo",
+   "dt_km2": 178.9
+  },
+  {
+   "ma": "quangtri",
+   "ten": "Quang Tri",
+   "cap": 0,
+   "cha": null,
+   "dt_km2": 177.4
+  },
+  {
+   "ma": "dalay",
+   "ten": "Da Lay",
+   "cap": 1,
+   "cha": "trian",
+   "dt_km2": 176.5
+  },
+  {
+   "ma": "canan2",
+   "ten": "Ca Nan 2",
+   "cap": 3,
+   "cha": "canan1",
+   "dt_km2": 176.2
+  },
+  {
+   "ma": "namsiluong1a",
+   "ten": "Nậm Sì Lường 1A",
+   "cap": 2,
+   "cha": "namsiluong3",
+   "dt_km2": 175.2
+  },
+  {
+   "ma": "namxe2",
+   "ten": "Nam Xe 2",
+   "cap": 3,
+   "cha": "namxe2a",
+   "dt_km2": 174.1
+  },
+  {
+   "ma": "natau",
+   "ten": "Hồ Nà Tấu",
+   "cap": 0,
+   "cha": null,
+   "dt_km2": 166.8
+  },
+  {
+   "ma": "daksin1",
+   "ten": "Đăk Sin 1",
+   "cap": 1,
+   "cha": "trian",
+   "dt_km2": 162.7
+  },
+  {
+   "ma": "supan2",
+   "ten": "Sử Pán 2",
+   "cap": 3,
+   "cha": "banho",
+   "dt_km2": 162.7
+  },
+  {
+   "ma": "nhanco",
+   "ten": "Nhân Cơ",
+   "cap": 2,
+   "cha": "dongnai5",
+   "dt_km2": 158.5
+  },
+  {
+   "ma": "namsiluong1",
+   "ten": "Nậm Sì Lường 1",
+   "cap": 3,
+   "cha": "namsiluong1a",
+   "dt_km2": 153.1
+  },
+  {
+   "ma": "thuonglo",
+   "ten": "Thượng Lộ",
+   "cap": 2,
+   "cha": "tatrach",
+   "dt_km2": 150.2
+  },
+  {
+   "ma": "songquang",
+   "ten": "Sông Quang",
+   "cap": 3,
+   "cha": "nhanhac",
+   "dt_km2": 147.3
+  },
+  {
+   "ma": "namban3",
+   "ten": "Nậm Ban 3",
+   "cap": 1,
+   "cha": "namna3",
+   "dt_km2": 146.2
+  },
+  {
+   "ma": "dakdi2",
+   "ten": "Đăk Di 2",
+   "cap": 2,
+   "cha": "songtranh2",
+   "dt_km2": 136.9
+  },
+  {
+   "ma": "daknteng",
+   "ten": "Đăk Nteng",
+   "cap": 0,
+   "cha": null,
+   "dt_km2": 134.0
+  },
+  {
+   "ma": "namngan",
+   "ten": "Nậm Ngần 2",
+   "cap": 0,
+   "cha": null,
+   "dt_km2": 133.8
+  },
+  {
+   "ma": "latrong",
+   "ten": "La Trọng",
+   "cap": 0,
+   "cha": null,
+   "dt_km2": 133.7
+  },
+  {
+   "ma": "daknong1",
+   "ten": "Đăk Nông 1",
+   "cap": 3,
+   "cha": "daknong",
+   "dt_km2": 126.4
+  },
+  {
+   "ma": "suoivang",
+   "ten": "Suoi Vang",
+   "cap": 9,
+   "cha": "dadang",
+   "dt_km2": 123.9
+  },
+  {
+   "ma": "namxe",
+   "ten": "Nam Xe",
+   "cap": 4,
+   "cha": "namxe2",
+   "dt_km2": 123.9
+  },
+  {
+   "ma": "songgiang2",
+   "ten": "Sông Giang 2",
+   "cap": 0,
+   "cha": null,
+   "dt_km2": 119.4
+  },
+  {
+   "ma": "dasiat",
+   "ten": "Đa Siat",
+   "cap": 2,
+   "cha": "dongnai5",
+   "dt_km2": 115.5
+  },
+  {
+   "ma": "nampac2",
+   "ten": "Nam Pac 2",
+   "cap": 5,
+   "cha": "namxe",
+   "dt_km2": 113.5
+  },
+  {
+   "ma": "sardeung",
+   "ten": "Sar Deung 2",
+   "cap": 7,
+   "cha": "dadang2",
+   "dt_km2": 113.1
+  },
+  {
+   "ma": "supan1",
+   "ten": "Sử Pán 1",
+   "cap": 4,
+   "cha": "supan2",
+   "dt_km2": 112.8
+  },
+  {
+   "ma": "cocsanha",
+   "ten": "Cocsanha",
+   "cap": 0,
+   "cha": null,
+   "dt_km2": 112.5
+  },
+  {
+   "ma": "namchim2",
+   "ten": "Nậm Chim 2",
+   "cap": 0,
+   "cha": null,
+   "dt_km2": 110.7
+  },
+  {
+   "ma": "pahu",
+   "ten": "Pá Hu",
+   "cap": 1,
+   "cha": "vanchan",
+   "dt_km2": 110.4
+  },
+  {
+   "ma": "namtha6",
+   "ten": "Nậm Tha 6",
+   "cap": 0,
+   "cha": null,
+   "dt_km2": 109.2
+  },
+  {
+   "ma": "namkhoa3",
+   "ten": "Nậm Khóa 3",
+   "cap": 0,
+   "cha": null,
+   "dt_km2": 107.6
+  },
+  {
+   "ma": "nambum2",
+   "ten": "Nậm Bụm 2",
+   "cap": 0,
+   "cha": null,
+   "dt_km2": 105.2
+  },
+  {
+   "ma": "namtha5",
+   "ten": "Nậm Tha 5",
+   "cap": 1,
+   "cha": "namtha6",
+   "dt_km2": 104.5
+  },
+  {
+   "ma": "namdong4",
+   "ten": "Nậm Đông 4",
+   "cap": 1,
+   "cha": "vanchan",
+   "dt_km2": 104.0
+  },
+  {
+   "ma": "namtoong",
+   "ten": "Nậm Toóng",
+   "cap": 3,
+   "cha": "banho",
+   "dt_km2": 103.9
+  },
+  {
+   "ma": "songrac",
+   "ten": "Hồ Sông Rác",
+   "cap": 0,
+   "cha": null,
+   "dt_km2": 102.0
+  },
+  {
+   "ma": "tanung",
+   "ten": "Tà Nung",
+   "cap": 7,
+   "cha": "dadang2",
+   "dt_km2": 100.7
+  },
+  {
+   "ma": "namxayluong45",
+   "ten": "Nam Xay Luong 45",
+   "cap": 4,
+   "cha": "namxayluong",
+   "dt_km2": 100.5
+  },
+  {
+   "ma": "talat",
+   "ten": "Talat",
+   "cap": 0,
+   "cha": null,
+   "dt_km2": 100.2
+  },
+  {
+   "ma": "namlum2",
+   "ten": "Nậm Lụm 2",
+   "cap": 2,
+   "cha": "namna2",
+   "dt_km2": 99.2
+  },
+  {
+   "ma": "namban2",
+   "ten": "Nậm Ban 2",
+   "cap": 2,
+   "cha": "namban3",
+   "dt_km2": 99.0
+  },
+  {
+   "ma": "vuctuan",
+   "ten": "Vực Tuần",
+   "cap": 0,
+   "cha": null,
+   "dt_km2": 98.6
+  },
+  {
+   "ma": "songgiang1",
+   "ten": "Song Giang 1",
+   "cap": 1,
+   "cha": "songgiang2",
+   "dt_km2": 97.4
+  },
+  {
+   "ma": "raoda",
+   "ten": "Hồ Rào Đá",
+   "cap": 0,
+   "cha": null,
+   "dt_km2": 96.6
+  },
+  {
+   "ma": "thanhthuy2",
+   "ten": "Thanh Thủy 2",
+   "cap": 0,
+   "cha": null,
+   "dt_km2": 95.0
+  },
+  {
+   "ma": "cocsan",
+   "ten": "Cốc San",
+   "cap": 1,
+   "cha": "cocsanha",
+   "dt_km2": 94.9
+  },
+  {
+   "ma": "sardeung2",
+   "ten": "Sar Deung 2",
+   "cap": 8,
+   "cha": "sardeung",
+   "dt_km2": 93.2
+  },
+  {
+   "ma": "namxayluong3",
+   "ten": "Nậm Xây Luông 3",
+   "cap": 5,
+   "cha": "namxayluong45",
+   "dt_km2": 91.9
+  },
+  {
+   "ma": "dakdi1",
+   "ten": "Đăk Di 1",
+   "cap": 3,
+   "cha": "dakdi2",
+   "dt_km2": 90.7
+  },
+  {
+   "ma": "krongpa2",
+   "ten": "Krông Pa 2",
+   "cap": 7,
+   "cha": "ankhe",
+   "dt_km2": 87.9
+  },
+  {
+   "ma": "namsai",
+   "ten": "Nậm Sài",
+   "cap": 2,
+   "cha": "namcun",
+   "dt_km2": 86.4
+  },
+  {
+   "ma": "namkhanh",
+   "ten": "Nậm Khánh",
+   "cap": 6,
+   "cha": "namphangb",
+   "dt_km2": 86.2
+  },
+  {
+   "ma": "namdong3",
+   "ten": "Nam Dong 3",
+   "cap": 2,
+   "cha": "namdong4",
+   "dt_km2": 85.0
+  },
+  {
+   "ma": "namma",
+   "ten": "Nậm Má",
+   "cap": 0,
+   "cha": null,
+   "dt_km2": 85.0
+  },
+  {
+   "ma": "namtha4",
+   "ten": "Nậm Tha 4",
+   "cap": 2,
+   "cha": "namtha5",
+   "dt_km2": 83.4
+  },
+  {
+   "ma": "naloa",
+   "ten": "Nà Lòa",
+   "cap": 0,
+   "cha": null,
+   "dt_km2": 80.9
+  },
+  {
+   "ma": "bacna",
+   "ten": "Bắc Nà",
+   "cap": 6,
+   "cha": "namphangb",
+   "dt_km2": 80.5
+  },
+  {
+   "ma": "dami",
+   "ten": "DAMI",
+   "cap": 1,
+   "cha": "trian",
+   "dt_km2": 78.0
+  },
+  {
+   "ma": "daklo",
+   "ten": "Đăk Lô A",
+   "cap": 2,
+   "cha": "sontra1b",
+   "dt_km2": 77.7
+  },
+  {
+   "ma": "dakre",
+   "ten": "Đăk Re",
+   "cap": 0,
+   "cha": null,
+   "dt_km2": 77.4
+  },
+  {
+   "ma": "hasongpha2",
+   "ten": "Hạ Sông Pha 2",
+   "cap": 3,
+   "cha": "thuongsongong",
+   "dt_km2": 74.0
+  },
+  {
+   "ma": "hotruoi",
+   "ten": "Hồ Truồi",
+   "cap": 0,
+   "cha": null,
+   "dt_km2": 73.8
+  },
+  {
+   "ma": "namtha3",
+   "ten": "Nậm Tha 3",
+   "cap": 3,
+   "cha": "namtha4",
+   "dt_km2": 73.3
+  },
+  {
+   "ma": "a_lin_b1",
+   "ten": "A Lin B 1",
+   "cap": 0,
+   "cha": null,
+   "dt_km2": 69.9
+  },
+  {
+   "ma": "mylam",
+   "ten": "My Lam",
+   "cap": 0,
+   "cha": null,
+   "dt_km2": 69.2
+  },
+  {
+   "ma": "dakre2",
+   "ten": "Dak Re 2",
+   "cap": 0,
+   "cha": null,
+   "dt_km2": 68.3
+  },
+  {
+   "ma": "suoilum3",
+   "ten": "Suối Lừm 3",
+   "cap": 0,
+   "cha": null,
+   "dt_km2": 67.3
+  },
+  {
+   "ma": "tralinh2",
+   "ten": "Trà Linh 2",
+   "cap": 2,
+   "cha": "songtranh2",
+   "dt_km2": 65.9
+  },
+  {
+   "ma": "thanhthuy1",
+   "ten": "Thanh Thủy 1",
+   "cap": 1,
+   "cha": "thanhthuy2",
+   "dt_km2": 64.7
+  },
+  {
+   "ma": "dakble",
+   "ten": "Dak Ble",
+   "cap": 7,
+   "cha": "ankhe",
+   "dt_km2": 59.3
+  },
+  {
+   "ma": "namxilung",
+   "ten": "Nam Xi Lung",
+   "cap": 4,
+   "cha": "namsiluong1",
+   "dt_km2": 58.3
+  },
+  {
+   "ma": "nampac1",
+   "ten": "Nam Pac 1",
+   "cap": 6,
+   "cha": "nampac2",
+   "dt_km2": 56.6
+  },
+  {
+   "ma": "suoilum1",
+   "ten": "Suối Lừm 1",
+   "cap": 1,
+   "cha": "suoilum3",
+   "dt_km2": 52.0
+  },
+  {
+   "ma": "thuongan",
+   "ten": "Thượng Ân",
+   "cap": 1,
+   "cha": "bachdang",
+   "dt_km2": 51.9
+  },
+  {
+   "ma": "ximvang2",
+   "ten": "Xím Vàng 2",
+   "cap": 0,
+   "cha": null,
+   "dt_km2": 48.1
+  },
+  {
+   "ma": "nambum1a",
+   "ten": "Nậm Bụm 1A",
+   "cap": 1,
+   "cha": "nambum2",
+   "dt_km2": 46.4
+  },
+  {
+   "ma": "nuocluong",
+   "ten": "Nước Lương",
+   "cap": 0,
+   "cha": null,
+   "dt_km2": 46.2
+  },
+  {
+   "ma": "hasongpha1",
+   "ten": "Hạ Sông Pha 1",
+   "cap": 4,
+   "cha": "hasongpha2",
+   "dt_km2": 45.1
+  },
+  {
+   "ma": "namdich2",
+   "ten": "Nam Dich 2",
+   "cap": 2,
+   "cha": "naan",
+   "dt_km2": 44.9
+  },
+  {
+   "ma": "namtuc2",
+   "ten": "Nậm Tục 2",
+   "cap": 1,
+   "cha": "vanchan",
+   "dt_km2": 43.8
+  },
+  {
+   "ma": "nammu",
+   "ten": "Nậm Mu",
+   "cap": 0,
+   "cha": null,
+   "dt_km2": 39.0
+  },
+  {
+   "ma": "nuocbieu",
+   "ten": "Nước Biêu",
+   "cap": 1,
+   "cha": "dakpsi3",
+   "dt_km2": 37.9
+  },
+  {
+   "ma": "trinang",
+   "ten": "Trí Năng",
+   "cap": 0,
+   "cha": null,
+   "dt_km2": 37.3
+  },
+  {
+   "ma": "ngoiduong2",
+   "ten": "Ngòi Đường 2",
+   "cap": 0,
+   "cha": null,
+   "dt_km2": 36.5
+  },
+  {
+   "ma": "daksorach",
+   "ten": "Dak So Rach",
+   "cap": 2,
+   "cha": "sontra1b",
+   "dt_km2": 35.0
+  },
+  {
+   "ma": "namlum1",
+   "ten": "Nam Lum 1",
+   "cap": 3,
+   "cha": "namlum2",
+   "dt_km2": 31.8
+  },
+  {
+   "ma": "mongsen",
+   "ten": "Móng Sến",
+   "cap": 2,
+   "cha": "cocsan",
+   "dt_km2": 26.8
+  },
+  {
+   "ma": "nam_nghe",
+   "ten": "Nậm Ngh ẹ",
+   "cap": 1,
+   "cha": "nambum2",
+   "dt_km2": 26.6
+  },
+  {
+   "ma": "nuocxang",
+   "ten": "Nước Xáng",
+   "cap": 0,
+   "cha": null,
+   "dt_km2": 26.4
+  },
+  {
+   "ma": "nambum1",
+   "ten": "Nậm Bụm 1",
+   "cap": 2,
+   "cha": "nambum1a",
+   "dt_km2": 26.0
+  },
+  {
+   "ma": "seochongho",
+   "ten": "Séo Chong Hô",
+   "cap": 4,
+   "cha": "supan2",
+   "dt_km2": 25.6
+  },
+  {
+   "ma": "namngan2",
+   "ten": "Nậm Ngần 2",
+   "cap": 1,
+   "cha": "namngan",
+   "dt_km2": 25.2
+  },
+  {
+   "ma": "naman",
+   "ten": "Nậm An",
+   "cap": 1,
+   "cha": "nammu",
+   "dt_km2": 24.6
+  },
+  {
+   "ma": "dakai",
+   "ten": "Đa Kai",
+   "cap": 4,
+   "cha": "dongnai3",
+   "dt_km2": 23.3
+  },
+  {
+   "ma": "namnhun1",
+   "ten": "Nậm Nhùn 1",
+   "cap": 0,
+   "cha": null,
+   "dt_km2": 22.6
+  },
+  {
+   "ma": "phumau2",
+   "ten": "Phú Mậu 2",
+   "cap": 0,
+   "cha": null,
+   "dt_km2": 21.7
+  },
+  {
+   "ma": "nuocbuou",
+   "ten": "Nuoc Buou",
+   "cap": 1,
+   "cha": "dakpsi3",
+   "dt_km2": 20.3
+  },
+  {
+   "ma": "paha",
+   "ten": "Pa Hạ",
+   "cap": 4,
+   "cha": "namsiluong1",
+   "dt_km2": 20.2
+  },
+  {
+   "ma": "ngoiduong1",
+   "ten": "Ngòi Đường 1",
+   "cap": 1,
+   "cha": "ngoiduong2",
+   "dt_km2": 20.2
+  },
+  {
+   "ma": "banxeo",
+   "ten": "Bản Xèo",
+   "cap": 1,
+   "cha": "ngoiphat",
+   "dt_km2": 20.0
+  },
+  {
+   "ma": "hanang",
+   "ten": "Hà Nang",
+   "cap": 0,
+   "cha": null,
+   "dt_km2": 18.8
+  },
+  {
+   "ma": "bacna1",
+   "ten": "Bắc Nà 1",
+   "cap": 7,
+   "cha": "bacna",
+   "dt_km2": 18.4
+  },
+  {
+   "ma": "namdich1",
+   "ten": "Nậm Đích 1",
+   "cap": 3,
+   "cha": "namdich2",
+   "dt_km2": 18.0
+  },
+  {
+   "ma": "locphat",
+   "ten": "Lộc Phát",
+   "cap": 4,
+   "cha": "daibinh",
+   "dt_km2": 17.7
+  },
+  {
+   "ma": "mayho",
+   "ten": "Mây Hồ",
+   "cap": 0,
+   "cha": null,
+   "dt_km2": 17.6
+  },
+  {
+   "ma": "chiengmuon",
+   "ten": "Chiềng Muôn",
+   "cap": 1,
+   "cha": "namchien2",
+   "dt_km2": 15.3
+  },
+  {
+   "ma": "sovin",
+   "ten": "Sovin",
+   "cap": 0,
+   "cha": null,
+   "dt_km2": 15.2
+  },
+  {
+   "ma": "huoivan",
+   "ten": "Huoi Van",
+   "cap": 0,
+   "cha": null,
+   "dt_km2": 14.8
+  },
+  {
+   "ma": "vietlong1",
+   "ten": "Thác Thúy (Việt Long 1)",
+   "cap": 0,
+   "cha": null,
+   "dt_km2": 13.3
+  },
+  {
+   "ma": "namcat",
+   "ten": "Nậm Cắt",
+   "cap": 1,
+   "cha": "thacgieng",
+   "dt_km2": 12.8
+  },
+  {
+   "ma": "bacbinh",
+   "ten": "Bắc Bình",
+   "cap": 0,
+   "cha": null,
+   "dt_km2": 11.3
+  },
+  {
+   "ma": "namnhun2",
+   "ten": "Nậm Nhùn 2",
+   "cap": 1,
+   "cha": "namnhun1",
+   "dt_km2": 11.0
+  },
+  {
+   "ma": "phumau1",
+   "ten": "Phú Mậu 1",
+   "cap": 1,
+   "cha": "phumau2",
+   "dt_km2": 10.8
+  },
+  {
+   "ma": "chiengngam",
+   "ten": "Chiềng Ngàm Thượng",
+   "cap": 0,
+   "cha": null,
+   "dt_km2": 9.9
+  },
+  {
+   "ma": "banria",
+   "ten": "Bản Rịa",
+   "cap": 2,
+   "cha": "phuclong",
+   "dt_km2": 7.2
+  },
+  {
+   "ma": "khegiong",
+   "ten": "Khe Giông",
+   "cap": 0,
+   "cha": null,
+   "dt_km2": 3.3
+  }
+ ]
+}

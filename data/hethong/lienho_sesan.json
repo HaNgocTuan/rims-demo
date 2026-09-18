@@ -1,0 +1,86 @@
+{
+ "schema": "rims.hethong.lienho/v0.1",
+ "he_thong": "sesan",
+ "ten": "Hệ thống liên hồ chứa lưu vực sông Sê San",
+ "quyet_dinh": "QĐ 215/QĐ-TTg (2018)",
+ "cap_nhat": "2026-09-07",
+ "nguon": {
+  "danh_muc_ho": "DB luật SEHO (WP_SEHO_Legal_Master_v2.6) — MD10, Điều 1 QTVH liên hồ",
+  "ten_ban_do + toa_do": "data/congtrinh/*.geojson (khớp tên; bỏ tiền tố TĐ., 'bậc'→'b', alias tên rút gọn)"
+ },
+ "nguyen_tac": "Thành viên theo Điều 1 QTVH luật định. Vẽ marker theo lon/lat đã chốt. tren_ban_do=false = hồ luật định CHƯA có trong geojson nền (chưa xây / đập dâng / thiếu bản ghi).",
+ "ho": [
+  {
+   "ten": "Thượng Kon Tum",
+   "ten_ban_do": "Thượng Kon Tum",
+   "tren_ban_do": true,
+   "loai": "Thủy điện",
+   "anqg": false,
+   "lon": 108.229174,
+   "lat": 14.692526
+  },
+  {
+   "ten": "Đăk Bla 1",
+   "ten_ban_do": "Đắk Bla 1",
+   "tren_ban_do": true,
+   "loai": "Thủy điện",
+   "anqg": false,
+   "lon": 108.146391,
+   "lat": 14.427214
+  },
+  {
+   "ten": "PleiKrông",
+   "ten_ban_do": "Plei Krông",
+   "tren_ban_do": true,
+   "loai": "Thủy điện",
+   "anqg": false,
+   "lon": 107.862816,
+   "lat": 14.408543
+  },
+  {
+   "ten": "Ialy",
+   "ten_ban_do": "Ialy",
+   "tren_ban_do": true,
+   "loai": "Thủy điện",
+   "anqg": false,
+   "lon": 107.832538,
+   "lat": 14.232894
+  },
+  {
+   "ten": "Sê San 3",
+   "ten_ban_do": "Sê San 3",
+   "tren_ban_do": true,
+   "loai": "Thủy điện",
+   "anqg": false,
+   "lon": 107.71971,
+   "lat": 14.21715
+  },
+  {
+   "ten": "Sê San 3A",
+   "ten_ban_do": "Sê San 3A",
+   "tren_ban_do": true,
+   "loai": "Thủy điện",
+   "anqg": false,
+   "lon": 107.657956,
+   "lat": 14.10642
+  },
+  {
+   "ten": "Sê San 4",
+   "ten_ban_do": "Sê San 4",
+   "tren_ban_do": true,
+   "loai": "Thủy điện",
+   "anqg": false,
+   "lon": 107.493895,
+   "lat": 13.970562
+  },
+  {
+   "ten": "Sê San 4A",
+   "ten_ban_do": "Sê San 4A",
+   "tren_ban_do": true,
+   "loai": "Thủy điện",
+   "anqg": false,
+   "lon": 107.466916,
+   "lat": 13.933286
+  }
+ ]
+}

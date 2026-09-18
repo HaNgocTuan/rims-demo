@@ -1,0 +1,458 @@
+{
+ "ho ho": {
+  "ten": "Đập thủy điện Hố Hô",
+  "src": "Nguồn: QĐ1241/2022",
+  "bang": [
+   [
+    "Cấp công trình",
+    "",
+    "III"
+   ],
+   [
+    "Lưu vực về đập",
+    "km²",
+    "278,6"
+   ],
+   [
+    "Lũ TK / KT",
+    "m³/s",
+    "2758 (P10%) / 3549 (P0,2%)"
+   ],
+   [
+    "Cao trình đỉnh đập",
+    "m",
+    "+72,0"
+   ],
+   [
+    "MNDBT",
+    "m",
+    "+70,0"
+   ],
+   [
+    "MN đón lũ / cao nhất trước lũ",
+    "m",
+    "+69,0 / +69,5"
+   ],
+   [
+    "MNLTK",
+    "m",
+    "+70,0"
+   ],
+   [
+    "MNLKT",
+    "m",
+    "+71,49"
+   ],
+   [
+    "MNC",
+    "m",
+    "+67,5"
+   ],
+   [
+    "Dung tích toàn bộ / hữu ích",
+    "10⁶ m³",
+    "38 / 6"
+   ],
+   [
+    "Dung tích phòng lũ riêng",
+    "",
+    "KHÔNG có"
+   ],
+   [
+    "Mặt hồ @ MNDBT",
+    "km²",
+    "2,35"
+   ],
+   [
+    "Tràn xả",
+    "",
+    "3 cửa van cung 10,5×13 m · ngưỡng +57,0"
+   ],
+   [
+    "Khả năng xả max @ MNDBT",
+    "m³/s",
+    "2770"
+   ],
+   [
+    "Khả năng xả max @ MNLTK",
+    "m³/s",
+    "2770"
+   ],
+   [
+    "Quy trình vận hành",
+    "",
+    "QĐ1241/2022 + liên hồ QĐ1605/2019"
+   ],
+   [
+    "Chủ hồ",
+    "",
+    "CTCP Thủy điện Hồ Bốn"
+   ]
+  ]
+ },
+ "cua dat": {
+  "ten": "Hồ Cửa Đạt",
+  "src": "Nguồn: Cục Quản lý & Xây dựng CTTL — VN-WIS (thuyloivietnam.gov.vn)",
+  "bang": [
+   [
+    "Địa điểm",
+    "",
+    "Sông Chu — Thường Xuân, Thanh Hoá"
+   ],
+   [
+    "Cấp công trình",
+    "",
+    "Quan trọng đặc biệt"
+   ],
+   [
+    "Diện tích lưu vực",
+    "km²",
+    "5.938"
+   ],
+   [
+    "Chế độ điều tiết",
+    "",
+    "Năm"
+   ],
+   [
+    "Hạng mục đầu mối",
+    "",
+    "Đập chính, tràn xả lũ, tuynel dẫn dòng, NM thuỷ điện + 3 cụm đập phụ (Dốc Cáy, Hón Can, Bản Trác)"
+   ],
+   [
+    "Nhiệm vụ tưới",
+    "ha",
+    "86.862 (Nam sông Chu 54.031 · Bắc sông Chu–Nam sông Mã 31.084)"
+   ],
+   [
+    "Cấp nước CN & sinh hoạt",
+    "m³/s",
+    "7,715"
+   ],
+   [
+    "Đẩy mặn hạ lưu sông Mã",
+    "m³/s",
+    "30,42"
+   ],
+   [
+    "Giảm lũ",
+    "",
+    "P=0,6% — MN Xuân Khánh ≤ +13,71 m"
+   ],
+   [
+    "Phát điện",
+    "MW",
+    "~97"
+   ],
+   [
+    "Khởi công / Khánh thành",
+    "",
+    "02/2004 – 11/2010"
+   ]
+  ]
+ },
+ "ngan truoi": {
+  "ten": "Hồ Ngàn Trươi",
+  "src": "Nguồn: Cục Quản lý & Xây dựng CTTL — VN-WIS (thuyloivietnam.gov.vn)",
+  "bang": [
+   [
+    "Địa điểm",
+    "",
+    "Hà Tĩnh"
+   ],
+   [
+    "Năm xây dựng",
+    "",
+    "2009"
+   ],
+   [
+    "Quy mô",
+    "",
+    "Lớn"
+   ],
+   [
+    "Dung tích toàn bộ",
+    "10⁶ m³",
+    "775"
+   ],
+   [
+    "Đập chính",
+    "",
+    "Đập đất nhiều khối · đỉnh +57,80 m · Hmax 61,80 m · dài 363,0 m"
+   ],
+   [
+    "Đập phụ",
+    "",
+    "Đỉnh +57,00 m · Hmax 27,0 m · dài 203,0 m"
+   ],
+   [
+    "Tràn xả lũ",
+    "",
+    "7 cửa (12×3,4) m · ngưỡng +48,60 m"
+   ],
+   [
+    "Q tràn thiết kế (P=0,5%)",
+    "m³/s",
+    "2.464"
+   ],
+   [
+    "Cống lấy nước TN1",
+    "",
+    "Dài 370 m · 2×(2,6×4,0) · Qtưới(P75%) 56,8 m³/s · cửa vào +19,00"
+   ],
+   [
+    "Cống lấy nước TN2",
+    "",
+    "Dài 156 m · D2,50 m · Qtưới(P75%) 8,86 m³/s · cửa vào +19,00"
+   ],
+   [
+    "Nhiệm vụ tưới",
+    "ha",
+    "32.585"
+   ],
+   [
+    "Cấp nước SH & chăn nuôi",
+    "m³/s",
+    "0,175"
+   ],
+   [
+    "Cấp nước môi trường hạ du",
+    "m³/s",
+    "6,0"
+   ],
+   [
+    "Phát điện",
+    "MW",
+    "25,5"
+   ],
+   [
+    "Nuôi trồng thuỷ sản",
+    "ha",
+    "5.991"
+   ]
+  ]
+ },
+ "ta trach": {
+  "ten": "Hồ Tả Trạch",
+  "src": "Nguồn: Cục Quản lý & Xây dựng CTTL — VN-WIS (thuyloivietnam.gov.vn)",
+  "bang": [
+   [
+    "Địa điểm",
+    "",
+    "Sông Hương — Thừa Thiên Huế"
+   ],
+   [
+    "Năm xây dựng",
+    "",
+    "2005"
+   ],
+   [
+    "Quy mô",
+    "",
+    "Lớn"
+   ],
+   [
+    "Dung tích toàn bộ",
+    "10⁶ m³",
+    "646"
+   ],
+   [
+    "Đập chính",
+    "",
+    "Đập đất đá hỗn hợp 3 khối · dài 1.187 m · Hmax 60,0 m · đỉnh +55,0 m (tường +56,0)"
+   ],
+   [
+    "Đập phụ",
+    "",
+    "4 đập đất · đỉnh +56,0 m · Hmax 13,0–39,5 m · dài 57–314 m"
+   ],
+   [
+    "Tràn xả mặt",
+    "",
+    "5 cửa 5×(9×10) m · ngưỡng +37,0 m"
+   ],
+   [
+    "Tràn xả sâu",
+    "",
+    "5 cửa 5×(4×3,2) m · ngưỡng +16,0 m — xả khẩn cấp P=0,1%"
+   ],
+   [
+    "Cống lấy nước",
+    "",
+    "Cống tròn D1000 mm · ngưỡng +21,5 m · tuynel dài 342,76 m ngưỡng +12,0"
+   ],
+   [
+    "Nhiệm vụ tưới",
+    "ha",
+    "34.782"
+   ],
+   [
+    "Cấp nước SH & CN",
+    "m³/s",
+    "2"
+   ],
+   [
+    "Đẩy mặn hạ lưu sông Hương",
+    "m³/s",
+    "25,0"
+   ],
+   [
+    "Phát điện",
+    "MW",
+    "19,5 (3 tổ máy · ~80,4 triệu kWh/năm)"
+   ]
+  ]
+ },
+ "dau tieng": {
+  "ten": "Hồ Dầu Tiếng – Phước Hoà",
+  "src": "Nguồn: Cục Quản lý & Xây dựng CTTL — VN-WIS (thuyloivietnam.gov.vn)",
+  "bang": [
+   [
+    "Địa điểm",
+    "",
+    "Sông Sài Gòn — Tây Ninh"
+   ],
+   [
+    "Năm xây dựng",
+    "",
+    "1981"
+   ],
+   [
+    "Đập chính (Dầu Tiếng)",
+    "",
+    "Đập đất đồng chất · dài 1.100 m · rộng đỉnh 8 m · đỉnh +28 m"
+   ],
+   [
+    "Đập phụ",
+    "",
+    "Đập đất đồng chất · dài 27 km · rộng đỉnh 6 m · đỉnh +27 m"
+   ],
+   [
+    "Tràn xả lũ",
+    "",
+    "6 cửa (6×10) m · ngưỡng +14 m"
+   ],
+   [
+    "Q xả lũ max thiết kế",
+    "m³/s",
+    "2.800"
+   ],
+   [
+    "Cống lấy nước số 1 (kênh Đông)",
+    "",
+    "3 cửa (3×4) m · Q=93 m³/s · không áp"
+   ],
+   [
+    "Cống lấy nước số 2 / số 3",
+    "",
+    "Kênh Tây; kênh Tân Hưng Qtk 12,8 m³/s"
+   ],
+   [
+    "Đầu mối Phước Hoà",
+    "",
+    "Đập đất + đập tràn trên sông Bé · đỉnh +51,5 m · tràn 4 cửa (10×12,5) m · cống 3 cửa (4×4) m Q75 m³/s ngưỡng +38,9"
+   ],
+   [
+    "Kênh chuyển Phước Hoà–Dầu Tiếng",
+    "",
+    "Dài 40 km · Q 75 m³/s"
+   ],
+   [
+    "Cấp nước thô",
+    "m³/s",
+    "42,9 (HCM 14 · Tây Ninh 4,9 · Bình Dương 15 · Bình Phước 5 · Long An 4)"
+   ],
+   [
+    "Nhiệm vụ tưới",
+    "ha",
+    "Trực tiếp 86.049 + tạo nguồn 24.818"
+   ],
+   [
+    "Đẩy mặn hạ du sông Sài Gòn",
+    "m³/s",
+    "≥ 36,1"
+   ],
+   [
+    "Phát điện",
+    "MW",
+    "2 trạm × 1,5"
+   ]
+  ]
+ },
+ "dau tieng - phuoc hoa": {
+  "ten": "Hồ Dầu Tiếng – Phước Hoà",
+  "src": "Nguồn: Cục Quản lý & Xây dựng CTTL — VN-WIS (thuyloivietnam.gov.vn)",
+  "bang": [
+   [
+    "Địa điểm",
+    "",
+    "Sông Sài Gòn — Tây Ninh"
+   ],
+   [
+    "Năm xây dựng",
+    "",
+    "1981"
+   ],
+   [
+    "Đập chính (Dầu Tiếng)",
+    "",
+    "Đập đất đồng chất · dài 1.100 m · rộng đỉnh 8 m · đỉnh +28 m"
+   ],
+   [
+    "Đập phụ",
+    "",
+    "Đập đất đồng chất · dài 27 km · rộng đỉnh 6 m · đỉnh +27 m"
+   ],
+   [
+    "Tràn xả lũ",
+    "",
+    "6 cửa (6×10) m · ngưỡng +14 m"
+   ],
+   [
+    "Q xả lũ max thiết kế",
+    "m³/s",
+    "2.800"
+   ],
+   [
+    "Cống lấy nước số 1 (kênh Đông)",
+    "",
+    "3 cửa (3×4) m · Q=93 m³/s · không áp"
+   ],
+   [
+    "Cống lấy nước số 2 / số 3",
+    "",
+    "Kênh Tây; kênh Tân Hưng Qtk 12,8 m³/s"
+   ],
+   [
+    "Đầu mối Phước Hoà",
+    "",
+    "Đập đất + đập tràn trên sông Bé · đỉnh +51,5 m · tràn 4 cửa (10×12,5) m · cống 3 cửa (4×4) m Q75 m³/s ngưỡng +38,9"
+   ],
+   [
+    "Kênh chuyển Phước Hoà–Dầu Tiếng",
+    "",
+    "Dài 40 km · Q 75 m³/s"
+   ],
+   [
+    "Cấp nước thô",
+    "m³/s",
+    "42,9 (HCM 14 · Tây Ninh 4,9 · Bình Dương 15 · Bình Phước 5 · Long An 4)"
+   ],
+   [
+    "Nhiệm vụ tưới",
+    "ha",
+    "Trực tiếp 86.049 + tạo nguồn 24.818"
+   ],
+   [
+    "Đẩy mặn hạ du sông Sài Gòn",
+    "m³/s",
+    "≥ 36,1"
+   ],
+   [
+    "Phát điện",
+    "MW",
+    "2 trạm × 1,5"
+   ]
+  ]
+ }
+}

@@ -1,0 +1,59 @@
+{
+ "schema": "rims.hethong.lienho/v0.1",
+ "he_thong": "trakhuc",
+ "ten": "Hệ thống liên hồ chứa lưu vực sông Trà Khúc",
+ "quyet_dinh": "QĐ 911/QĐ-TTg (2018)",
+ "cap_nhat": "2026-09-07",
+ "nguon": {
+  "danh_muc_ho": "DB luật SEHO (WP_SEHO_Legal_Master_v2.6) — MD10, Điều 1 QTVH liên hồ",
+  "ten_ban_do + toa_do": "data/congtrinh/*.geojson (khớp tên; bỏ tiền tố TĐ., 'bậc'→'b', alias tên rút gọn)"
+ },
+ "nguyen_tac": "Thành viên theo Điều 1 QTVH luật định. Vẽ marker theo lon/lat đã chốt. tren_ban_do=false = hồ luật định CHƯA có trong geojson nền (chưa xây / đập dâng / thiếu bản ghi).",
+ "ho": [
+  {
+   "ten": "Đakđrinh",
+   "ten_ban_do": "Đakđrinh",
+   "tren_ban_do": true,
+   "loai": "Thủy điện",
+   "anqg": false,
+   "lon": 108.300944,
+   "lat": 14.979084
+  },
+  {
+   "ten": "Nước Trong",
+   "ten_ban_do": "Hồ Nước Trong",
+   "tren_ban_do": true,
+   "loai": "Thủy lợi",
+   "anqg": false,
+   "lon": 108.4112,
+   "lat": 15.0794
+  },
+  {
+   "ten": "Sơn Trà 1",
+   "ten_ban_do": "Sơn Trà 1",
+   "tren_ban_do": true,
+   "loai": "Thủy điện",
+   "anqg": false,
+   "lon": 108.45331,
+   "lat": 14.869666
+  },
+  {
+   "ten": "Đăk Re",
+   "ten_ban_do": "Đăk Re",
+   "tren_ban_do": true,
+   "loai": "Thủy điện",
+   "anqg": false,
+   "lon": 108.484416,
+   "lat": 14.604118
+  },
+  {
+   "ten": "Sơn Tây",
+   "ten_ban_do": "Sơn Tây",
+   "tren_ban_do": true,
+   "loai": "Thủy điện",
+   "anqg": false,
+   "lon": 108.36006,
+   "lat": 15.008372
+  }
+ ]
+}

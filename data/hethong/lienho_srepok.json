@@ -1,0 +1,122 @@
+{
+ "schema": "rims.hethong.lienho/v0.1",
+ "he_thong": "srepok",
+ "ten": "Hệ thống liên hồ chứa lưu vực sông Srêpôk",
+ "quyet_dinh": "QĐ 1612/QĐ-TTg (2019)",
+ "cap_nhat": "2026-09-07",
+ "nguon": {
+  "danh_muc_ho": "DB luật SEHO (WP_SEHO_Legal_Master_v2.6) — MD10, Điều 1 QTVH liên hồ",
+  "ten_ban_do + toa_do": "data/congtrinh/*.geojson (khớp tên; bỏ tiền tố TĐ., 'bậc'→'b', alias tên rút gọn)"
+ },
+ "nguyen_tac": "Thành viên theo Điều 1 QTVH luật định. Vẽ marker theo lon/lat đã chốt. tren_ban_do=false = hồ luật định CHƯA có trong geojson nền (chưa xây / đập dâng / thiếu bản ghi).",
+ "ho": [
+  {
+   "ten": "Krông Nô 2",
+   "ten_ban_do": "Krông Nô 2",
+   "tren_ban_do": true,
+   "loai": "Thủy điện",
+   "anqg": false,
+   "lon": 108.355474,
+   "lat": 12.254352
+  },
+  {
+   "ten": "Krông Nô 3",
+   "ten_ban_do": "Krông Nô 3",
+   "tren_ban_do": true,
+   "loai": "Thủy điện",
+   "anqg": false,
+   "lon": 108.2846,
+   "lat": 12.211625
+  },
+  {
+   "ten": "Buôn Tua Srah",
+   "ten_ban_do": "Buôn Tua Srah",
+   "tren_ban_do": true,
+   "loai": "Thủy điện",
+   "anqg": false,
+   "lon": 108.042532,
+   "lat": 12.282234
+  },
+  {
+   "ten": "Chư Pông Krông",
+   "ten_ban_do": "Chư Pông Krông",
+   "tren_ban_do": true,
+   "loai": "Thủy điện",
+   "anqg": false,
+   "lon": 107.9743,
+   "lat": 12.296799
+  },
+  {
+   "ten": "Krông Búk Hạ",
+   "ten_ban_do": "Hồ Krông Buk hạ",
+   "tren_ban_do": true,
+   "loai": "Thủy lợi",
+   "anqg": false,
+   "lon": 108.3702,
+   "lat": 12.78
+  },
+  {
+   "ten": "Ea Rớt",
+   "ten_ban_do": "Hồ Ea Rớt",
+   "tren_ban_do": true,
+   "loai": "Thủy lợi",
+   "anqg": false,
+   "lon": 108.5517,
+   "lat": 12.5936
+  },
+  {
+   "ten": "Buôn Kuốp",
+   "ten_ban_do": "Buôn Kuốp",
+   "tren_ban_do": true,
+   "loai": "Thủy điện",
+   "anqg": false,
+   "lon": 107.924325,
+   "lat": 12.530735
+  },
+  {
+   "ten": "Hòa Phú",
+   "ten_ban_do": "Hòa Phú",
+   "tren_ban_do": true,
+   "loai": "Thủy điện",
+   "anqg": false,
+   "lon": 107.909141,
+   "lat": 12.649789
+  },
+  {
+   "ten": "Đray H'linh",
+   "ten_ban_do": "Đrây H’linh",
+   "tren_ban_do": true,
+   "loai": "Thủy điện",
+   "anqg": false,
+   "lon": 107.904151,
+   "lat": 12.675762
+  },
+  {
+   "ten": "Srêpôk 3",
+   "ten_ban_do": "Srêpốk 3",
+   "tren_ban_do": true,
+   "loai": "Thủy điện",
+   "anqg": false,
+   "lon": 107.87691,
+   "lat": 12.752334
+  },
+  {
+   "ten": "Srêpôk 4",
+   "ten_ban_do": "Srêpốk 4",
+   "tren_ban_do": true,
+   "loai": "Thủy điện",
+   "anqg": false,
+   "lon": 107.8558,
+   "lat": 12.8082
+  },
+  {
+   "ten": "Srêpôk 4A",
+   "ten_ban_do": "Srêpốk 4A",
+   "tren_ban_do": true,
+   "loai": "Thủy điện",
+   "anqg": false,
+   "lon": 107.812399,
+   "lat": 12.893514
+  }
+ ]
+}

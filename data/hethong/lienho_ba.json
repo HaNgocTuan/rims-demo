@@ -1,0 +1,122 @@
+{
+ "schema": "rims.hethong.lienho/v0.1",
+ "he_thong": "ba",
+ "ten": "Hệ thống liên hồ chứa lưu vực sông Ba",
+ "quyet_dinh": "QĐ 878/QĐ-TTg (2018)",
+ "cap_nhat": "2026-09-07",
+ "nguon": {
+  "danh_muc_ho": "DB luật SEHO (WP_SEHO_Legal_Master_v2.6) — MD10, Điều 1 QTVH liên hồ",
+  "ten_ban_do + toa_do": "data/congtrinh/*.geojson (khớp tên; bỏ tiền tố TĐ., 'bậc'→'b', alias tên rút gọn)"
+ },
+ "nguyen_tac": "Thành viên theo Điều 1 QTVH luật định. Vẽ marker theo lon/lat đã chốt. tren_ban_do=false = hồ luật định CHƯA có trong geojson nền (chưa xây / đập dâng / thiếu bản ghi).",
+ "ho": [
+  {
+   "ten": "Sông Ba Hạ",
+   "ten_ban_do": "Sông Ba Hạ",
+   "tren_ban_do": true,
+   "loai": "Thủy điện",
+   "anqg": false,
+   "lon": 108.903654,
+   "lat": 13.023339
+  },
+  {
+   "ten": "Sông Hinh",
+   "ten_ban_do": "Sông Hinh",
+   "tren_ban_do": true,
+   "loai": "Thủy điện",
+   "anqg": false,
+   "lon": 108.993611,
+   "lat": 12.928056
+  },
+  {
+   "ten": "Krông H'Năng",
+   "ten_ban_do": "Krông H’năng",
+   "tren_ban_do": true,
+   "loai": "Thủy điện",
+   "anqg": false,
+   "lon": 108.710736,
+   "lat": 12.938197
+  },
+  {
+   "ten": "Ayun Hạ",
+   "ten_ban_do": "Hồ Ayun Hạ",
+   "tren_ban_do": true,
+   "loai": "Thủy lợi",
+   "anqg": false,
+   "lon": 108.257527,
+   "lat": 13.58195
+  },
+  {
+   "ten": "An Khê",
+   "ten_ban_do": "An Khê",
+   "tren_ban_do": true,
+   "loai": "Thủy điện",
+   "anqg": false,
+   "lon": 108.690245,
+   "lat": 14.013979
+  },
+  {
+   "ten": "Ka Nak",
+   "ten_ban_do": "Ka Nak",
+   "tren_ban_do": true,
+   "loai": "Thủy điện",
+   "anqg": false,
+   "lon": 108.576933,
+   "lat": 14.174311
+  },
+  {
+   "ten": "Ia M'lá",
+   "ten_ban_do": "Hồ Ia Mlá",
+   "tren_ban_do": true,
+   "loai": "Thủy lợi",
+   "anqg": false,
+   "lon": 108.784439,
+   "lat": 13.28547
+  },
+  {
+   "ten": "ĐăkSrông",
+   "ten_ban_do": "Thủy điện Đaksrông",
+   "tren_ban_do": true,
+   "loai": "Thủy điện",
+   "anqg": false,
+   "lon": 108.523695,
+   "lat": 13.762699
+  },
+  {
+   "ten": "ĐăkSrông 2",
+   "ten_ban_do": "Đăk Srông 2",
+   "tren_ban_do": true,
+   "loai": "Thủy điện",
+   "anqg": false,
+   "lon": 108.561901,
+   "lat": 13.696432
+  },
+  {
+   "ten": "ĐăkSrông 2A",
+   "ten_ban_do": "Đăk Srông 2A",
+   "tren_ban_do": true,
+   "loai": "Thủy điện",
+   "anqg": false,
+   "lon": 108.562419,
+   "lat": 13.678775
+  },
+  {
+   "ten": "ĐăkSrông 3A",
+   "ten_ban_do": "ĐakSrông3A",
+   "tren_ban_do": true,
+   "loai": "Thủy điện",
+   "anqg": false,
+   "lon": 108.532606,
+   "lat": 13.348654
+  },
+  {
+   "ten": "ĐăkSrông 3B",
+   "ten_ban_do": "Đăk Srông 3B",
+   "tren_ban_do": true,
+   "loai": "Thủy điện",
+   "anqg": false,
+   "lon": 108.557973,
+   "lat": 13.336658
+  }
+ ]
+}

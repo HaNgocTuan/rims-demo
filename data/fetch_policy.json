@@ -1,0 +1,62 @@
+{
+  "schema": "rims.fetch_policy/v1",
+  "nhip": {
+    "tram_mua": {
+      "bat": true,
+      "phut": 60,
+      "mo_ta": "Tong mua theo khoang - MOT loi goi station/status cho ca mang (RIMS-05)"
+    },
+    "tram_thuyvan": {
+      "bat": true,
+      "phut": 30,
+      "mo_ta": "Muc nuoc tram thuy van - mang RMA hien chi co 17 tram loai nay tren ca nuoc"
+    },
+    "radar": {
+      "bat": true,
+      "phut": 10,
+      "mo_ta": "Anh radar - tile, khong theo tram"
+    },
+    "mua_phan_tich": {
+      "bat": true,
+      "phut": 15,
+      "mo_ta": "Mua phan tich - tile"
+    },
+    "mua_du_bao": {
+      "bat": true,
+      "phut": 60,
+      "mo_ta": "Mua du bao - theo phien mo hinh"
+    },
+    "gio": {
+      "bat": true,
+      "phut": 60,
+      "mo_ta": "Truong gio - tile"
+    },
+    "ve_tinh": {
+      "bat": true,
+      "phut": 15,
+      "mo_ta": "Anh ve tinh - tile"
+    },
+    "bao": {
+      "bat": true,
+      "phut": 30,
+      "mo_ta": "Vet bao va non sai so"
+    }
+  },
+  "gioi_han": {
+    "goi_moi_phut": 300,
+    "song_song": 5,
+    "tram_toi_da_moi_vong": 400,
+    "ghi_chu": "Van dat O MAY CHU. Hai loi goi CAU TRUC (station/getall, station/status) di LAN UU TIEN, khong bao gio bi chan. Tu 03/9/2026 lop tram mua chi con dung hai loi goi nay, nen tran 300/phut la rat rong - giu van lai de phong lop khac hoac bug lam bung so loi goi."
+  },
+  "ghi_chu_chung": "Do that 03/9/2026: mang RMA co 3.713 tram mua va 17 tram thuy van. PHAT HIEN quan trong: station/status voi than {from,to} tra ve trong truong last_data chinh la TONG LUONG MUA cua khoang do, cho toan mang, trong MOT loi goi - da doi chieu 10/10 tram khop tuyet doi voi phep cong tay tu station/fromto. Nen KHONG con phai quet tung tram o bat ky cua so nao, ke ca che do Lich. Moi cua so (3h/12h/24h/48h/72h/Lich) deu ton dung 1 loi goi.",
+  "do_duoc_ngay_03_9_2026": {
+    "so_tram_mua": 3713,
+    "so_tram_thuy_van": 17,
+    "tram_mua_co_so_do_trong_2h": 3173,
+    "ty_le_tuoi": "89,1%",
+    "tram_loi_hoac_qua_cu": 245,
+    "thoi_gian_mot_loi_goi_tung_tram_ms": 40,
+    "kich_thuoc_station_status": "2,2 MB / ~1 giay cho ca mang",
+    "loi_goi_moi_vong_sau_RIMS05": 1
+  }
+}

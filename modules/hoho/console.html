@@ -1,0 +1,1058 @@
+<!DOCTYPE html>
+<html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>HydroNet — Console vận hành Hố Hô</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="hnt-fonts.css">
+<style>
+:root{--font-sans:"Be Vietnam Pro",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;--font-head:"Nunito",var(--font-sans);--font-mono:"Roboto Mono",ui-monospace,Menlo,monospace;
+  --bg:#15181d;--canvas:#21252b;--surface:#2a323b;--surface2:#222932;--ink:#e7e9ec;--slate:#9aa1a9;--faint:#6e757e;--line:#2e3540;--line2:#414b55;--brand:#0072bb;--azure:#1f93e3;--field:#1f262d;--chip:#243340;--ok:#4caf6a;--warn:#e0a83a;
+  --color-background-primary:#222932;--color-background-secondary:#1f262d;--color-text-primary:#e7e9ec;--color-text-secondary:#9aa1a9;--color-text-tertiary:#6e757e;--color-border-secondary:#414b55;--color-border-tertiary:#363f48;--border-radius-md:8px;--border-radius-lg:12px;
+  --panel:#1f242c;--panel2:#242a33;--txt:#d6dae1;--txt2:#9aa1ad;--txt3:#6b7280;--grid:rgba(255,255,255,.055);--gridS:rgba(255,255,255,.10);
+  --c-qin:#ecdf3a;--c-qspill:#e3564d;--c-qturb:#4a93d8;--c-qout:#d98ab4;--c-mn:#86b5d6;--c-rain:#2f9be0;--c-cum:#7fc7ee;--c-thr:#c89a4a;--wp-green:#87B23F;}
+*{box-sizing:border-box}html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font-sans);overflow-x:hidden}
+svg{display:block;width:100%;height:auto}text{font-family:var(--font-sans)}input[type=range]{accent-color:var(--azure);width:100%}.mono{font-family:var(--font-mono)}
+.stage{padding:16px}
+#console{background:var(--canvas);border:1px solid var(--line2);border-radius:14px;overflow:hidden}
+#console.mode-embed{width:auto;margin:0}#console.mode-detach{max-width:1280px;margin:0 auto}
+.conhd{display:flex;align-items:center;gap:10px;padding:10px 14px;background:#171b21;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.conhd .nm{font:800 13px/1 var(--font-head);color:var(--ink)}.conhd .badge{font-size:9.5px;font-weight:700;color:var(--warn);border:1px solid var(--warn);border-radius:5px;padding:1px 6px}.conhd .sp{flex:1}
+.fresh{display:flex;align-items:center;gap:7px;font-size:11.5px;color:var(--txt2)}.dot{width:9px;height:9px;border-radius:50%;display:inline-block;background:#6e757e}
+.ib{width:28px;height:28px;border:1px solid var(--line2);border-radius:7px;background:var(--surface);color:var(--slate);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px}.ib.hot:hover{color:var(--azure);border-color:var(--azure)}
+.segfig{display:flex;background:var(--field);border:1px solid var(--line2);border-radius:8px;padding:2px}
+.segfig button{appearance:none;border:0;background:transparent;color:var(--slate);font:700 11px/1 var(--font-head);padding:5px 10px;border-radius:6px;cursor:pointer}.segfig button.on{color:#fff;background:var(--azure)}
+#console.mode-detach .segfig{display:none}
+.conbody{padding:14px;display:flex;flex-direction:column;gap:13px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:9px;align-items:stretch}.kgrp{display:contents}.kpis .kpi{min-width:0;display:flex;flex-direction:column;justify-content:center;gap:2px;min-height:56px;padding:8px 12px}.kgrp.fc .kpi{background:linear-gradient(180deg,rgba(200,154,74,.05),rgba(200,154,74,0))}
+.kpi{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:7px 12px;min-width:118px;border-left:3px solid var(--azure)}.kgrp.fc .kpi{border-left-color:var(--c-thr)}.vtabs{display:flex;align-items:center;gap:8px;padding:2px 0 9px}.vtab{background:var(--panel2);border:1px solid var(--line);color:var(--txt2);border-radius:8px;padding:5px 14px;font-size:12.5px;cursor:pointer;font-family:inherit}.vtab.on{background:var(--azure);border-color:var(--azure);color:#fff;font-weight:600}.vspace{flex:1}.tblcount{font-size:11px;color:var(--txt2)}.vexport{background:var(--panel2);border:1px solid var(--line);color:var(--txt);border-radius:8px;padding:5px 13px;font-size:12px;cursor:pointer;font-family:inherit}.vexport:hover{border-color:var(--azure)}.tablewrap{max-height:600px;overflow:auto;border:1px solid var(--line);border-radius:10px;background:var(--panel2)}#opsTable{border-collapse:collapse;width:100%;font-size:11.5px}#opsTable th{position:sticky;top:0;background:var(--panel);color:var(--txt2);font-weight:600;padding:6px 10px;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap;z-index:1}#opsTable th:first-child,#opsTable td:first-child{text-align:left;position:sticky;left:0}#opsTable th:first-child{background:var(--panel);z-index:2}#opsTable td:first-child{background:var(--panel2)}#opsTable td{padding:5px 10px;text-align:right;border-bottom:1px solid rgba(255,255,255,.045);font-family:"Roboto Mono",ui-monospace,monospace;color:var(--txt);white-space:nowrap}#opsTable tbody tr:hover td{background:rgba(133,183,235,.06)}#opsTable td.nul{color:#e3564d}
+.kpi .k{font-size:10px;color:var(--txt2);font-weight:600}
+.kpi .src{font-size:8px;font-weight:700;border-radius:4px;padding:0 4px;margin-left:4px;vertical-align:middle;letter-spacing:.02em}
+.kpi .src.api{color:#7fd29a;border:1px solid #2f6a47}.kpi .src.mock{color:#d8b06a;border:1px solid rgba(200,154,74,.4)}.kpi .src.dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:#4caf6a;margin-left:5px;vertical-align:middle;border:none;padding:0}
+.kpi.mockcard{opacity:.78}.kpi .v{font-family:var(--font-mono);font-size:16px;font-weight:600;color:#fff;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.kpi .v small{font-size:10px;color:var(--txt2);font-weight:400;margin-left:2px}
+.kpi.sel{border-left-color:var(--line2);display:flex;flex-direction:column;gap:3px}.kpi.sel select{background:var(--field);color:var(--txt);border:1px solid var(--line2);border-radius:6px;padding:3px 6px;font-size:12px;font-family:var(--font-mono)}
+.card{background:var(--surface2);border:1px solid var(--line);border-radius:12px;padding:12px 13px}.card .lbl{font-size:12px;font-weight:600;color:var(--slate);margin-bottom:7px}.card .lbl span{color:var(--faint);font-weight:400}
+.figs{display:flex;flex-direction:column;gap:13px}
+#console.mode-embed .fig-el{display:none}#console.mode-embed.show-el .fig-cs{display:none}#console.mode-embed.show-el .fig-el{display:block}
+#console.mode-detach .figs{display:grid;grid-template-columns:1fr 1fr;gap:13px}#console.mode-detach .fig-cs,#console.mode-detach .fig-el{display:block}
+@media(max-width:820px){#console.mode-detach .figs{grid-template-columns:1fr}}
+.ctl{display:flex;align-items:flex-end;gap:12px;padding:0 0 11px;flex-wrap:wrap}.fcwrap{margin-left:auto;display:flex;gap:9px;flex-wrap:wrap}.fcwrap .kpi{padding:5px 11px}.fld{display:flex;flex-direction:column;gap:4px}.fld label{font-size:11px;color:var(--txt2);font-weight:600}
+.fld select{background:var(--panel2);color:var(--txt);border:1px solid var(--line);border-radius:7px;padding:6px 9px;font-size:12px;font-family:inherit;min-width:120px}
+.legend{display:flex;gap:13px;flex-wrap:wrap;justify-content:center;padding:6px 0 0;font-size:13px;color:var(--txt2)}.legend .it{display:flex;align-items:center;gap:6px}.legend .sw{width:18px;height:0;border-top-width:3px;border-top-style:solid;border-radius:2px}.legend .sw.bar{height:10px;border-top:none;border-radius:2px}
+.note{font-size:11px;color:var(--txt3);line-height:1.5;padding-top:10px;border-top:1px solid var(--line);margin-top:8px}.note b{color:var(--txt2)}.tag{display:inline-block;background:rgba(200,154,74,.16);color:#d8b06a;border:1px solid rgba(200,154,74,.35);border-radius:5px;padding:1px 7px;font-size:10px;font-weight:700}
+#tip{position:fixed;pointer-events:none;background:#11141a;border:1px solid #38414d;border-radius:8px;padding:8px 10px;font-size:11.5px;color:var(--txt);box-shadow:0 4px 16px rgba(0,0,0,.5);opacity:0;transition:opacity .08s;z-index:65;min-width:158px}#tip .tt{color:var(--txt2);font-size:10.5px;margin-bottom:5px;font-family:var(--font-mono)}#tip .row{display:flex;justify-content:space-between;gap:14px;margin:2px 0;font-family:var(--font-mono)}#tip .row .nm{color:var(--txt2)}
+</style>
+<script>
+/* ══ HHT-SO (22/08/2026) · MỘT KIỂU VIẾT SỐ CHO CẢ MÀN HÌNH ══════════════════
+   Ảnh màn hình trực 22/08 cho thấy HAI kiểu viết số cách nhau vài centimet trên
+   cùng một console: ô KPI và nhãn trên hình dùng `toFixed` ⇒ dấu CHẤM
+   ("Mực nước hồ 62.60 m", "5.8 giờ trước"), còn nhãn ngưỡng trên đồ thị dùng
+   `toLocaleString('vi-VN')` ⇒ dấu PHẨY ("MN trước lũ 69,0"). Lớp bản đồ đã được
+   nắn trong lô 2; console đập thì chưa — đây là phần còn lại.
+   Vì sao lọt: đường DỮ LIỆU MINH HOẠ dùng `fmt()` (phẩy), đường DỮ LIỆU SỐNG
+   dùng `toFixed` (chấm). Không ai thấy, vì bàn thử chỉ chạy nhánh minh hoạ.
+
+   `useGrouping:false` là CỐ Ý: tiếng Việt ngăn nghìn bằng dấu CHẤM, nên
+   1020 m³/s sẽ thành "1.020" — cạnh "62,60" thì rất dễ đọc nhầm. Bỏ ngăn nghìn.
+
+   ⚠ CHỈ dùng cho số ĐƯA RA MÀN HÌNH. Giá trị máy (`input.value`, tham số tính
+   toán, khoá JSON) phải giữ nguyên dạng máy. */
+function hntSo(x,d){
+  var n=Number(x);
+  if(x==null||x===''||!isFinite(n))return '–';
+  return n.toLocaleString('vi-VN',{minimumFractionDigits:d,maximumFractionDigits:d,useGrouping:false});
+}
+</script>
+<script src="config.js"></script><!-- FL-57: KHÔNG nạp secret.local.js nữa — console đọc dam_history_*.json do máy chủ kéo -->
+<script src="hht-freshness.js" onerror="void 0"></script>
+
+<style id="hht-ctlresp">
+/* ── HHT-CTLRESP · hàng điều khiển co giãn đồng nhịp ─────────────────────────
+   Trước: mỗi .fld một cỡ cứng ⇒ khi co giãn thì gãy hàng lệch nhịp, chừa khoảng
+   trống lởm chởm; ô ngày thấp hơn select 2px nên nhãn 3 cột không thẳng.
+   Nay: flex có grow/shrink + trần bề rộng, nhãn nowrap, ô ngày cùng cỡ select. */
+.ctl{display:flex;flex-wrap:wrap;align-items:flex-end;gap:10px 12px}
+.ctl>.fld{flex:1 1 148px;min-width:0;max-width:230px}
+.ctl>.fld.fld-range{flex:2 1 300px;max-width:360px}
+/* nhãn 3 cột phải CÙNG chiều cao, nếu không .ctl (align-items:flex-end) sẽ đẩy cột cao hơn lên lệch */
+.ctl>.fld>label{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;height:16px;line-height:16px}
+/* khối chọn khoảng: bỏ nhãn chữ (dài, chiếm chỗ) → chỉ còn biểu tượng lịch đứng đầu hàng ô ngày;
+   giữ một ô trống cao đúng bằng nhãn để 3 cột vẫn thẳng mép trên/dưới */
+.ctl>.fld>.rnglbl{display:block;height:16px}
+.ctl .rngrow>.rngico{flex:none;font-size:12px;line-height:1;opacity:.8;padding-right:1px}
+/* panel hẹp (băng phải/cửa sổ nhỏ): bỏ trần bề rộng để ô chiếm trọn hàng, không chừa mép lởm chởm */
+@media(max-width:520px){.ctl>.fld,.ctl>.fld.fld-range{max-width:none}}
+.ctl .fld select,.ctl .fld input{width:100%;min-width:0;box-sizing:border-box}
+.ctl .rngrow{display:flex;align-items:center;gap:6px;min-width:0;flex-wrap:wrap;row-gap:6px}
+/* KHÔNG đặt min-width:0 cho ô ngày: để trình duyệt giữ bề rộng tối thiểu theo nội dung,
+   nếu không giá trị dd/mm/yyyy bị nút lịch cắt mất. Hết chỗ thì ô thứ hai xuống dòng. */
+.ctl .rngrow>input[type=date]{flex:1 1 0;min-width:138px}  /* 138 = bề rộng tối thiểu đo được của ô date (dd/mm/yyyy + nút lịch) */
+.ctl .rngrow>.rngsep{flex:none}
+.ctl .rngrow>input[type=date]{background:var(--panel2);color:var(--txt);border:1px solid var(--line);
+  border-radius:7px;padding:6px 9px;font-size:12px;font-family:inherit;color-scheme:dark}
+.ctl .rngrow>input[type=date]:focus{outline:none;border-color:#3d9be0;box-shadow:0 0 0 2px rgba(61,155,224,.18)}
+.ctl .rngrow>.rngsep{color:var(--txt2);font-size:12px}
+
+/* rất hẹp: 2 ô ngày xếp dọc (đủ chỗ đọc dd/mm/yyyy), mũi tên → thành ↓, biểu tượng lịch lên hàng nhãn */
+@media(max-width:420px){
+  .ctl>.fld>.rnglbl::before{content:"\1F4C5";font-size:12px;line-height:16px}
+  .ctl .rngrow>.rngico{display:none}
+  .ctl .rngrow>input[type=date]{flex:1 1 100%}
+  .ctl .rngrow>.rngsep{flex:1 1 100%;text-align:center;font-size:0;line-height:0}
+  .ctl .rngrow>.rngsep::before{content:"\2193";font-size:12px;line-height:1}
+}
+</style>
+</head>
+<body>
+<div class="stage">
+  <div id="console" class="mode-detach">
+    <div class="conhd">
+      <span class="nm">Đập Hố Hô</span>
+      <span class="sp"></span>
+      <div class="fresh"><span id="freshDot" class="dot"></span><span id="freshTxt"></span></div>
+      <div class="segfig"><button data-fig="cs" class="on">Mặt cắt</button><button data-fig="el">Mặt đứng</button></div>
+      <div class="ib hot" id="btnDetach" title="Tách ra cửa sổ riêng">⧉</div>
+    </div>
+    <div class="conbody">
+      <div class="kpis">
+        <div class="kgrp">
+          <div class="kpi"><div class="k">MN hồ / hạ lưu<span class="src dot" title="Số liệu trực tiếp từ API — màu = độ tươi"></span></div><div class="v"><span id="kMN">—</span><small> / <span id="kMNhl">—</span></small></div></div>
+          <div class="kpi"><div class="k">Lưu lượng vào<span class="src dot" title="Số liệu trực tiếp từ API — màu = độ tươi"></span></div><div class="v" id="kQin">—</div></div>
+          <div class="kpi"><div class="k">Lưu lượng ra<span class="src dot" title="Số liệu trực tiếp từ API — màu = độ tươi"></span></div><div class="v" id="kQra">—</div></div>
+          <div class="kpi"><div class="k">Cường suất lũ<span class="src dot" title="Số liệu trực tiếp từ API — màu = độ tươi"></span></div><div class="v" id="kRate">—</div></div>
+        </div>
+        <div class="kgrp fc">
+          <div class="kpi"><div class="k"><span id="kQmaxLbl">Lưu lượng vào max 72h tới</span><span class="src dot" title="Số liệu trực tiếp từ API — màu = độ tươi"></span></div><div class="v" id="kQmax">—</div></div>
+          <div class="kpi"><div class="k"><span id="kWinLbl">Tổng lượng dự báo</span><span class="src dot" title="Số liệu trực tiếp từ API — màu = độ tươi"></span></div><div class="v" id="kWin">—</div></div>
+        </div>
+      </div>
+      <div class="figs">
+        <div class="card fig-cs"><div class="lbl">Mặt cắt ngang cửa xả tràn (Số 2)</div><svg id="cs" viewBox="40 0 400 340" role="img"></svg></div>
+        <div class="card fig-el"><div class="lbl">Mặt đứng nhìn từ hạ du</div><svg id="el" viewBox="0 0 340 336" role="img"></svg></div>
+      </div>
+      <div class="card">
+        <div class="ctl">
+          <div class="fld"><label>Quá khứ</label><select id="selObs"><option>3h</option><option>6h</option><option>12h</option><option>1 ngày</option><option selected>3 ngày</option><option>7 ngày</option><option>10 ngày</option></select></div>
+          <div class="fld"><label>Dự báo</label><select id="selFc"><option>Không dự báo</option><option>1 ngày</option><option>2 ngày</option><option selected>3 ngày</option><option>5 ngày</option><option>7 ngày</option><option>10 ngày</option></select></div>
+          <div class="fld fld-range"><span class="rnglbl" aria-hidden="true"></span><div class="rngrow" title="Chọn khoảng ngày"><span class="rngico" aria-hidden="true">📅</span><input id="anchorFrom" type="date" title="Từ ngày"><span class="rngsep">→</span><input id="anchorTo" type="date" title="Đến ngày"></div></div>
+        </div>
+        <div class="vtabs"><button class="vtab on" data-v="chart">Đồ thị</button><button class="vtab" data-v="table">Bảng số liệu</button><span class="vspace"></span><span id="tblCount" class="tblcount"></span><button class="vexport" id="btnCSV" style="display:none">⬇ Xuất CSV</button></div>
+        <!-- Kịch bản xả Hố Hô: điều khiển đã DỜI về công cụ "Dự báo hệ thống" trên topbar (toàn cục).
+             Console đập chỉ VẼ ĐÈ overlay xả khi trạng thái toàn cục = "có đập" (hht-release-scenario.js nghe). -->
+        <div class="chartbox" id="chartbox"><svg id="chart" viewBox="0 0 1200 600" preserveAspectRatio="xMidYMid meet" role="img"></svg></div>
+        <div class="tablewrap" id="tableWrap" style="display:none"><table id="opsTable"></table></div>
+        <div class="legend" id="legend"></div>
+        <p class="note" style="text-align:right"><b style="color:var(--txt2)">HNT HydroNet</b></p>
+      </div>
+    </div>
+  </div>
+</div>
+<div id="tip"></div>
+
+<script>
+(function(){
+  var SVGNS='http://www.w3.org/2000/svg';
+  function el(t,a){var e=document.createElementNS(SVGNS,t);for(var k in a)e.setAttribute(k,a[k]);return e;}
+  var CONC='#5b626c',CONC_S='#39424c',WATER='#378ADD',WLITE='#85B7EB',GRAY='#7e8690',WINK='#185FA5';
+  var STEEL='#7d8aa0',STEEL_D='#3b4252',HOLE='#33404f';
+  function Qgate(a,Z){if(a<=0||Z<=57)return 0;var Zd=57+a;if(Z<Zd)return Math.round(2.0*10.5*Math.pow(Z-57,1.5));return Math.round(0.6*10.5*a*Math.sqrt(2*9.81*(Z-57-a/2)));}
+  var NGATE=3;
+  var LEVELS=[['MNLKT',71.49,'#E24B4A'],['MNLTK',70.00,'#7F77DD'],['MNDBT',70.00,'#185FA5'],['MNC',67.50,'#BA7517'],['Ngưỡng tràn',57.00,'#1D9E75']];
+
+  var cs=document.getElementById('cs');
+  var s=5,X0=150,Y0=400;
+  function X(m){return X0+m*s;} function Y(z){return Y0-z*s;}
+  var Tx=X(8),Ty=Y(66),R=55;
+  function lipX(z){var dy=Y(z)-Ty;return Tx-Math.sqrt(Math.max(0,R*R-dy*dy));}
+  var FACE_SEG=[[[2,57],[9,50],[17,42]],[[17,42],[27,37],[34,37]],[[34,37],[37,38.5],[38,40]]];
+  function facePts(){var f=[];FACE_SEG.forEach(function(S,si){var steps=8;for(var k=(si===0?0:1);k<=steps;k++){var t=k/steps;var mm=(1-t)*(1-t)*S[0][0]+2*(1-t)*t*S[1][0]+t*t*S[2][0];var zz=(1-t)*(1-t)*S[0][1]+2*(1-t)*t*S[1][1]+t*t*S[2][1];f.push([mm,zz]);}});return f;}
+
+  function waterLayer(g,a,Z){
+    if(!(a>0&&Z>57))return;
+    var bf=[[-1,57],[2,57]].concat(facePts().slice(1));
+    var n=bf.length,h0=Math.min(3.8,a*0.7+0.3);
+    var bottom=bf.map(function(p){return X(p[0])+','+Y(p[1]);});
+    var topArr=[];for(var i=0;i<n;i++){var fr=i/(n-1);var h=h0*(1-0.5*fr);if(h<0.45)h=0.45;topArr.push([bf[i][0],bf[i][1]+h]);}
+    var topS=topArr.map(function(p){return X(p[0])+','+Y(p[1]);});
+    var lip=lipX(57+a)+','+Y(57+a);
+    var poly=bottom.concat(topS.slice().reverse());poly.push(lip);
+    g.appendChild(el('polygon',{points:poly.join(' '),fill:WATER,'fill-opacity':'0.6'}));
+    g.appendChild(el('polyline',{points:([lip].concat(topS)).join(' '),fill:'none',stroke:WLITE,'stroke-width':'1.6','stroke-opacity':'0.95'}));
+    g.appendChild(el('path',{d:'M'+X(38)+','+Y(40.5)+' Q'+X(44)+','+Y(39)+' '+X(49)+','+Y(31),fill:'none',stroke:WATER,'stroke-width':'3','stroke-opacity':'0.5','stroke-linecap':'round'}));
+  }
+
+  function drawCS(a,Z){
+    cs.innerHTML='';var g=el('g',{});cs.appendChild(g);
+    g.appendChild(el('polygon',{points:X(-18)+','+Y(Z)+' '+X(-3)+','+Y(Z)+' '+X(-3)+','+Y(22)+' '+X(-18)+','+Y(22),fill:WATER,'fill-opacity':'0.28'}));
+    LEVELS.forEach(function(L){var x1=(L[0]==='MNLTK')?X(-9):X(-18);var x2=(L[0]==='MNLTK')?X(-4):X(-11);
+      g.appendChild(el('line',{x1:x1,y1:Y(L[1]),x2:x2,y2:Y(L[1]),stroke:L[2],'stroke-width':'2.4'}));});
+    g.appendChild(el('line',{x1:X(-18),y1:Y(Z),x2:X(-3),y2:Y(Z),stroke:WINK,'stroke-width':'1.5'}));
+    var zt=el('text',{x:X(-17.5),y:Y(Z)-3.5,'font-size':'10.5',fill:'#85B7EB','font-weight':'500','font-family':'"Roboto Mono",ui-monospace,monospace'});zt.textContent=hntSo(Z,2)+' m';g.appendChild(zt);
+    var body='M'+X(-4)+','+Y(22)+' L'+X(-3)+','+Y(57)+' L'+X(2)+','+Y(57)+' Q'+X(9)+','+Y(50)+' '+X(17)+','+Y(42)+' Q'+X(27)+','+Y(37)+' '+X(34)+','+Y(37)+' Q'+X(37)+','+Y(38.5)+' '+X(38)+','+Y(40)+' L'+X(42)+','+Y(26)+' L'+X(43)+','+Y(22)+' Z';
+    g.appendChild(el('path',{d:body,fill:CONC,stroke:CONC_S,'stroke-width':'1.2','stroke-linejoin':'round'}));
+    g.appendChild(el('polygon',{points:X(43)+','+Y(25)+' '+X(50)+','+Y(25)+' '+X(50)+','+Y(22)+' '+X(43)+','+Y(22),fill:WATER,'fill-opacity':'0.28'}));
+    var pier='M'+X(-3)+','+Y(72)+' L'+X(11)+','+Y(72)+' Q'+X(15)+','+Y(54)+' '+X(17)+','+Y(42)+' Q'+X(9)+','+Y(50)+' '+X(2)+','+Y(57)+' L'+X(-3)+','+Y(57)+' Z';
+    g.appendChild(el('path',{d:pier,fill:'#566069','fill-opacity':'0.92',stroke:CONC_S,'stroke-width':'1','stroke-linejoin':'round'}));
+    g.appendChild(el('line',{x1:X(3.5),y1:Y(72),x2:X(11),y2:Y(53),stroke:CONC_S,'stroke-width':'0.8','stroke-opacity':'0.55'}));
+    g.appendChild(el('line',{x1:X(-3),y1:Y(72),x2:X(11),y2:Y(72),stroke:CONC_S,'stroke-width':'1'}));
+    waterLayer(g,a,Z);
+    g.appendChild(el('polygon',{points:X(-3)+','+Y(72)+' '+X(-4.1)+','+Y(73.6)+' '+X(-1.9)+','+Y(73.6),fill:CONC_S}));
+    var pt=el('text',{x:X(-3),y:Y(74.4),'font-size':'9','fill':CONC_S,'text-anchor':'middle','font-weight':'500','font-family':'"Roboto Mono",ui-monospace,monospace'});pt.textContent='72,0';g.appendChild(pt);
+    var ptl=el('text',{x:X(-3),y:Y(76.8),'font-size':'8','fill':GRAY,'text-anchor':'middle'});ptl.textContent='Đỉnh đập';g.appendChild(ptl);
+    var v0=[lipX(57)-Tx,Y(57)-Ty],v1=[lipX(57+a)-Tx,Y(57+a)-Ty];
+    var deg=(Math.atan2(v1[1],v1[0])-Math.atan2(v0[1],v0[0]))*180/Math.PI;
+    var gate=el('g',{transform:'rotate('+deg+' '+Tx+' '+Ty+')'});g.appendChild(gate);
+    var skin=[];for(var z=57;z<=70;z+=1.1){skin.push(lipX(z)+','+Y(z));}skin.push(lipX(70)+','+Y(70));
+    gate.appendChild(el('polyline',{points:skin.join(' '),fill:'none',stroke:'#6b7890','stroke-width':'6.5','stroke-linejoin':'round','stroke-linecap':'round'}));
+    gate.appendChild(el('polyline',{points:skin.join(' '),fill:'none',stroke:'#9aa6bb','stroke-width':'1.4','stroke-linecap':'round'}));
+    [59,67].forEach(function(zz){var sk=[lipX(zz),Y(zz)];
+      gate.appendChild(el('line',{x1:Tx,y1:Ty,x2:sk[0],y2:sk[1],stroke:STEEL,'stroke-width':'5','stroke-linecap':'round'}));
+      for(var t=0.4;t<0.85;t+=0.24){var hx=Tx+(sk[0]-Tx)*t,hy=Ty+(sk[1]-Ty)*t;gate.appendChild(el('circle',{cx:hx,cy:hy,r:'2',fill:HOLE}));}});
+    gate.appendChild(el('circle',{cx:Tx,cy:Ty,r:'4.5',fill:'#444f63',stroke:STEEL_D,'stroke-width':'1'}));
+    gate.appendChild(el('circle',{cx:Tx,cy:Ty,r:'1.6',fill:'#9aa6bb'}));
+    var tb=el('g',{});g.appendChild(tb);var bx=288,by=20,bw=140;
+    tb.appendChild(el('rect',{x:bx,y:by,width:bw,height:144,rx:'5',fill:'#1f262d',stroke:'#363f48','stroke-width':'0.8'}));
+    var th=el('text',{x:bx+9,y:by+16,'font-size':'9.5',fill:'#9aa1a9','font-weight':'500'});th.textContent='Mực nước thiết kế (m)';tb.appendChild(th);
+    LEVELS.forEach(function(L,i){var ry=by+30+i*17,sub=(Z>=L[1]);
+      if(sub)tb.appendChild(el('rect',{x:bx+4,y:ry-12,width:bw-8,height:15,rx:'2',fill:WATER,'fill-opacity':'0.16'}));
+      tb.appendChild(el('rect',{x:bx+9,y:ry-7,width:13,height:5,rx:'1',fill:L[2]}));
+      var nm=el('text',{x:bx+28,y:ry-2.5,'font-size':'9.5',fill:sub?'#85B7EB':'#e7e9ec','font-weight':sub?'500':'400'});nm.textContent=L[0];tb.appendChild(nm);
+      var vv=el('text',{x:bx+bw-9,y:ry-2.5,'font-size':'9.5',fill:sub?WINK:'#9aa1a9','font-weight':sub?'500':'400','text-anchor':'end','font-family':'"Roboto Mono",ui-monospace,monospace'});vv.textContent=hntSo(L[1],2);tb.appendChild(vv);});
+    var _sepY=by+30+4*17+9;
+    tb.appendChild(el('line',{x1:bx+6,y1:_sepY,x2:bx+bw-6,y2:_sepY,stroke:'var(--color-border-tertiary)','stroke-width':'0.9'}));
+    var _hl=el('text',{x:bx+bw-9,y:_sepY-2,'font-size':'7','text-anchor':'end',fill:'var(--color-text-secondary)','font-style':'italic'});_hl.textContent='hạ lưu';tb.appendChild(_hl);
+    [['Hạ lưu max',35.00],['Hạ lưu min',22.90]].forEach(function(L,k){var ry=_sepY+15+k*16;
+      tb.appendChild(el('rect',{x:bx+9,y:ry-7,width:13,height:5,rx:'1',fill:'#7fb5d6'}));
+      var nm=el('text',{x:bx+28,y:ry-2.5,'font-size':'9.5',fill:'var(--color-text-primary)'});nm.textContent=L[0];tb.appendChild(nm);
+      var vv=el('text',{x:bx+bw-9,y:ry-2.5,'font-size':'9.5',fill:'var(--color-text-secondary)','text-anchor':'end','font-family':'var(--font-mono)'});vv.textContent=hntSo(L[1],2);tb.appendChild(vv);});
+  }
+
+  var elv=document.getElementById('el');
+  function YE(z){return 296-(z-20)*5;}
+  var bays=[{x0:125,n:3},{x0:192.5,n:2},{x0:260,n:1}],BW=52.5,sillZ=57,topZ=70,deckZ=72;
+  function drawEL(gate,Z){
+    elv.innerHTML='';var g=el('g',{});elv.appendChild(g);
+    if(Z>57){g.appendChild(el('rect',{x:100,y:YE(Math.min(Z,72)),width:237.5,height:YE(sillZ)-YE(Math.min(Z,72)),fill:WATER,'fill-opacity':'0.22'}));
+      g.appendChild(el('line',{x1:100,y1:YE(Math.min(Z,72)),x2:337.5,y2:YE(Math.min(Z,72)),stroke:WINK,'stroke-width':'1','stroke-opacity':'0.6'}));}
+    g.appendChild(el('rect',{x:24,y:YE(50),width:70,height:YE(22)-YE(50),fill:'#4f565f',stroke:CONC_S,'stroke-width':'1'}));
+    g.appendChild(el('rect',{x:21,y:YE(51.5),width:76,height:YE(50)-YE(51.5),fill:'#566069',stroke:CONC_S,'stroke-width':'0.8'}));
+    for(var w=0;w<3;w++){var wx=33+w*20;g.appendChild(el('path',{d:'M'+wx+','+YE(40)+' L'+wx+','+YE(46)+' A6 6 0 0 1 '+(wx+12)+','+YE(46)+' L'+(wx+12)+','+YE(40)+' Z',fill:'#2e4256',stroke:CONC_S,'stroke-width':'0.8'}));}
+    g.appendChild((function(){var t=el('text',{x:59,y:YE(22)+11,'font-size':'8.5',fill:GRAY,'text-anchor':'middle'});t.textContent='nhà máy';return t;})());
+    bays.forEach(function(b){var a=gate[b.n],open=(a>0&&Z>57),inten=a/13,op=0.4+0.5*inten;
+      g.appendChild(el('rect',{x:b.x0,y:YE(sillZ),width:BW,height:YE(22)-YE(sillZ),fill:'#454c55'}));
+      if(open){g.appendChild(el('rect',{x:b.x0+3,y:YE(sillZ),width:BW-6,height:YE(22)-YE(sillZ),fill:WATER,'fill-opacity':op}));
+        g.appendChild(el('rect',{x:b.x0+3,y:YE(sillZ),width:BW-6,height:7,fill:WLITE,'fill-opacity':Math.min(0.9,op+0.2)}));
+        if(inten>0.35){for(var ff=0;ff<4;ff++){var fx=b.x0+8+Math.random()*(BW-16);g.appendChild(el('ellipse',{cx:fx,cy:YE(22)-2-Math.random()*5,rx:2.4,ry:1.6,fill:'#eef4fb','fill-opacity':0.7}));}}}});
+    function pier(x,wd){g.appendChild(el('rect',{x:x,y:YE(deckZ),width:wd,height:YE(22)-YE(deckZ),fill:'#4f565f',stroke:CONC_S,'stroke-width':'1'}));}
+    pier(100,25);pier(177.5,15);pier(245,15);pier(312.5,25);
+    bays.forEach(function(b,i){var a=gate[b.n],open=(a>0&&Z>57),inten=a/13,op=0.4+0.5*inten,lift=a*5;
+      var wlev=Math.min(Z,sillZ+a);
+      if(open&&wlev>sillZ){g.appendChild(el('rect',{x:b.x0+4,y:YE(wlev),width:BW-8,height:YE(sillZ)-YE(wlev),fill:WATER,'fill-opacity':Math.min(0.85,op+0.15)}));}
+      var gy=YE(sillZ)-(YE(sillZ)-YE(topZ))-lift;
+      var clip='gc'+i,cp=el('clipPath',{id:clip});cp.appendChild(el('rect',{x:b.x0,y:YE(deckZ),width:BW,height:YE(20)-YE(deckZ)}));g.appendChild(cp);
+      var gg=el('g',{'clip-path':'url(#'+clip+')'});g.appendChild(gg);
+      gg.appendChild(el('rect',{x:b.x0+3,y:gy,width:BW-6,height:(YE(sillZ)-YE(topZ)),rx:'2',fill:STEEL,stroke:STEEL_D,'stroke-width':'1'}));
+      for(var r=1;r<5;r++){var ry=gy+r*((YE(sillZ)-YE(topZ))/5);gg.appendChild(el('line',{x1:b.x0+3,y1:ry,x2:b.x0+BW-3,y2:ry,stroke:STEEL_D,'stroke-width':'0.7'}));}
+      var _r=qCua(b.n,Z),_q=_r.q,qt=el('text',{x:b.x0+BW/2,y:YE(22)+13,'font-size':'10',fill:(_q==null?'#e3564d':WINK),'text-anchor':'middle','font-weight':'500'});qt.textContent=(_q==null?'–':(_r.uoc?'≈ ':'')+Math.round(_q))+' m³/s';g.appendChild(qt);
+      var _o=(window.HHT_OPEN&&window.HHT_OPEN[b.n]),_os=hntSo(_o,1)+' m';var rt=el('text',{x:b.x0+BW/2,y:YE(deckZ)-16,'font-size':'9.5',fill:(_o==null?'#e3564d':'var(--color-text-secondary)'),'text-anchor':'middle','font-weight':'500'});rt.textContent='Cửa '+b.n+' ('+_os+')';g.appendChild(rt);if(_o==null)g.appendChild(el('circle',{cx:b.x0+BW/2-30,cy:YE(deckZ)-19,r:2.6,fill:'#e3564d'}));var _man=(window.HHT_MANUAL&&window.HHT_MANUAL[b.n]);if(_o!=null&&_man){var _ts=el('tspan',{fill:'#e0a83a','font-size':'8'});_ts.textContent=' ✎ tay';rt.appendChild(_ts);}});
+    g.appendChild(el('rect',{x:100,y:YE(deckZ)-3,width:237.5,height:6,fill:'#566069',stroke:CONC_S,'stroke-width':'0.8'}));
+    [177.5,245].forEach(function(px){g.appendChild(el('rect',{x:px-4,y:YE(deckZ)-16,width:23,height:13,fill:'#4f565f',stroke:CONC_S,'stroke-width':'0.8'}));});
+    g.appendChild(el('rect',{x:108,y:YE(deckZ)-14,width:17,height:11,fill:'#4f565f',stroke:CONC_S,'stroke-width':'0.8'}));
+    g.appendChild(el('rect',{x:316,y:YE(deckZ)-14,width:17,height:11,fill:'#4f565f',stroke:CONC_S,'stroke-width':'0.8'}));
+    g.appendChild((function(){var t=el('text',{x:24,y:YE(20)+13,'font-size':'8.5',fill:GRAY});t.textContent='Bờ phải';return t;})());
+    g.appendChild((function(){var t=el('text',{x:333,y:YE(20)+13,'font-size':'8.5',fill:GRAY,'text-anchor':'end'});t.textContent='Bờ trái';return t;})());;(function(){var TWx1=100,TWx2=337.5;
+  [['Hạ lưu max',35.00],['Hạ lưu min',22.90]].forEach(function(p){var yy=YE(p[1]);
+    g.appendChild(el('line',{x1:TWx1,y1:yy,x2:TWx2,y2:yy,stroke:'#7d8aa0','stroke-width':'0.8','stroke-dasharray':'4 3','stroke-opacity':'0.85'}));
+    var tl=el('text',{x:TWx1-3,y:yy+3,'font-size':'7.5',fill:'#9aa6bb','text-anchor':'end'});tl.textContent=p[0];g.appendChild(tl);});
+  var tw=(typeof window!=='undefined'&&window.HHT_TAILWATER!=null)?window.HHT_TAILWATER:null;
+  if(tw!=null&&tw>=20&&tw<=57){var yy=YE(tw);
+    g.appendChild(el('line',{x1:TWx1,y1:yy,x2:TWx2,y2:yy,stroke:WATER,'stroke-width':'1.5'}));
+    var tt=el('text',{x:TWx2+3,y:yy+3,'font-size':'8.5',fill:WINK,'font-weight':'500'});tt.textContent='HL '+hntSo(tw,2)+' m';g.appendChild(tt);}
+})()
+    var tot=bays.reduce(function(s2,b){var a=gate[b.n];return s2+(a>0&&Z>57?Qgate(a,Z):0);},0);
+    g.appendChild((function(){var _t=tongXa(Z);var t=el('text',{x:228,y:YE(22)+27,'font-size':'9.5',fill:(_t.thieu?'#e3564d':'#85B7EB'),'text-anchor':'middle','font-weight':'500'});t.textContent=tongXaTxt(Z,false);return t;})());
+  }
+
+  /* ── FL-29 (vá 20/08/2026) · CONSOLE BỊA SỐ VẬN HÀNH KHI KHÔNG CÓ DỮ LIỆU ──
+     CŨ: `render()` đọc thẳng giá trị thanh trượt. Mà thanh trượt mang GIÁ TRỊ MẶC
+     ĐỊNH CỦA BẢN PROTOTYPE ngay trong HTML:
+         #zSld value="68.4"   #g1 value="4.5"   #g2 value="5.0"   #g3 value="0"
+     `render()` chạy ngay lúc nạp trang ⇒ trước khi API trả lời (và VĨNH VIỄN nếu API
+     hỏng, hoặc `lake_level` null) màn hình vận hành in ra:
+         "Z = 68.40 m · cửa 1 4.5 m · cửa 2 5.0 m · cửa 3 đóng · tổng ≈ N m³/s"
+     Không một dấu hiệu nào nói đó là số bịa. Người trực đọc thành TRẠNG THÁI ĐẬP
+     THẬT — ở một hệ cảnh báo lũ. Đây là nợ FL-29, nặng nhất trong nhóm.
+     ⚑ Ngàn Trươi mắc y hệt (7 cửa 2,0–2,5 m, Z=52,0) — vá cùng, R-13.
+
+       NAY (26/08/2026, sau khi gỡ `#hstate`) — chỉ còn HAI trạng thái:
+       · có SỐ ĐO   → vẽ và tính bình thường
+       · CHƯA có số → hiện "–", KHÔNG vẽ, KHÔNG tính tổng Q
+     Trạng thái thứ ba ("người dùng tự kéo thanh trượt → dán nhãn GIẢ ĐỊNH") ĐÃ BỎ
+     cùng với bộ thanh trượt. Nó chưa từng dùng được — khối chứa nó tàng hình từ
+     lâu (`pointer-events:none`) — nên nhánh đó chỉ còn là mìn chờ ai gỡ nhầm dòng
+     CSS. `resZ()` nay không có đường nào trả về một con số do người dùng đặt. */
+  function _n2(v){var x=parseFloat(v);return isFinite(x)?x:null;}
+  function zIsReal(){return window.HHT_RES_Z!=null&&!isNaN(window.HHT_RES_Z);}
+  function resZ(){
+    if(zIsReal())return +window.HHT_RES_Z;                                   // số ĐO thật
+    return null;                                                             // CHƯA BIẾT
+  }
+  function openOf(n){
+    if(window.HHT_OPEN&&window.HHT_OPEN[n]!==undefined)return window.HHT_OPEN[n];
+    return null;
+  }
+  function _lbl(v){return v==null?'–':(v>0?hntSo(v,1)+' m':'đóng');}
+
+  /* ══ HHT-XA (22/08/2026) · MỘT BỘ LUẬT CHO LƯU LƯỢNG XẢ — R-21 ═══════════
+     CŨ: hai chỗ trên CÙNG một màn hình cộng "tổng xả" theo hai luật khác nhau.
+       · hình mặt đứng  → chỉ cộng `HHT_QGATE` (số nguồn khai); thiếu một cửa ⇒ '–'
+       · dòng readout   → chỉ cộng `Qgate(a,Z)` (ước lượng tại chỗ), BỎ QUA số khai
+     Đo trên bàn thử headless, cùng một bộ dữ liệu (Z=68,42 · cửa 1,5/2,0/0 ·
+     nguồn khai 210/295/0): readout in **317 m³/s**, hình in **505 m³/s** —
+     lệch 188 m³/s (59%), cả hai đều mang chữ "tổng". Người trực không có cách
+     nào biết cái nào là cái nào.
+     ⚑ Ngàn Trươi mắc cùng bệnh và nặng hơn: BA bản chép của cùng một luật
+     (ô từng cửa · hình · readout), và readout trưng số ƯỚC LƯỢNG mà không một
+     chữ nào nói là ước lượng — trong khi bảng xả Z-a-Q của NT còn nợ (N-01).
+
+     NAY: một hàm cho một cửa, một hàm cộng tổng, một hàm dựng câu. Ba nơi hiển
+     thị cùng đọc từ đó. Thứ tự ưu tiên nói rõ:
+       1. nguồn KHAI Q cửa đó      → số đo, in thẳng
+       2. không khai, có độ mở + Z → ước lượng, in kèm dấu ≈ và chữ "ước lượng"
+       3. chưa biết độ mở          → KHÔNG tính, KHÔNG đoán (R-11)
+     Đừng canh cho hai chỗ giống nhau — gộp lại là hết chuyện canh. */
+  function qCua(k,Z){
+    var a=openOf(k);
+    if(a==null)  return {q:null,uoc:false,thieu:true};                 // chưa biết độ mở
+    if(!(a>0))   return {q:0,   uoc:false,thieu:false};                // cửa đóng
+    var d=(window.HHT_QGATE&&window.HHT_QGATE[k]!=null)?+window.HHT_QGATE[k]:null;
+    if(d!=null&&isFinite(d)) return {q:d,uoc:false,thieu:false};       // nguồn khai
+    if(Z==null)  return {q:null,uoc:false,thieu:true};
+    return {q:Qgate(a,Z),uoc:true,thieu:false};                        // ước lượng tại chỗ
+  }
+  function tongXa(Z){
+    var q=0,uoc=false,thieu=0;
+    for(var k=1;k<=NGATE;k++){var r=qCua(k,Z);
+      if(r.thieu){thieu++;continue;} q+=r.q; if(r.uoc)uoc=true;}
+    return {q:q,uoc:uoc,thieu:thieu};
+  }
+  function tongXaTxt(Z,dai){
+    var t=tongXa(Z);
+    if(t.thieu) return dai?('tổng xả chưa tính được — thiếu độ mở '+t.thieu+' cửa'):'tổng xả –';
+    return 'tổng xả '+(t.uoc?'≈ ':'')+Math.round(t.q)+' m³/s'
+         +(t.uoc?(dai?' · ước lượng, chưa có bảng xả thực đo':' (ước lượng)'):'');
+  }
+  function render(){
+    var Z=resZ();
+    var G={1:openOf(1),2:openOf(2),3:openOf(3)};
+    if(Z==null){
+      /* KHÔNG gọi drawCS/drawEL: chúng vẽ mặt nước theo Z và sẽ ném lỗi ở Z.toFixed.
+         Xoá hình thay vì vẽ một con đập khô — khoảng trống phải TRÔNG như khoảng
+         trống (Đ-FL6), không được trông như "hồ cạn". */
+      cs.innerHTML='';elv.innerHTML='';
+      return;
+    }
+    drawCS(G[2],Z);drawEL(G,Z);
+  }
+  /* ⛏ HHT-UI (26/08/2026) · ĐÃ GỠ HẲN KHỐI `#hstate` — mục 137.
+     Khối đó chứa bộ thanh trượt "xem thử" (mực hồ + độ mở từng cửa) và dòng
+     readout. Nó mang `width:0;height:0;opacity:0;pointer-events:none` và
+     KHÔNG một dòng mã nào trong toàn hệ bật nó lên — không CSS, không JS,
+     không `index.html`, không `hht-modulehost.js`.
+
+     Vì sao gỡ chứ không hiện lại: nhánh "(GIẢ ĐỊNH)" của FL-29 (console lấy
+     giá trị thanh trượt làm trạng thái đập) hiện đang bị chặn bởi DÒNG CSS
+     tàng hình, chứ không phải bởi mã. Ai xoá nhầm dòng CSS đó là FL-29 —
+     nợ nặng nhất nhóm — sống lại nguyên vẹn. Gỡ hẳn thì không còn nhánh nào
+     để sống lại: `resZ()` nay chỉ trả SỐ ĐO hoặc `null`.
+
+     Mất gì: công cụ "nếu mở cửa thế này thì sao". Nó chưa từng dùng được
+     (pointer-events:none). Cần lại thì dựng riêng, ngoài đường dữ liệu thật.
+     Mã nợ không tái sử dụng. */
+  window.HHT_renderSpill=render;
+  render();
+})();
+</script>
+<script>
+(function(){
+  "use strict";
+  var SVGNS="http://www.w3.org/2000/svg";
+  function el(t,a,txt){var e=document.createElementNS(SVGNS,t);for(var k in a)e.setAttribute(k,a[k]);if(txt!=null)e.textContent=txt;return e;}
+  function css(v){return getComputedStyle(document.documentElement).getPropertyValue(v).trim();}
+  var COL={qin:css('--c-qin'),qspill:css('--c-qspill'),qturb:css('--c-qturb'),qout:css('--c-qout'),mn:css('--c-mn'),rain:css('--c-rain'),cum:css('--c-cum'),thr:css('--c-thr'),txt2:css('--txt2'),grid:css('--grid'),gridS:css('--gridS')};
+
+  // ---------- SỐ LIỆU MINH HOẠ: dựng một sự kiện lũ tổng hợp ----------
+  // Trục thời gian giờ, từ -72h (−3 ngày) đến +72h (+3 ngày), now = 0.
+  var NOW=new Date(2026,5,26,11,0,0);            // 26/06/2026 11:00 (mốc "bây giờ")
+  var LAST=new Date(2026,5,26,10,45,0);          // cập nhật gần nhất (−15')
+  var N=145, IH=72;                              // 145 điểm giờ, chỉ số now=72
+  function gauss(i,c,w,p){var d=(i-c)/w;return p*Math.exp(-d*d);}
+  var rain=[],qin=[],qturb=[],qspill=[],qout=[],mn=[];
+  var cum=[],c=0;
+  for(var i=0;i<N;i++){
+    // mưa TB lưu vực (mm/h): vài trận nhỏ + đợt chính dẫn lũ + đợt dự báo
+    var r = gauss(i,30,5,2.0)+gauss(i,46,3,1.6)+gauss(i,60,6,9.5)+gauss(i,66,3,5.0)  // quá khứ
+          + gauss(i,96,7,4.2)+gauss(i,100,4,2.4);                                     // dự báo (+24h)
+    if(r<0.05)r=0; rain.push(r); c+=r; cum.push(c);
+  }
+  for(i=0;i<N;i++){
+    // Q vào (đến hồ): nền + đáp ứng mưa (trễ ~8h), đỉnh quanh now, rút dần; đợt dự báo nhỏ
+    var base=14+3*Math.sin(i/9);
+    var flood = gauss(i,70,7.5,830) + gauss(i,72,3.2,180);     // đỉnh ~ now
+    var fcwave= gauss(i,104,9,260);                            // sóng dự báo
+    var q=base+flood+fcwave; qin.push(q);
+  }
+  for(i=0;i<N;i++){
+    var q=qin[i];
+    // Q qua tua bin: tối đa 36,52 m³/s khi có nước; giảm về 0 khi xả lớn (ưu tiên an toàn)
+    var t = q<5?Math.max(0,q*0.6):Math.min(36.52, 34);
+    if(q>650) t=0;                          // dừng phát khi xả lớn
+    qturb.push(t);
+    // Q ra tổng: định tuyến hồ — chỉ giảm đỉnh nhẹ (Vhi=6 tr.m³, KHÔNG phòng lũ)
+    var atten = q>200 ? q*0.93 : q*0.85;    // hồ nhỏ: thoát gần hết
+    qout.push(atten);
+    // Q xả qua tràn = tổng ra − tua bin (khi >0)
+    qspill.push(Math.max(0, atten - t));
+  }
+  // MN hồ: pre-release hạ đón lũ → dâng khi lũ → rút; giữ trong dải vận hành
+  var z=68.6;
+  for(i=0;i<N;i++){
+    var dStore=(qin[i]-qout[i]); // m³/s ròng
+    z += dStore*3600/ (2.0e6) / 1.0 * 0.0;   // (đặt 0: dùng hình tổng hợp bên dưới cho mượt)
+    mn.push(0);
+  }
+  // hình MN hồ tổng hợp (mượt, minh hoạ): hạ nhẹ trước lũ rồi dâng tới ~70,3 rồi rút
+  for(i=0;i<N;i++){
+    var pre = -0.5*Math.exp(-Math.pow((i-52)/10,2));      // hạ đón lũ
+    var rise= 1.85*Math.exp(-Math.pow((i-74)/9,2));        // dâng đỉnh
+    var rec = 0.6*Math.exp(-Math.pow((i-110)/16,2));       // sóng dự báo
+    mn[i]=68.55+pre+rise+rec;
+  }
+
+  // ---------- chỉ số rút từ đường Q vào ----------
+  var Qmax=0, idxMax=0, rateMax=0;
+  for(i=0;i<N;i++){ if(qin[i]>Qmax){Qmax=qin[i];idxMax=i;} if(i>0){var dr=qin[i]-qin[i-1]; if(dr>rateMax)rateMax=dr;} }
+  var W=0; for(i=0;i<N;i++) W+=qin[i]*3600; W=W/1e6;   // ×10⁶ m³ trên cửa sổ 7 ngày
+  function fmt(n,d){return n.toLocaleString('vi-VN',{minimumFractionDigits:d,maximumFractionDigits:d});}
+  var rateNow=qin[IH]-qin[IH-1];
+  function setHTML(id,h){var e=document.getElementById(id);if(e)e.innerHTML=h;}
+  setHTML('kMN',fmt(mn[IH],2)+' <small>m</small>');setHTML('kQin',fmt(qin[IH],0)+' <small>m³/s</small>');
+  setHTML('kQra',fmt(qout[IH],0)+' <small>m³/s</small>');setHTML('kRate',(rateNow>=0?'+':'')+fmt(rateNow,0)+' <small>m³/s·h</small>');
+  function fcDays(){var s=document.getElementById('selFc');var m=s?(s.value.match(/\d+/)):null;return m?parseInt(m[0],10):3;}
+  function computeKPI(){var d=fcDays(),Nh=d*24,end=Math.min(IH+Nh,N-1),qm=0,w=0;for(var j=IH;j<=end;j++){if(qin[j]>qm)qm=qin[j];w+=qin[j]*3600;}
+    setHTML('kQmax',fmt(qm,0)+' <small>m³/s</small>');setHTML('kWin',fmt(w/1e6,1)+' <small>×10⁶ m³</small>');
+    var a1=document.getElementById('kQmaxLbl');if(a1)a1.textContent='Lưu lượng vào max '+(d*24)+'h tới';
+    var a2=document.getElementById('kWinLbl');if(a2)a2.textContent='Tổng lượng dự báo '+(fcDays()*24)+'h tới';}
+  computeKPI();var sf=document.getElementById('selFc');if(sf)sf.addEventListener('change',computeKPI);
+
+  var qinRaw=qin.map(function(v,i){return Math.max(0,v+Math.sin(i*1.9)*v*0.05+((i%3)-1)*v*0.025);});
+  var times=[]; for(var _t=0;_t<N;_t++) times.push(new Date(NOW.getTime()+(_t-IH)*3600*1000));
+  var viewA=0, viewB=N-1;
+  var vis={qinraw:0,qin:1,qinfc:1,qspill:0,qturb:0,qout:1,mn:1};
+  var rainT=[],rainV=[],rainCum=[];
+  function draw(){
+  if(viewA<0)viewA=0; if(viewB>N-1)viewB=N-1; if(viewB-viewA<2)viewB=Math.min(N-1,viewA+2);
+  Qmax=0; idxMax=0; for(var _i=0;_i<N;_i++){ if(qin[_i]>Qmax){Qmax=qin[_i];idxMax=_i;} }
+  // ---------- bố cục SVG ----------
+  var W0=1200,H0=600, PL=56,PR=66,PT=14;
+  var HY_H=120, GAP=30, HD_H=330;                 // hyeto / khoảng / hydro
+  var hyTop=PT, hyBot=PT+HY_H;
+  var hdTop=hyBot+GAP, hdBot=hdTop+HD_H;
+  var axB=hdBot+34;                                // nhãn trục thời gian
+  var brTop=axB+8, brH=30;
+  var domA=+times[viewA],domB=+times[viewB];if(viewB>=N-1&&window.__hhtFcEnd&&window.__hhtFcEnd>domB)domB=window.__hhtFcEnd;if(viewB>=N-1&&window.__hhtRangeTo==null){var _wall=Date.now();if(_wall>domB)domB=_wall;}function Xt(ms){return PL+(W0-PL-PR)*((ms-domA)/((domB-domA)||1));}function X(i){return Xt(+times[i]);}
+  // mưa (mm) — trục lộn ngược: 0 ở trên
+  var RAIN_MAX=Math.max(14,Math.ceil((rainV.length?Math.max.apply(null,rainV):0)/2)*2), CUM_MAX=Math.max(60,Math.ceil((rainCum.length?rainCum[rainCum.length-1]:0)/20)*20);
+  function Yr(mm){return hyTop + (mm/RAIN_MAX)*HY_H;}
+  function Yc(v){return hyTop + (v/CUM_MAX)*HY_H;}
+  // hydro
+  var Q_MAX=Math.ceil(Qmax/100)*100; if(Q_MAX<Math.ceil((Math.max.apply(null,qout))/100)*100)Q_MAX=Math.ceil((Math.max.apply(null,qout))/100)*100;
+  var _mnv=mn.filter(function(x){return x>0;});var _mnmin=_mnv.length?Math.min.apply(null,_mnv):66,_mnmax=_mnv.length?Math.max.apply(null,_mnv):72;var Z_MIN=58, Z_MAX=Math.max(72,Math.ceil(_mnmax)+1);
+  function Yq(q){return hdBot - (q/Q_MAX)*HD_H;}
+  function Yz(zz){return hdBot - ((zz-Z_MIN)/(Z_MAX-Z_MIN))*HD_H;}
+
+  var svg=document.getElementById('chart'); svg.innerHTML='';
+  var root=el('g',{}); svg.appendChild(root);
+
+  function line(x1,y1,x2,y2,stroke,w,dash,op){var a={x1:x1,y1:y1,x2:x2,y2:y2,stroke:stroke,'stroke-width':w};if(dash)a['stroke-dasharray']=dash;if(op!=null)a['stroke-opacity']=op;root.appendChild(el('line',a));}
+  function txt(x,y,s,col,size,anch,wt){var a={x:x,y:y,fill:col||COL.txt2,'font-size':Math.round((size||11)*1.25),'text-anchor':anch||'start'};if(wt)a['font-weight']=wt;root.appendChild(el('text',a,s));}
+  // chuỗi: vẽ tách quan trắc (liền) / dự báo (đứt) tại IH
+  function seriesY(arr,Yf){return arr.map(function(v,i){return X(i)+','+Yf(v);});}
+  function poly(pts,a,b,stroke,w,dash){var s=pts.slice(a,b+1).join(' ');var at={points:s,fill:'none',stroke:stroke,'stroke-width':w,'stroke-linejoin':'round','stroke-linecap':'round'};if(dash)at['stroke-dasharray']=dash;root.appendChild(el('polyline',at));}
+  /* FL-13 (19/08/2026) — VẼ THEO TỪNG ĐOẠN LIỀN, NGẮT TẠI ĐIỂM THIẾU SỐ ĐO.
+     Bản cũ: seriesY ánh xạ MỌI phần tử ⇒ null → Yf(null) → NaN → chuỗi điểm "x,NaN"
+     ⇒ SVG polyline không hợp lệ ⇒ trình duyệt bỏ NGUYÊN đường. Chính vì vậy tầng parse
+     buộc phải ép `||0` — và hệ quả là MỰC HỒ THIẾU bị vẽ thành 0 m trên trục 25–72 m,
+     một con số vô lý về vật lý. (drawStep dùng cho Q đã xử lý null đúng từ đầu.)
+     Nay: null thành KHOẢNG TRỐNG thật; một cầu nối chấm mờ bắc qua để mắt vẫn theo được
+     đường, đồng thời thấy rõ đoạn đó KHÔNG có số đo — không bị đọc nhầm là đồ thị hỏng. */
+  function drawSeries(arr,Yf,stroke,w,dash){
+    var a=Math.max(viewA,0),b=Math.min(viewB,N-1),mid=Math.max(a,Math.min(IH,b));
+    if(mid<a)return;
+    var runs=[],cur=null;
+    for(var i=a;i<=mid;i++){
+      var v=arr[i];
+      if(v==null||isNaN(v)){ if(cur)runs.push(cur); cur=null; continue; }
+      if(!cur)cur={pts:[]};
+      cur.pts.push(X(i)+','+Yf(v));
+    }
+    if(cur)runs.push(cur);
+    for(var k=1;k<runs.length;k++){                      /* cầu nối: KHÔNG có số đo ở giữa */
+      var A=runs[k-1].pts,B=runs[k].pts;
+      root.appendChild(el('polyline',{points:A[A.length-1]+' '+B[0],fill:'none',stroke:stroke,
+        'stroke-width':Math.max(1,w-0.6),'stroke-dasharray':'2 4','stroke-opacity':'0.42'}));
+    }
+    runs.forEach(function(r){
+      if(r.pts.length>1)root.appendChild(el('polyline',{points:r.pts.join(' '),fill:'none',stroke:stroke,
+        'stroke-width':w,'stroke-linejoin':'round','stroke-linecap':'round','stroke-dasharray':(dash||'none')}));
+      else if(r.pts.length===1){var c=r.pts[0].split(',');
+        root.appendChild(el('circle',{cx:c[0],cy:c[1],r:Math.max(1,w*0.9),fill:stroke}));}
+    });
+  } function drawStep(arr,Yf,stroke,w){var a=Math.max(viewA,0),b=Math.min(viewB,N-1),mid=Math.max(a,Math.min(IH,b));if(mid<=a)return;var pts=[];for(var i=a;i<=mid;i++){pts.push(X(i)+','+Yf(arr[i]));if(i<mid)pts.push(X(i+1)+','+Yf(arr[i]));}root.appendChild(el('polyline',{points:pts.join(' '),fill:'none',stroke:stroke,'stroke-width':w,'stroke-linejoin':'miter'}));}
+
+  // ===== nền hyeto =====
+  root.appendChild(el('rect',{x:PL,y:hyTop,width:W0-PL-PR,height:HY_H,fill:'rgba(255,255,255,.02)',stroke:'rgba(255,255,255,.10)','stroke-width':1,rx:4}));
+  [0,4,8,12].forEach(function(mm){var y=Yr(mm);line(PL,y,W0-PR,y,COL.grid,1);txt(PL-7,y+3,String(mm),COL.txt2,10,'end');});
+  root.appendChild(el('text',{x:16,y:hyTop+HY_H/2,fill:COL.txt2,'font-size':13,'text-anchor':'middle','font-weight':600,transform:'rotate(-90 16 '+(hyTop+HY_H/2)+')'},'Lượng mưa (mm)'));
+  // trục mưa tích luỹ (phải)
+  [0,CUM_MAX/3,2*CUM_MAX/3,CUM_MAX].forEach(function(v){var y=Yc(v);txt(W0-PR+7,y+3,String(Math.round(v)),COL.cum,10,'start');});
+  root.appendChild(el('text',{x:W0-15,y:hyTop+HY_H/2,fill:COL.cum,'font-size':13,'text-anchor':'middle','font-weight':600,transform:'rotate(-90 '+(W0-15)+' '+(hyTop+HY_H/2)+')'},'Lượng mưa tích lũy (mm)'));
+
+  // thanh mưa lộn ngược
+  var barW=6;(function(){var md=1e9,prev=null;for(var _k=0;_k<rainT.length;_k++){var _t=+rainT[_k];if(_t<domA||_t>domB)continue;var _x=Xt(_t);if(prev!=null){var _d=_x-prev;if(_d>0&&_d<md)md=_d;}prev=_x;}if(md<1e9)barW=Math.max(1.5,Math.min(9,md*0.7));})();
+  (function(){var _now=Date.now();for(var _k=0;_k<rainT.length;_k++){var _t=+rainT[_k];if(_t<domA||_t>domB)continue;var _x=Xt(_t);var h=Yr(rainV[_k])-hyTop;if(h<=0.3)continue;var fc=_t>_now;root.appendChild(el('rect',{x:_x-barW/2,y:hyTop,width:barW,height:h,fill:COL.rain,'fill-opacity':fc?0.32:0.85,stroke:fc?COL.rain:'none','stroke-width':fc?0.8:0,'stroke-dasharray':fc?'2 2':''}));}})();
+  // đường mưa tích luỹ
+  (function(){if(!rainT.length)return;var _now=Date.now();var sol=[],das=[];for(var _k=0;_k<rainT.length;_k++){var _t=+rainT[_k];if(_t<domA||_t>domB)continue;var _p=Xt(_t)+','+Yc(rainCum[_k]);if(_t<=_now){sol.push(_p);}else{if(sol.length&&!das.length)das.push(sol[sol.length-1]);das.push(_p);}}if(sol.length>1)root.appendChild(el('polyline',{points:sol.join(' '),fill:'none',stroke:COL.cum,'stroke-width':2}));if(das.length>1)root.appendChild(el('polyline',{points:das.join(' '),fill:'none',stroke:COL.cum,'stroke-width':2,'stroke-dasharray':'5 5'}));})();
+
+  // ===== nền hydro =====
+  root.appendChild(el('rect',{x:PL,y:hdTop,width:W0-PL-PR,height:HD_H,fill:'rgba(255,255,255,.02)',stroke:'rgba(255,255,255,.10)','stroke-width':1,rx:4}));
+  // dải vận hành đón lũ MN 69,0–70,0
+  var WL={MNC:67.5,truocLu:69.5,donLu:69.0,MNDBT:70.0,MNLTK:70.0,MNLKT:71.49};
+  root.appendChild(el('rect',{x:PL,y:Yz(WL.MNDBT),width:W0-PL-PR,height:Yz(WL.MNC)-Yz(WL.MNDBT),fill:COL.mn,'fill-opacity':.06}));
+  root.appendChild(el('rect',{x:PL,y:Yz(WL.MNLKT),width:W0-PL-PR,height:Yz(WL.MNDBT)-Yz(WL.MNLKT),fill:COL.thr,'fill-opacity':.13}));
+  function wlLine(z,lab,col,dash){if(z<Z_MIN||z>Z_MAX)return;var y=Yz(z);line(PL,y,W0-PR,y,col,1,dash,.85);txt(PL+6,y-3,lab,col,9,'start',600);}
+  wlLine(WL.MNC,'MNC '+fmt(WL.MNC,1),COL.mn,'4 4');
+  wlLine(WL.MNDBT,'MNDBT '+fmt(WL.MNDBT,1),COL.mn,null);
+  if(WL.MNLTK!==WL.MNDBT)wlLine(WL.MNLTK,'MNLTK '+fmt(WL.MNLTK,1),'#d8b06a','5 3');
+  wlLine(WL.MNLKT,'MNLKT '+fmt(WL.MNLKT,2),COL.qspill,'5 3');
+  // lưới Q (trái)
+  var qStep=Q_MAX<=300?50:(Q_MAX<=800?100:(Q_MAX<=2000?200:500));
+  for(var q=0;q<=Q_MAX;q+=qStep){var y=Yq(q);line(PL,y,W0-PR,y,COL.grid,1);txt(PL-7,y+3,String(q),COL.txt2,10,'end');}
+  root.appendChild(el('text',{x:16,y:hdTop+HD_H/2,fill:COL.txt2,'font-size':13,'text-anchor':'middle','font-weight':600,transform:'rotate(-90 16 '+(hdTop+HD_H/2)+')'},'Lưu lượng (m³/s)'));
+  // trục MN hồ (phải, m)
+  (function(){for(var zz=Math.ceil(Z_MIN);zz<=Math.floor(Z_MAX);zz++){var y=Yz(zz);txt(W0-PR+7,y+3,fmt(zz,0),COL.mn,10,'start');}})();
+  root.appendChild(el('text',{x:W0-15,y:hdTop+HD_H/2,fill:COL.mn,'font-size':13,'text-anchor':'middle','font-weight':600,transform:'rotate(-90 '+(W0-15)+' '+(hdTop+HD_H/2)+')'},'Mực nước (m)'));
+  // mốc vận hành 400/700 (Q đến)
+  [[400,'400 m³/s — giảm lũ'],[700,'700 m³/s — cắt lũ']].forEach(function(t){if(t[0]<=Q_MAX){var y=Yq(t[0]);line(PL,y,W0-PR,y,COL.thr,1.3,'7 5',.8);txt(PL+8,y-4,t[1],COL.thr,10,'start',600);}});
+
+  // các chuỗi hydro (vẽ MN dưới cùng để Q nổi trên)
+  if(vis.mn)drawSeries(mn, Yz, COL.mn, 1.8);
+  if(vis.qout)drawStep(qout, Yq, COL.qout, 1.6);
+  if(vis.qturb)drawStep(qturb, Yq, COL.qturb, 1.8);
+  if(vis.qspill)drawStep(qspill, Yq, COL.qspill, 2.0);
+  if(vis.qinraw)drawSeries(qinRaw, Yq, COL.qin, 1.3, '1 3');if(vis.qin){var pq=seriesY(qin,Yq),qa=Math.max(viewA,0),qb=Math.min(viewB,N-1),qm=Math.max(qa,Math.min(IH,qb));poly(pq,qa,qm,COL.qin,2.4,null);if(vis.qinfc&&qb>IH){var fp=[];for(var fi=Math.max(IH,qa);fi<=qb;fi++){if(qin[fi]!=null&&!isNaN(qin[fi])){fp.push(X(fi)+','+Yq(qin[fi]));}else{if(fp.length>1)root.appendChild(el('polyline',{points:fp.join(' '),fill:'none',stroke:COL.qin,'stroke-width':2.4,'stroke-dasharray':'5 5'}));fp=[];}}if(fp.length>1)root.appendChild(el('polyline',{points:fp.join(' '),fill:'none',stroke:COL.qin,'stroke-width':2.4,'stroke-dasharray':'5 5'}));}}
+  // dấu đỉnh Qmax
+  if(idxMax>=viewA&&idxMax<=viewB)root.appendChild(el('circle',{cx:X(idxMax),cy:Yq(Qmax),r:3.4,fill:COL.qin,stroke:'#181b21','stroke-width':1.4}));
+
+  // ===== vạch BÂY GIỜ =====
+  var _nowMs=Date.now();if(_nowMs>=domA&&_nowMs<=domB){var _nx=Xt(_nowMs);var _nd=new Date(_nowMs);var _hl='HIỆN TẠI '+('0'+_nd.getHours()).slice(-2)+':'+('0'+_nd.getMinutes()).slice(-2);line(_nx,hyTop-2,_nx,hdBot,'#cdd3dc',1.4,'3 4',.85);root.appendChild(el('rect',{x:_nx-46,y:hyTop-13,width:92,height:13,rx:3,fill:'#cdd3dc'}));txt(_nx,hyTop-3.5,_hl,'#15181d',9,'middle',800);}
+
+  // ===== trục thời gian =====
+  (function(){var span=domB-domA;var stepH=span<=1728e5?6:span<=432e6?12:24;var stepMs=stepH*36e5;var t=Math.ceil(domA/stepMs)*stepMs;for(;t<=domB;t+=stepMs){var x=Xt(t);if(x<PL-1||x>W0-PR+1)continue;var d=new Date(t);line(x,hdBot,x,hdBot+5,COL.txt2,1);var hh=('0'+d.getHours()).slice(-2)+':00';var dd=('0'+d.getDate()).slice(-2)+'/'+('0'+(d.getMonth()+1)).slice(-2);txt(x,hdBot+17,hh,COL.txt2,9.5,'middle');txt(x,hdBot+29,dd,'#5b626d',9,'middle');}})();if(false){var x=0,hh='',dd='';
+    txt(x,hdBot+17,hh,COL.txt2,9.5,'middle');
+    txt(x,hdBot+29,dd,'#5b626d',9,'middle');
+  }
+
+  // ===== overlay KỊCH BẢN XẢ (HHT-RELEASE) + hook vẽ lại =====
+  window.__hhtRedraw=draw;
+  if(window.HHT_releaseOverlay){try{window.HHT_releaseOverlay({root:root,el:el,line:line,txt:txt,Xt:Xt,Yq:Yq,Yz:Yz,domA:domA,domB:domB,PL:PL,PR:PR,W0:W0,hdTop:hdTop,hdBot:hdBot,COL:COL,fmt:fmt});}catch(_e){console.error('HHT_releaseOverlay',_e);}}
+
+  // ===== thanh thu phóng (mini overview) =====
+  root.appendChild(el('rect',{x:PL,y:brTop,width:W0-PL-PR,height:brH,rx:5,fill:'#15181d',stroke:COL.grid}));
+  function miniX(i){var t0=+times[0],sp=(+times[N-1]-t0)||1;return PL+(W0-PL-PR)*((+times[i]-t0)/sp);}
+  var miniMax=Math.max.apply(null,qin)||1;
+  var mp=qin.map(function(v,i){return miniX(i)+','+(brTop+brH-(v/miniMax)*(brH-4)-2);});
+  root.appendChild(el('polyline',{points:mp.join(' '),fill:'none',stroke:COL.qin,'stroke-width':1.2,'stroke-opacity':.8}));
+  var wx0=miniX(viewA),wx1=miniX(viewB);
+  root.appendChild(el('rect',{x:wx0,y:brTop,width:Math.max(2,wx1-wx0),height:brH,rx:4,fill:'rgba(135,178,63,.10)',stroke:'rgba(135,178,63,.55)','data-br':'win',style:'cursor:grab'}));
+  root.appendChild(el('rect',{x:wx0-3,y:brTop+2,width:7,height:brH-4,rx:2,fill:'#87B23F','data-br':'L',style:'cursor:ew-resize'}));
+  root.appendChild(el('rect',{x:wx1-4,y:brTop+2,width:7,height:brH-4,rx:2,fill:'#87B23F','data-br':'R',style:'cursor:ew-resize'}));
+  window.__hhtBrush={svg:svg,W0:W0,PL:PL,PR:PR};
+
+  // ===== legend =====
+  var L=[['Qvào','dot',COL.qin,'qinraw'],['Qvào_tbt','line',COL.qin,'qin'],['Q_dự báo','dash',COL.qin,'qinfc'],['Qxả','line',COL.qspill,'qspill'],['Qphát','line',COL.qturb,'qturb'],['Qra','line',COL.qout,'qout'],['Mực nước hồ','line',COL.mn,'mn']];
+  var lg=document.getElementById('legend'); lg.innerHTML='';
+  L.forEach(function(it){var d=document.createElement('div');d.className='it';var key=it[3];
+    if(key){d.style.cursor='pointer';d.style.userSelect='none';d.style.opacity=vis[key]?1:0.38;d.title='Bấm để bật/tắt đường';d.addEventListener('click',function(){vis[key]=!vis[key];draw();});}
+    var sw=document.createElement('span');sw.className='sw'+(it[1]==='bar'?' bar':'');
+    if(it[1]==='bar'){sw.style.background=it[2];sw.style.opacity=.85;}else{sw.style.borderTopColor=it[2];if(it[1]==='dash')sw.style.borderTopStyle='dashed';else if(it[1]==='dot')sw.style.borderTopStyle='dotted';}
+    d.appendChild(sw);d.appendChild(document.createTextNode(it[0]));lg.appendChild(d);});
+
+  // ===== hover tooltip =====
+  var tip=document.getElementById('tip');
+  var hover=el('g',{}); root.appendChild(hover);
+  var ov=el('rect',{x:PL,y:hyTop,width:W0-PL-PR,height:hdBot-hyTop,fill:'transparent',style:'cursor:crosshair'}); root.appendChild(ov);
+  function rowHTML(nm,v,col){return '<div class="row"><span class="nm">'+nm+'</span><span style="color:'+col+'">'+v+'</span></div>';}
+  ov.addEventListener('mousemove',function(ev){
+    var r=svg.getBoundingClientRect(); var sx=(ev.clientX-r.left)/r.width*W0;
+    var _tt=domA+((sx-PL)/(W0-PL-PR))*((domB-domA)||1);var i=0,_bd=Infinity;for(var _k=0;_k<N;_k++){var _dd=Math.abs(+times[_k]-_tt);if(_dd<_bd){_bd=_dd;i=_k;}}
+    hover.innerHTML='';
+    hover.appendChild(el('line',{x1:X(i),y1:hyTop,x2:X(i),y2:hdBot,stroke:'#fff','stroke-opacity':.25,'stroke-width':1}));
+    [[qin,Yq,COL.qin],[qspill,Yq,COL.qspill],[qturb,Yq,COL.qturb],[mn,Yz,COL.mn]].forEach(function(s){hover.appendChild(el('circle',{cx:X(i),cy:s[1](s[0][i]),r:3,fill:s[2],stroke:'#181b21','stroke-width':1.2}));});
+    var d=(times[i]!=null)?new Date(+times[i]):new Date(NOW.getTime());
+    var ts=('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2)+' '+('0'+d.getDate()).slice(-2)+'/'+('0'+(d.getMonth()+1)).slice(-2)+(i>IH?' · dự báo':'');
+    tip.innerHTML='<div class="tt">'+ts+'</div>'
+      +rowHTML('Q vào',fmt(qin[i],1)+' m³/s',COL.qin)
+      +rowHTML('Q xả tràn',fmt(qspill[i],1)+' m³/s',COL.qspill)
+      +rowHTML('Q qua tua bin',fmt(qturb[i],1)+' m³/s',COL.qturb)
+      +rowHTML('Q ra tổng',fmt(qout[i],1)+' m³/s',COL.qout)
+      +rowHTML('MN hồ',fmt(mn[i],2)+' m',COL.mn)
+      +rowHTML('Mưa tích luỹ',fmt((function(){var _tt=+times[i],_v=0;for(var _k=0;_k<rainT.length;_k++){if(+rainT[_k]<=_tt)_v=rainCum[_k];else break;}return _v;})(),1)+' mm',COL.cum);
+    tip.style.opacity=1; tip.style.left=(ev.clientX+16)+'px'; tip.style.top=(ev.clientY+12)+'px';
+  });
+  ov.addEventListener('mouseleave',function(){tip.style.opacity=0;hover.innerHTML='';});
+  }
+  draw();
+  (function(){var B=null;
+   function idxFromX(cx){var b=window.__hhtBrush;if(!b)return 0;var r=b.svg.getBoundingClientRect();var sx=(cx-r.left)/r.width*b.W0;var f=Math.max(0,Math.min(1,(sx-b.PL)/(b.W0-b.PL-b.PR)));var t0=+times[0],tt=t0+f*((+times[N-1]-t0)||1),best=0,bd=Infinity;for(var i=0;i<N;i++){var d=Math.abs(+times[i]-tt);if(d<bd){bd=d;best=i;}}return best;}
+   document.addEventListener('mousedown',function(e){var t=e.target&&e.target.getAttribute&&e.target.getAttribute('data-br');if(!t)return;B={m:t,x0:idxFromX(e.clientX),a:viewA,b:viewB};e.preventDefault();});
+   document.addEventListener('mousemove',function(e){if(!B)return;var i=idxFromX(e.clientX);if(B.m==='L'){viewA=Math.min(i,viewB-2);}else if(B.m==='R'){viewB=Math.max(i,viewA+2);}else{var di=i-B.x0,w=B.b-B.a;viewA=Math.max(0,Math.min(N-1-w,B.a+di));viewB=viewA+w;}draw();});
+   document.addEventListener('mouseup',function(){B=null;});
+  })();
+
+  /* ⛏ HHT-UI lô 2 (22/08/2026) · ĐÃ XOÁ `tickClock()` · `START` · `fmtDT()` · `two()`.
+     `tickClock` mang thang CỨNG 15′/120′ ("tươi/trễ/mất") và KHÔNG nơi nào gọi;
+     ba thứ còn lại chỉ phục vụ nó. Chính thang cứng đó là nguyên nhân (a) của
+     FL-64 bên console trạm: một đồng hồ nền ghi đè phép đo nhịp tự thích nghi.
+     Ở đây nó chưa nổ chỉ vì chưa ai nối dây vào — nối vào là tái tạo FL-64.
+     Độ tươi của console đập do khối HHT-TICK bên dưới quản, suy từ NHỊP NGUỒN
+     do puller khai. Mã nợ không tái sử dụng.
+     (`LAST` ở khối SỐ LIỆU MINH HOẠ nay không ai dùng nữa — để nguyên vì cả khối
+      đó sẽ đi khi adapter thật thay chỗ.) */
+
+  // ---------- API ghép sau (D-12/D-13) ----------
+  // renderHydroChart({now, lastUpdate, rain:{obs[],fc[]}, qin:{obs[],fc[]}, qspill, qturb, qout, mn, thresholds})
+  // -> bản v0.1 dùng số minh hoạ; khi tích hợp thay khối "SỐ LIỆU MINH HOẠ" bằng dữ liệu adapter.
+  window.HHT_setChart=function(p){try{if(!p||!p.qin||!p.qin.length)return;qin=p.qin;qinRaw=p.qinRaw||p.qin;qspill=p.qspill||[];qturb=p.qturb||[];qout=p.qout||[];mn=p.mn||[];rain=p.rain||[];times=p.times||times;rainT=p.rainT||[];rainV=p.rainV||[];N=qin.length;IH=(p.ih!=null?p.ih:N-1);NOW=p.now||new Date();cum=[];var cc=0;for(var i=0;i<N;i++){cc+=(rain[i]||0);cum.push(cc);}rainCum=[];var _rc=0;for(var _rk=0;_rk<rainV.length;_rk++){_rc+=(rainV[_rk]||0);rainCum.push(_rc);}/* FL-13: bỏ mn khỏi danh sách ép 0 (Q=0 là trạng thái THẬT, mực hồ=0 thì không) */[qspill,qturb,qout,rain].forEach(function(a){for(var k=0;k<N;k++)if(a[k]==null)a[k]=0;});window.__hhtTable=[];for(var _r=0;_r<=IH;_r++){window.__hhtTable.push({t:times[_r],rain:rain[_r],qinRaw:qinRaw[_r],qin:qin[_r],qspill:qspill[_r],qturb:qturb[_r],qout:qout[_r],mn:mn[_r],zhl:(p.zhl&&p.zhl[_r]!=null?p.zhl[_r]:null),vhc:(p.vhc&&p.vhc[_r]!=null?p.vhc[_r]:null)});}if(window.HHT_refreshTable)window.HHT_refreshTable();viewA=0;viewB=N-1;draw();}catch(e){console.error('HHT_setChart',e);}};window.renderHydroChart=window.HHT_setChart;
+})();
+</script>
+<script>(function(){
+  var CFG=window.HHT_CONFIG||{};
+  /* FL-57: `S = window.HHT_SECRET` đã gỡ — console không còn cần credential. */
+  console.info('[HHT] HHT-CONSOLE v0.3 (build 03/07/2026)');
+  /* HHT-REPLAY: nghiem thu su kien qua khu -> nap file JSON tai cho thay vi goi API (qua dung duong san xuat) */
+  var _RP=new URLSearchParams(location.search);
+  var REPLAY=!!_RP.get('data'), REPLAY_FILE=_RP.get('data'), _RNOW=null;
+  if(REPLAY){
+    var _np=_RP.get('now'); if(_np){var _p=Date.parse(_np.replace(' ','T')); if(!isNaN(_p))_RNOW=_p;}
+    var _realNow=Date.now.bind(Date); Date.now=function(){return _RNOW!=null?_RNOW:_realNow();};
+    console.info('[HHT] CHE DO REPLAY file='+REPLAY_FILE+' now='+(_np||'(cuoi chuoi)'));
+  }
+  function replayFetch(url){
+    if(String(url).indexOf('fromto')>=0){ return fetch(REPLAY_FILE); }
+    /* outlet/getall: khong co lich su do mo tung cua -> tra rong, 3 cua hien "-" trung thuc */
+    return Promise.resolve(new Response(JSON.stringify({data:[]}),{status:200,headers:{'Content-Type':'application/json'}}));
+  }
+  // ----- URL (có thể override trong config.js). Mặc định đoán theo base outlet/getall -----
+  var DATA_URL=CFG.dataUrl||'https://hoho.seho.vn/api/renew/v1/Dashboard/data/fromto';
+  // ⚑ FL-57: LOGIN_URL/REFRESH_URL đã gỡ — máy chủ đăng nhập SEHO, không phải trình duyệt.
+  var OUTLET_BASE=CFG.outletUrl||'https://hoho.seho.vn/api/renew/v1/dashboard/outlet/getall';
+  // K-02: Hố Hô KHÔNG có cảm biến cửa van → vận hành viên nhập tay. fillSensor=false lấy số nhập tay.
+  //       Lưu vực CÓ cảm biến (vd Ngàn Trươi) đặt CFG.fillSensor=true.
+  var FILLSENSOR=(CFG.fillSensor===true);
+  function stripQ(u,k){var i=u.indexOf('?');if(i<0)return u;var qs=u.slice(i+1).split('&').filter(function(p){return p.split('=')[0]!==k;});return u.slice(0,i)+(qs.length?'?'+qs.join('&'):'');}
+  var _ob=stripQ(OUTLET_BASE,'fillSensor');
+  var OUTLET_URL=_ob+(_ob.indexOf('?')<0?'?':'&')+'fillSensor='+(FILLSENSOR?'true':'false');
+  var HYDRO=CFG.hydroCode||'';                 // '' = nhà máy chính (Hố Hô)
+  // ⛑ HHT-TICK 20/08: `POLL`/`CFG.pollMs` đã gỡ — nhịp nay lấy từ `tickMin` chung.
+  /* ===== HHT-TICK (20/08/2026) · CONSOLE ĐẬP BÁM NHỊP CHUNG CỦA HỆ ==============
+     THAY cho hai khối cũ: HHT-LIVENESS (regime normal/watch/flood, mỗi bậc một
+     pollMs + freshMaxMin/lateMaxMin đóng cứng) và HHT-DAMCADENCE (đọc
+     settings.damCadence: mode auto/fixed + 3 bậc chu kỳ + ngưỡng Qin riêng mỗi đập).
+
+     VÌ SAO BỎ — đo được, không phải cảm tính:
+     · CHU KỲ để CHUNG cho hai đập, nhưng NGUỒN của hai đập khác hẳn nhau: đập có
+       tầng quan trắc tự động WP cấp 5′/lần, còn đập nhập tay thì BẤT ĐỊNH. Đo trên
+       chuỗi thật (183 bản ghi 24/08–03/09/2025, account "vanhanh"): khoảng cách
+       median 59′, p25 39′, p75 97′, max 439′ (7,3 h); quanh đỉnh lũ ±12 h vẫn từ
+       8′ tới 71′. Cái để CHUNG mới đúng là cái phải RIÊNG. (FL-58)
+     · NGƯỠNG ĐỘ TƯƠI đóng cứng 15′/45′ ở bậc "lũ" và GIỐNG HỆT nhau ở cả hai
+       console, không có trong settings.json, panel không chỉnh được. Chạy đúng bộ
+       ngưỡng đó lên chuỗi thật: XANH 19% · VÀNG 32% · ĐỎ 50% thời gian — tức trong
+       lũ chấm đập đỏ/vàng 81% thời gian DÙ HỆ HOÀN TOÀN BÌNH THƯỜNG, chỉ vì nguồn
+       vốn ~1 h/lần. Chấm đỏ mất nghĩa vì đỏ liên tục.
+     · Nhịp 1′ khi lũ là vô nghĩa: API `data/fromto` TRẢ THEO KHOẢNG, nên hỏi thưa
+       hơn nguồn KHÔNG mất mốc nào — chỉ trễ tối đa một nhịp. Một lần hỏi vẫn về đủ
+       cả ba mốc 5′ của nguồn tự động.
+
+     NAY:
+     · Nhịp = `tickMin` — nhịp DUY NHẤT của toàn hệ (/api/settings · settings.json).
+     · Ngưỡng độ tươi SUY TỪ NHỊP, không đóng cứng: tươi ≤ 2×nhịp · trễ ≤ 6×nhịp.
+       Nhịp 15′ ⇒ 30′/90′ — hợp với một nguồn cấp quanh mỗi giờ.
+     · Công tắc DỪNG của hệ cũng ăn ở đây: dừng thì console ngừng gọi SEHO.
+
+     ⚑ CÒN NỢ (không giải ở bước này): console vẫn TỰ GỌI SEHO từ trình duyệt —
+       FL-57. Bước sau chuyển sang đọc /api/dam/... do máy chủ kéo, và khi đó độ
+       tươi sẽ suy từ NHỊP NGUỒN TỪNG ĐẬP (5′ tự động / "bất định" nhập tay) thay
+       vì suy từ nhịp hỏi như tạm thời ở đây.
+     ⚠ T2-01 (ĐÃ TRẢ 21/08/2026): KHÔNG có đường "dựng lại" cho tệp này, và sẽ không
+       có. Hai script đúc cũ đã chuyển vào `_archive/khuon_build_console/`. Console
+       là BẢN GỐC, sửa thẳng vào đây.
+       Thay cho khuôn đúc, cặp sinh đôi nay được canh bằng
+       `node scripts/check_dam_twins.mjs check` — nó khoá 19 khối dùng chung (~70%
+       số dòng) và BÁO NGAY khi một bên được vá còn bên kia thì chưa (R-13).
+       ⇒ Sửa xong MỘT console, luôn: diff sang console kia · vá nốt · `check` ·
+         rồi `update` để chốt lock.
+     ⚠ R-13: mọi thay đổi ở đây phải áp cho CẢ console.html (Hố Hô) lẫn
+       console_ntr.html (Ngàn Trươi). Hai bản này là cặp sinh đôi.
+     ============================================================================ */
+  var TICK_DEF=15, TICK_LO=5, TICK_HI=720;
+  var _tickMin=TICK_DEF, _running=true;
+  var LV={heartbeatMs:5000, staleHoldMin:360};
+  var _dataTs=null,_lastQin=null,_pollOk=true,_hbTimer=null,_pollTimer=null,_schedStarted=false;
+  function _pollMs(){ return _tickMin*60000; }
+  function _hhmm(iso){var d=new Date(iso);if(isNaN(d))return null;
+    function p(n){return String(n).padStart(2,'0');}return p(d.getHours())+':'+p(d.getMinutes());}
+  function _ageTxt(min){ if(min<90)return Math.round(min)+' ph';
+    var h=min/60; return (h<10?hntSo(h,1):Math.round(h))+' giờ'; }
+  function _liveness(){
+    if(window.HHT_ANCHOR!=null){fresh('wait','Đang xem: '+(window.HHT_anchorLabel?window.HHT_anchorLabel():'')+' · không trực tiếp');return;}
+    if(!_running){fresh('err','PHẦN MỀM ĐANG DỪNG · số trên màn hình là số cũ');return;}
+
+    /* Tách bạch HAI thứ trước nay bị gộp làm một chấm:
+         (a) MÁY CHỦ có kéo được không  → lỗi của TA
+         (b) NGUỒN có số mới không      → chuyện của nhà cung cấp
+       Gộp lại thì người trực không biết nên gọi ai. */
+    var m=_pullMeta;
+    if(m&&m.lastPullOk===false){
+      fresh('err','Máy chủ KHÔNG kéo được số đập'+(m.error?' ('+m.error+')':'')+' — số dưới đây là số cũ');
+      return;
+    }
+    if(_dataTs==null){
+      fresh('wait', m? 'Máy chủ đã kéo, nguồn chưa có bản ghi nào trong cửa sổ này'
+                     : 'Chờ máy chủ kéo số đập…');
+      return;
+    }
+    var ageMin=(Date.now()-_dataTs)/60000;
+    /* Mốc dữ liệu nằm ở TƯƠNG LAI ⇒ tuổi âm. Không in "-9 ph trước" (đọc thành
+       vô nghĩa) và tuyệt đối không lấy trị tuyệt đối cho đẹp — đó là dấu hiệu
+       lệch đồng hồ máy chủ/nguồn, phải báo để còn đi sửa. */
+    if(ageMin < -5){
+      fresh('err','Mốc dữ liệu ở TƯƠNG LAI ('+Math.round(-ageMin)+' ph) — nghi lệch đồng hồ nguồn/máy chủ');
+      return;
+    }
+    if(ageMin < 0) ageMin = 0;   // lệch vài phút: coi như vừa xong
+    /* QUYETDINH §2: tô màu TỪNG MỐC theo tuổi riêng; nhãn trung tính; chấm ● = màu XẤU NHẤT.
+       "MẤT KẾT NỐI" (đứt thật, quá staleHoldMin) vẫn đỏ cả dòng. */
+    var _dHM=_hhmm(new Date(_dataTs).toISOString())||'—';
+    var _agoT=(window.HHTFresh?HHTFresh.ago(ageMin):_ageTxt(ageMin)+' trước');
+    var _db=window.HHTFresh?HHTFresh.band(ageMin):{color:'#9aa1a9',level:(ageMin>LV.staleHoldMin?'red':'green')};
+    if(_db.level==='red'){ fresh('err','MẤT KẾT NỐI — Số liệu lúc '+_dHM+' ('+_agoT+')'); return; }   /* (việc 4/B) đỏ THEO MÙA từ settings.freshness (lũ 2h/cạn 6h), KHÔNG còn 360′ phẳng; 360′ chỉ là dự phòng khi thiếu HHTFresh */
+    var _html='Số liệu lúc <span style="color:'+_db.color+'">'+_dHM+' ('+_agoT+')</span>';
+    var _wl=_db.level;
+    if(m&&m.forecast&&m.forecast.seenAt){
+      var _fcA=(Date.now()-new Date(m.forecast.seenAt).getTime())/60000;
+      var _fbb=window.HHTFresh?HHTFresh.band(_fcA):{color:'#9aa1a9',level:'green'};
+      _html+=' · phiên dự báo lúc <span style="color:'+_fbb.color+'">'+(_hhmm(m.forecast.seenAt)||'—')+'</span>';
+      if(window.HHTFresh&&HHTFresh.sev(_fbb.level)>HHTFresh.sev(_wl))_wl=_fbb.level;
+    }
+    var _wc=window.HHTFresh?(_wl==='red'?HHTFresh.colors.err:_wl==='yellow'?HHTFresh.colors.warn:HHTFresh.colors.ok):'#9aa1a9';
+    if(dot)dot.style.background=_wc;_cardDots(_wl==='red'?'#e0454f':_wl==='yellow'?'#e0a83a':'#4caf6a');
+    if(ftxt){ftxt.innerHTML=_html;ftxt.style.color='#9aa1a9';}
+  }
+  window.HHT_LV={LV:LV,tick:_liveness,tickMin:function(){return _tickMin;},
+    srcCadence:_srcCadence,meta:function(){return _pullMeta;},running:function(){return _running;}};
+
+  /* Đọc nhịp chung. localStorage trước cho nhanh (panel Cài đặt ghi đồng bộ, cùng
+     same-origin nên console trong iframe đọc được), rồi /api/settings ghi đè vì đó
+     mới là nguồn sự thật — mở từ máy khác vẫn đúng.
+     ĐANG CHẠY: sự kiện 'storage' chỉ đọc localStorage, KHÔNG fetch lại, để tránh
+     đua với POST /api/settings chưa kịp xong sẽ kéo về giá trị cũ. */
+  function _tickClamp(v){var n=parseFloat(v);if(!isFinite(n))return null;return Math.max(TICK_LO,Math.min(TICK_HI,Math.round(n)));}
+  function _tickApply(tick,running){
+    var t=_tickClamp(tick); if(t!=null)_tickMin=t;
+    // ⚑ R-11: chỉ `false` tường minh mới là DỪNG. Thiếu khoá ⇒ CHẠY.
+    if(running===false)_running=false; else if(running===true)_running=true;
+  }
+  function _tickLocal(){try{var S=JSON.parse(localStorage.getItem('hydronet_settings')||'{}');_tickApply(S.tickMin,S.running);}catch(e){}}
+  function _tickReschedule(){if(!_schedStarted)return;clearTimeout(_pollTimer);_sched();_liveness();}
+  function _tickBoot(){
+    _tickLocal();
+    try{fetch('/api/settings',{cache:'no-store'})
+      .then(function(r){return r.ok?r.json():null;})
+      .then(function(j){if(j&&j.tickMin!=null){_tickApply(j.tickMin,j.running);_tickReschedule();}})
+      .catch(function(){});}catch(e){}
+  }
+  window.addEventListener('storage',function(e){if(!e||!e.key||e.key==='hydronet_settings'){_tickLocal();_tickReschedule();}});
+  /* Soi lại công tắc + nhịp mỗi 60 s: console đập thường mở suốt ca, người trực có
+     thể bấm DỪNG hoặc đổi nhịp ở cửa sổ chính mà tab này không nhận sự kiện. */
+  setInterval(_tickBoot,60000);
+  _tickBoot();
+  // (không còn token cửa van riêng: cả 2 API dùng chung access token của API mới)
+
+  function num(v){var x=parseFloat(v);return isFinite(x)?x:null;}
+  function pad(n){return String(n).padStart(2,'0');}
+  function fmtT(d){return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())+' '+pad(d.getHours())+':'+pad(d.getMinutes())+':00';}
+  function hourKey(s){return String(s).slice(0,13)+':00:00';}       // canh giờ từ 'yyyy-MM-dd HH...'
+  function toMs(s){return new Date(String(s).replace(' ','T')).getTime();}  // chuỗi datetime -> ms
+
+  var dot=document.getElementById('freshDot'),ftxt=document.getElementById('freshTxt');
+  function _cardDots(c){var cd=document.querySelectorAll('.kpi .src.dot');for(var i=0;i<cd.length;i++)cd[i].style.background=c;}
+  function fresh(s,m){if(!dot)return;var c={ok:'#4caf6a',wait:'#e0a83a',err:'#e0454f'}[s]||'#6e757e';dot.style.background=c;_cardDots(c);if(ftxt){ftxt.textContent=m;ftxt.style.color=c;}}
+  function setHTML(id,h){var e=document.getElementById(id);if(e)e.innerHTML=h;}
+  function setIn(id,v){var e=document.getElementById(id);if(e&&v!=null){e.value=v;e.dispatchEvent(new Event('input',{bubbles:true}));}}
+  function clearWait(){var w=document.getElementById('hhtWait');if(w&&w.parentNode)w.parentNode.removeChild(w);}
+
+  /* ═══ FL-57 (20/08/2026) · CONSOLE KHÔNG CÒN GỌI SEHO TỪ TRÌNH DUYỆT ═══════
+     ĐÃ GỠ: AUTH · parseExp · doLogin · doRefresh · ensureAccess · authedFetch —
+     toàn bộ tầng đăng nhập SEHO chạy trong tab người dùng.
+
+     VÌ SAO GỠ (sáu hệ quả, đã đo):
+       1. Đóng tab là ngừng hẳn ⇒ KHÔNG một dòng lịch sử đập nào được lưu. Tháp có
+          tower_history.json giữ 15 ngày; đập không có tệp nào.
+       2. Tải nhân theo số người xem: 3 máy trực = 3 lần gọi song song, mỗi lần kéo
+          cửa sổ 6 ngày. Lũ nhịp 1′ ⇒ 1440 req/ngày/console + pollGates ăn ké = 2880.
+       3. Mở lệch 3 phút là hai máy trực thấy hai số khác nhau.
+       4. Mật khẩu SEHO nằm trong trình duyệt (secret.local.js phục vụ như tệp tĩnh).
+       5. Gọi hụt là mất luôn — không có cơ chế lấp đoạn.
+       6. Số chỉ sống trong bộ nhớ một tab ⇒ bản đồ / cảnh báo / engine không với tới.
+
+     NAY: `app/server/dam_pull_live.mjs` kéo phía MÁY CHỦ mỗi nhịp HHT-TICK và ghi
+     `dam_history_<đập>.json`. Console chỉ ĐỌC tệp đó — same-origin, không token,
+     không mạng ngoài. Một nguồn sự thật cho mọi máy trực.
+     `serve.mjs` nay TỪ CHỐI phục vụ `secret.local.js` qua HTTP; nếu màn hình nào
+     hỏng vì thiếu nó thì chỗ đó vẫn đang gọi API trực tiếp — sửa chỗ đó.
+     ⚑ Chế độ REPLAY (tua lũ 2025) giữ nguyên: đọc tệp tĩnh, vốn đã không cần token.
+     ═══════════════════════════════════════════════════════════════════════════ */
+  var HIST_FILE='dam_history_hoho.json';
+  var _pullMeta=null;
+
+  /* Độ tươi suy từ NHỊP NGUỒN do puller khai báo, KHÔNG suy từ nhịp ta hỏi (FL-58).
+       · số   → tươi ≤ 2×nhịp nguồn · trễ ≤ 6×nhịp nguồn
+       · null → nguồn BẤT ĐỊNH (đập nhập tay): bỏ hẳn chấm màu theo tuổi, chỉ nói
+                thẳng "số liệu lúc HH:MM (n giờ trước) · nhập tay".
+     Vì sao bỏ chấm màu: đo trên chuỗi thật 2025 (nhập tay, median 59′, max 7,3 h),
+     bộ ngưỡng cũ 15′/45′ cho ĐỎ/VÀNG 81% thời gian DÙ HỆ HOÀN TOÀN BÌNH THƯỜNG.
+     Chấm đỏ thường trực là chấm đỏ vô nghĩa — và khi nó vô nghĩa thì lần đỏ THẬT
+     cũng không ai buồn nhìn. */
+  function _srcCadence(){ return (_pullMeta&&_pullMeta.sourceCadenceMin!=null)?+_pullMeta.sourceCadenceMin:null; }
+
+  function obsHours(){var so=document.getElementById('selObs');if(!so)return 72;var v=so.value;var n=parseInt(v,10)||3;return v.indexOf('ngày')>=0?n*24:n;}
+  function fcDays(){var sf=document.getElementById('selFc');if(!sf)return 3;if(sf.value.indexOf('Không')>=0)return 0;var n=parseInt(sf.value,10);return n||3;}
+
+  // ===================== KÊNH CHÍNH: data/fromto =====================
+  function pollAll(){
+    // 📅 Chọn khoảng (lịch): nếu đặt HHT_ANCHOR_FROM & HHT_ANCHOR_TO -> lấy đúng khoảng [từ, đến].
+    // Ngược lại dùng "hiện tại" (hoặc mốc đơn HHT_ANCHOR) với cửa sổ [now − quan trắc, now + dự báo].
+    var _AF=window.HHT_ANCHOR_FROM,_AT=window.HHT_ANCHOR_TO;
+    var rangeOn=(!REPLAY&&_AF!=null&&_AT!=null&&!isNaN(_AF)&&!isNaN(_AT)&&(+_AT)>(+_AF));
+    var now,from,to;
+    if(rangeOn){from=new Date(+_AF);to=new Date(+_AT);now=to;window.__hhtRangeTo=+_AT;}
+    else{window.__hhtRangeTo=null;now=(!REPLAY&&window.HHT_ANCHOR!=null&&!isNaN(window.HHT_ANCHOR))?new Date(+window.HHT_ANCHOR):new Date();
+      from=new Date(now.getTime()-obsHours()*3600*1000);
+      to=new Date(now.getTime()+fcDays()*24*3600*1000);}   // Dev: endTime kéo tới tương lai mới có dự báo
+    var body=JSON.stringify({startTime:fmtT(from),endTime:fmtT(to),hydro_code:HYDRO});
+    fresh('wait','đang lấy số liệu…');
+    /* FL-57: đọc tệp lịch sử do máy chủ kéo, rồi CẮT theo đúng cửa sổ [from, to]
+       mà người dùng đang chọn. Trước đây việc cắt do SEHO làm (ta gửi startTime/
+       endTime); nay làm tại chỗ vì dữ liệu đã nằm sẵn trên máy. */
+    (REPLAY ? replayFetch(DATA_URL) : fetch(HIST_FILE+'?t='+Date.now(),{cache:'no-store'}))
+      .then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.json();})
+      .then(function(H){
+        if(REPLAY) return H;
+        _pullMeta=H.meta||null; window.__hhtDamMeta=_pullMeta;
+        var f0=+from,t1=+to;
+        var inWin=function(ms){return ms!=null&&isFinite(ms)&&ms>=f0&&ms<=t1;};
+        /* Lịch sử chỉ giữ N ngày. Xin khoảng cũ hơn thì phải NÓI RA, không im lặng
+           trả về rỗng để người dùng tưởng "hôm đó không có lũ". */
+        var g0=(H.general&&H.general.length)?num(H.general[0].date_time)*1000:null;
+        window.__hhtHistFrom=g0;
+        return {status:'ok',data:{
+          general_datas:(H.general||[]).filter(function(p){return inWin(num(p.date_time)*1000);}),
+          rain_datas:(H.rain||[]).filter(function(p){return inWin(num(p.datetime)*1000);}),
+          flow_forecast_datas:H.forecast_flow||[],
+          rain_forecast_datas:H.forecast_rain||[]
+        }};
+      })
+      .then(function(j){
+        console.log('[HHT data/fromto] raw:',j);
+        if(!j||j.status==='error'||!j.data){console.warn('[HHT] bản tin lỗi:',(j&&j.message)||'không có data');fresh('err','Không đọc được số liệu');return;}
+        var D=j.data;
+        var gd=(D.general_datas||[]).slice().sort(function(a,b){return num(a.date_time)-num(b.date_time);});
+        if(!gd.length){console.warn('[HHT] general_datas rỗng');fresh('wait','nguồn chưa có bản ghi nào trong khoảng này');return;}
+        if(REPLAY&&_RNOW==null&&gd.length){_RNOW=num(gd[gd.length-1].date_time)*1000;}
+        _dataTs=num(gd[gd.length-1].date_time)*1000;_lastQin=num(gd[gd.length-1].total_discharge_lake);_pollOk=true;
+        // mưa quan trắc -> map theo giờ (ưu tiên date_string đã là giờ server)
+        var rmap={};(D.rain_datas||[]).forEach(function(p){var k=p.date_string?hourKey(p.date_string):hourKey(fmtT(new Date(num(p.datetime)*1000)));var v=num(p.value);if(v!=null)rmap[k]=v;});var __rObs=[];(D.rain_datas||[]).forEach(function(p){var _t=(p.datetime!=null)?num(p.datetime)*1000:(p.date_string?toMs(p.date_string):null);var _v=num(p.value);if(_t!=null&&_v!=null)__rObs.push({t:_t,v:_v});});__rObs.sort(function(a,b){return a.t-b.t;});window.__hhtRainObs=__rObs;
+        var qin=[],qinRaw=[],qspill=[],qturb=[],qout=[],mn=[],rain=[],times=[],zhl=[],vhc=[];
+        gd.forEach(function(p){
+          var t=new Date(num(p.date_time)*1000);times.push(t);
+          var proc=num(p.inflow_moving_average),raw=num(p.total_discharge_lake);
+          qin.push(Math.max(0,proc!=null?proc:(raw!=null?raw:0)));qinRaw.push(Math.max(0,raw!=null?raw:0));
+          qspill.push(num(p.total_discharge_dam)||0);qturb.push(num(p.total_discharge_turbine)||0);
+          qout.push(num(p.total_discharge_out)||0);mn.push(num(p.lake_level))          /* FL-13: KHÔNG ép 0 — thiếu số đo để null, drawSeries vẽ đứt đoạn */;
+          var kk=p.date_string?hourKey(p.date_string):hourKey(fmtT(t));var rv=rmap[kk];rain.push(rv!=null?rv:0);
+          zhl.push(num(p.downstream_water_level));vhc.push(num(p.lake_capacity));
+        });
+        // dự báo: bám 'now' của server, clip theo selFc
+        var nowMs=Date.now(),fcd=fcDays();
+        var lim=rangeOn?to.getTime():(nowMs+fcd*24*3600*1000);
+        var showFc=rangeOn?(to.getTime()>nowMs):(fcd>0);   // chế độ khoảng: chỉ hiện dự báo phần rơi trong [nay, đến]
+        var fcFlow=[],fcRain=[];
+        if(showFc){
+          (D.flow_forecast_datas||[]).forEach(function(p){var t=toMs(p.forecast_data_time),v=num(p.kiv_forecast_value);if(t>nowMs&&t<=lim&&v!=null)fcFlow.push({t:t,v:v});});
+          (D.rain_forecast_datas||[]).forEach(function(p){var t=toMs(p.forecast_data_time),mm=num(p.rain_value);if(t>nowMs&&t<=lim&&mm!=null)fcRain.push({t:t,mm:mm});});
+          fcFlow.sort(function(a,b){return a.t-b.t;});fcRain.sort(function(a,b){return a.t-b.t;});
+        }
+        window.__hhtObs={qin:qin,qinRaw:qinRaw,qspill:qspill,qturb:qturb,qout:qout,mn:mn,rain:rain,times:times,zhl:zhl,vhc:vhc};
+        window.__hhtFc=fcFlow;window.__hhtRainFc=fcRain;
+        renderChart();computeFc(fcFlow,fcd);
+        // KPI quan trắc
+        var last=gd[gd.length-1],prev=gd.length>1?gd[gd.length-2]:null;
+        var mnL=num(last.lake_level),qi=num(last.total_discharge_lake),qra=num(last.total_discharge_out),tw=num(last.downstream_water_level);
+        setHTML('kMN',mnL!=null?hntSo(mnL,2)+' <small>m</small>':'– <small>m</small>');
+        setHTML('kMNhl',tw!=null?hntSo(tw,2)+' <small>m</small>':'– <small>m</small>');
+        setHTML('kQin',qi!=null?(qi<10?hntSo(qi,2):Math.round(qi))+' <small>m³/s</small>':'– <small>m³/s</small>');
+        setHTML('kQra',qra!=null?Math.round(qra)+' <small>m³/s</small>':'– <small>m³/s</small>');
+        if(prev){var q0=num(prev.total_discharge_lake),dt=(num(last.date_time)-num(prev.date_time))/3600;
+          if(qi!=null&&q0!=null&&dt>0){var rate=(qi-q0)/dt;setHTML('kRate',(rate>=0?'+':'')+hntSo(rate,2)+' <small>m³/s·h</small>');}
+          else setHTML('kRate','– <small>m³/s·h</small>');}
+        if(tw!=null)window.HHT_TAILWATER=tw;
+        /* FL-29 (20/08/2026): công bố mực hồ ĐO ĐƯỢC ra window để lớp vẽ tràn dùng
+           đúng SỐ THẬT, thay vì đọc giá trị thanh trượt. `mnL` có thể là null (thiếu
+           số đo) — null là trạng thái hợp lệ và PHẢI truyền đi nguyên vẹn (R-11).
+           Console Ngàn Trươi đã làm đúng từ trước; Hố Hô nay khớp lại (R-13). */
+        window.HHT_RES_Z = mnL;
+        if(window.HHT_renderSpill)window.HHT_renderSpill();
+        /* HHT-UI lô 2 (22/08/2026): ô "Cập nhật gần nhất" ĐÃ GỠ. Nó mang giờ MÁY
+           TRỰC lúc gọi tệp xong — luôn ≈ bây giờ, kể cả khi nguồn không có bản ghi
+           mới nào — mà lại đứng cạnh dòng nói giờ MỐC DỮ LIỆU. Hai đồng hồ, cái sai
+           có nhãn thân thiện hơn. Một đại lượng, một chỗ nói (R-21). */
+        _liveness();clearWait();
+      })
+      .catch(function(e){console.warn('[HHT data/fromto]',e.message);_pollOk=false;_liveness();});
+  }
+
+  function renderChart(){
+    var o=window.__hhtObs;if(!o||!window.HHT_setChart)return;
+    var fcd=fcDays();var _rt=window.__hhtRangeTo;window.__hhtFcEnd=(_rt!=null)?((_rt>Date.now())?_rt:null):((fcd>0)?(Date.now()+fcd*24*3600*1000):null);
+    var times=o.times.slice(),qin=o.qin.slice(),qinRaw=o.qinRaw.slice(),qspill=o.qspill.slice(),qturb=o.qturb.slice(),qout=o.qout.slice(),mn=o.mn.slice(),rain=o.rain.slice(),zhl=o.zhl.slice(),vhc=o.vhc.slice();
+    var ih=times.length-1,nowT=ih>=0?+times[ih]:Date.now();
+    if(fcd>0){
+      var map={};
+      (window.__hhtFc||[]).forEach(function(p){var k=+p.t;if(k<=nowT)return;(map[k]=map[k]||{t:k}).qin=p.v;});
+      (window.__hhtRainFc||[]).forEach(function(p){var k=+p.t;if(k<=nowT)return;(map[k]=map[k]||{t:k}).rain=p.mm;});
+      Object.keys(map).map(Number).sort(function(a,b){return a-b;}).forEach(function(k){var g=map[k];
+        times.push(new Date(k));qin.push(g.qin!=null?g.qin:null);qinRaw.push(null);qspill.push(null);qturb.push(null);qout.push(null);mn.push(null);rain.push(g.rain!=null?g.rain:0);zhl.push(null);vhc.push(null);});
+    }
+    var _rObs=window.__hhtRainObs||[],rainT=[],rainV=[];for(var _ri=0;_ri<_rObs.length;_ri++){rainT.push(_rObs[_ri].t);rainV.push(_rObs[_ri].v);}if(fcd>0){(window.__hhtRainFc||[]).forEach(function(p){rainT.push(+p.t);rainV.push(p.mm);});}window.HHT_setChart({qin:qin,qinRaw:qinRaw,qspill:qspill,qturb:qturb,qout:qout,mn:mn,rain:rain,rainT:rainT,rainV:rainV,times:times,zhl:zhl,vhc:vhc,ih:ih,now:new Date()});
+  }
+
+  function computeFc(fc,fcd){
+    var a1=document.getElementById('kQmaxLbl');if(a1)a1.textContent='Lưu lượng vào max '+(fcd*24)+'h tới';
+    var a2=document.getElementById('kWinLbl');if(a2)a2.textContent='Tổng lượng dự báo '+(fcDays()*24)+'h tới';
+    if(!fc||!fc.length){setHTML('kQmax','– <small>m³/s</small>');setHTML('kWin','– <small>×10⁶ m³</small>');return;}
+    var qm=0,w=0;for(var i=0;i<fc.length;i++){if(fc[i].v>qm)qm=fc[i].v;var dt=(i>0)?(fc[i].t-fc[i-1].t)/1000:3600;w+=fc[i].v*dt;}
+    setHTML('kQmax',hntSo(qm,1)+' <small>m³/s</small>');
+    setHTML('kWin',hntSo(w/1e6,1)+' <small>×10⁶ m³</small>');
+  }
+
+  // ===================== KÊNH SNAPSHOT: outlet/getall (độ mở + Q từng cửa) =====================
+  function nameOf(o){return (o&&o.outlet_name||'').toUpperCase();}
+  function findOut(arr,nm){for(var i=0;i<arr.length;i++)if(nameOf(arr[i])===nm)return arr[i];return null;}
+  function applyGates(j){try{
+    console.log('[HHT outlet/getall] raw:',j);
+    var gs=(j&&j.data)||(Array.isArray(j)?j:[]);if(!gs.length){console.warn('[HHT gates] data rỗng');return;}
+    var slotName={1:'CVC3',2:'CVC2',3:'CVC1'};var OPEN={},QG={},MAN={};   // R-10: slot 1←CVC3, 2←CVC2, 3←CVC1
+    [1,2,3].forEach(function(s){var o=findOut(gs,slotName[s]);var op=o?num(o.input_value):null;var q=o?num(o.output_value):null;OPEN[s]=op;QG[s]=q;var st=(o&&o.status!=null)?parseInt(o.status,10):null;MAN[s]=(st!=null?(st===2):(!FILLSENSOR));setIn('g'+s,op!=null?op:0);});
+    window.HHT_OPEN=OPEN;window.HHT_QGATE=QG;window.HHT_MANUAL=MAN;
+  }catch(e){console.error('[HHT gates]',e);}}
+  function pollGates(){
+    /* FL-57: ảnh chụp cửa van nay cũng do máy chủ kéo, nằm trong cùng tệp lịch sử. */
+    if(REPLAY){ return replayFetch(OUTLET_URL).then(function(r){return r.json();}).then(applyGates).catch(function(){}); }
+    fetch(HIST_FILE+'?t='+Date.now(),{cache:'no-store'})
+      .then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.json();})
+      .then(function(H){applyGates({data:H.gates||[]});})
+      .catch(function(e){console.warn('[HHT gates]',e.message);});
+  }
+
+  // ===================== khởi động =====================
+  // chặn dữ liệu minh hoạ của prototype hiện ra như thật cho tới khi có dữ liệu thật
+  ['kMN','kQin','kQra','kRate','kQmax','kWin'].forEach(function(id){var e=document.getElementById(id);if(e)e.innerHTML='–';});
+  (function(){var ch=document.getElementById('chart');if(ch)ch.innerHTML='';var lg=document.getElementById('legend');if(lg)lg.innerHTML='';})();
+  (function(){var cb=document.getElementById('chartbox');if(cb&&!document.getElementById('hhtWait')){cb.style.position='relative';var o=document.createElement('div');o.id='hhtWait';o.textContent='Đang chờ số liệu…';o.style.cssText='position:absolute;left:0;top:0;right:0;bottom:0;display:flex;align-items:center;justify-content:center;background:rgba(21,24,29,.92);color:#9aa1a9;font-size:13px;z-index:5';cb.appendChild(o);}})();
+  // Đổi Thời gian quan trắc / dự báo -> VỀ HIỆN TẠI (xoá khoảng lịch nếu đang xem quá khứ) rồi gọi lại.
+  function _liveRefresh(){if(window.HHT_backToLive)window.HHT_backToLive();pollAll();if(window.HHT_LV&&window.HHT_LV.tick)window.HHT_LV.tick();}
+  var so0=document.getElementById('selObs');if(so0)so0.addEventListener('change',_liveRefresh);
+  var sf0=document.getElementById('selFc');if(sf0)sf0.addEventListener('change',_liveRefresh);
+  // ===== 📅 Chọn mốc (calendar pick): đặt/xoá mốc neo cho cửa sổ dữ liệu =====
+  window.HHT_ANCHOR=(typeof window.HHT_ANCHOR!=='undefined')?window.HHT_ANCHOR:null;
+  window.HHT_ANCHOR_FROM=(typeof window.HHT_ANCHOR_FROM!=='undefined')?window.HHT_ANCHOR_FROM:null;
+  window.HHT_ANCHOR_TO=(typeof window.HHT_ANCHOR_TO!=='undefined')?window.HHT_ANCHOR_TO:null;
+  window.HHT_anchorLabel=function(){function p(n){return('0'+n).slice(-2);}function f(ms){var d=new Date(+ms);return p(d.getDate())+'/'+p(d.getMonth()+1)+' '+p(d.getHours())+':'+p(d.getMinutes());}
+    if(window.HHT_ANCHOR_FROM!=null&&window.HHT_ANCHOR_TO!=null)return f(window.HHT_ANCHOR_FROM)+' → '+f(window.HHT_ANCHOR_TO);
+    if(window.HHT_ANCHOR!=null)return f(window.HHT_ANCHOR);return null;};
+  (function(){var af=document.getElementById('anchorFrom'),at=document.getElementById('anchorTo');
+    function ymd(d){function p(n){return('0'+n).slice(-2);}return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate());}
+    function ms00(v){return v?new Date(v+'T00:00').getTime():null;} // ô NGÀY -> mốc 00:00 giờ ĐỊA PHƯƠNG (giờ hiển thị trên biểu đồ)
+    function seed(){var e=new Date();e.setHours(0,0,0,0);var s=new Date(e.getTime()-3*24*3600*1000);if(af)af.value=ymd(s);if(at)at.value=ymd(e);}
+    function apply(){var v1=ms00(af&&af.value),v2=ms00(at&&at.value);
+      if(v1!=null&&v2!=null&&isFinite(v1)&&isFinite(v2)){if(v2<v1){var t=v1;v1=v2;v2=t;}window.HHT_ANCHOR_FROM=v1;window.HHT_ANCHOR_TO=v2;window.HHT_ANCHOR=v2;}
+      else{window.HHT_ANCHOR_FROM=null;window.HHT_ANCHOR_TO=null;window.HHT_ANCHOR=null;}
+      pollAll();if(window.HHT_LV&&window.HHT_LV.tick)window.HHT_LV.tick();}
+    if(af)af.addEventListener('change',apply);if(at)at.addEventListener('change',apply);
+    // Không còn nút "Trực tiếp": đổi Thời gian quan trắc / dự báo sẽ tự về hiện tại (xoá khoảng) — xem HHT_backToLive.
+    window.HHT_backToLive=function(){window.HHT_ANCHOR_FROM=null;window.HHT_ANCHOR_TO=null;window.HHT_ANCHOR=null;seed();};
+    seed();
+  })();
+  fresh('wait','đang lấy số liệu…');pollAll();pollGates();
+  _hbTimer=setInterval(_liveness,LV.heartbeatMs);
+  /* HHT-TICK: nhịp CỐ ĐỊNH theo `tickMin`, đọc lại mỗi vòng nên đổi cài đặt là
+     nhịp kế theo ngay. Đang DỪNG thì vẫn hẹn lại (để bắt được lúc bấm KHỞI ĐỘNG)
+     nhưng KHÔNG gọi SEHO — dừng là dừng. */
+  function _sched(){var ms=_pollMs();_pollTimer=setTimeout(function(){if(_running){pollAll();pollGates();}else{_liveness();}_sched();},ms);}
+  _schedStarted=true;_sched();
+  window.HHT_pollAll=pollAll;window.HHT_pollGates=pollGates;
+  // FL-57: `window.HHT_auth` đã gỡ cùng tầng đăng nhập — console không giữ token nữa.
+  window.HHT_damMeta=function(){return _pullMeta;};
+})();</script>
+<script>
+(function(){
+  var con=document.getElementById('console');
+  var m=new URLSearchParams(location.search).get('mode'); con.className='mode-'+(m==='embed'?'embed':'detach');
+  document.querySelectorAll('.segfig button').forEach(function(b){b.addEventListener('click',function(){
+    con.classList.toggle('show-el',b.dataset.fig==='el');document.querySelectorAll('.segfig button').forEach(function(x){x.classList.toggle('on',x===b);});});});
+  document.getElementById('btnDetach').addEventListener('click',function(){window.open('console.html?mode=detach','hhtConsoleDetach','width=1400,height=920');});
+})();
+</script>
+<script>
+(function(){var cur='chart';
+  function pad(x){return (x<10?'0':'')+x;}
+  function fmtTime(d){if(!(d instanceof Date))d=new Date(d);return pad(d.getDate())+'/'+pad(d.getMonth()+1)+' '+pad(d.getHours())+':'+pad(d.getMinutes());}
+  function n2(v){return v==null?'–':hntSo(v,2);}
+  function n1(v){return v==null?'–':hntSo(v,1);}
+  function nV(v){return v==null?'–':hntSo(v/1e6,2);}
+  var COLS=[['t','Thời gian',fmtTime],['rain','Mưa|(mm)',n2],['qinRaw','Về hồ thô|(m³/s)',n2],['qin','Về hồ làm mượt|(m³/s)',n2],['qspill','Xả tràn|(m³/s)',n1],['qturb','Qua tua bin|(m³/s)',n1],['qout','Xả tổng|(m³/s)',n1],['mn','Mực nước hồ|(m)',n2],['zhl','Mực nước hạ lưu|(m)',n2],['vhc','Dung tích hồ|(10⁶m³)',nV]];
+  function buildTable(){var rows=window.__hhtTable||[];var t=document.getElementById('opsTable');if(!t)return;
+    var h='<thead><tr>';COLS.forEach(function(c){h+='<th>'+c[1].split('|').join('<br>')+'</th>';});h+='</tr></thead><tbody>';
+    rows.slice().reverse().forEach(function(row){h+='<tr>';COLS.forEach(function(c){var raw=row[c[0]];var cls=(raw==null&&c[0]!=='t')?' class="nul"':'';h+='<td'+cls+'>'+c[2](raw)+'</td>';});h+='</tr>';});
+    t.innerHTML=h+'</tbody>';var cn=document.getElementById('tblCount');if(cn)cn.textContent=rows.length+' dòng';}
+  window.HHT_refreshTable=function(){if(cur==='table')buildTable();};
+  function setView(v){cur=v;var cb=document.getElementById('chartbox'),tw=document.getElementById('tableWrap'),ex=document.getElementById('btnCSV');
+    if(cb)cb.style.display=(v==='chart')?'':'none';if(tw)tw.style.display=(v==='table')?'':'none';if(ex)ex.style.display=(v==='table')?'':'none';
+    [].forEach.call(document.querySelectorAll('.vtab'),function(b){b.classList.toggle('on',b.getAttribute('data-v')===v);});
+    if(v==='table')buildTable();}
+  [].forEach.call(document.querySelectorAll('.vtab'),function(b){b.addEventListener('click',function(){setView(b.getAttribute('data-v'));});});
+  var btn=document.getElementById('btnCSV');if(btn)btn.addEventListener('click',function(){
+    var rows=window.__hhtTable||[];if(!rows.length){alert('Chưa có dữ liệu để xuất.');return;}
+    var head=COLS.map(function(c){return '"'+c[1].split('|').join(' ')+'"';}).join(',');var lines=[head];
+    rows.forEach(function(row){lines.push(COLS.map(function(c){var v=row[c[0]];if(c[0]==='t')return '"'+fmtTime(v)+'"';return v==null?'':(+v);}).join(','));});
+    var csv=String.fromCharCode(0xFEFF)+lines.join(String.fromCharCode(13,10));var blob=new Blob([csv],{type:'text/csv;charset=utf-8'});
+    var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='HoHo_vanhanh_'+new Date().toISOString().slice(0,16).replace(/[:T]/g,'')+'.csv';
+    document.body.appendChild(a);a.click();setTimeout(function(){URL.revokeObjectURL(a.href);document.body.removeChild(a);},100);});
+})();
+</script>
+<script src="hht-module-client.js"></script>
+<script src="hht-release-scenario.js" onerror="void 0"></script>
+<script src="hht-hoho-adapter.js"></script>
+<script src="hht-chart-fullscreen.js"></script>
+</body></html>

@@ -1,0 +1,1613 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>RIMS — Hệ thống tích hợp quản lý hồ chứa</title>
+<link rel="icon" type="image/svg+xml" href="assets/brand/RIMS_icon.svg">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/brand/favicon/icon-32.png">
+<link rel="apple-touch-icon" href="assets/brand/favicon/icon-180.png">
+
+<!-- =====================================================================
+     RIMS — KHUNG BỐN BĂNG (index.html)
+     ---------------------------------------------------------------------
+     TRÊN   : định danh · tìm kiếm · phạm vi · trạng thái · cài đặt
+     TRÁI   : hai thẻ — Lớp bản đồ (có #wxMount) · Danh mục hồ
+     GIỮA   : bản đồ
+     PHẢI   : không gian làm việc từng hồ (iframe console)
+     DƯỚI   : chú giải · thanh thời gian · mốc số liệu
+
+     NGUYÊN TẮC BÊ MÃ (xem docs/PORT_LOG.md)
+       weather-layers.js và hht-overlays.js GIỮ NGUYÊN không sửa, để còn
+       đối chiếu với bản HydroNet về sau. Mọi khác biệt của RIMS nằm ở
+       config.js và ở tệp này.
+
+       · weather-layers.js tự dựng bảng lớp rồi cắm vào #wxMount.
+       · Nó cũng tạo #hnTimeBar và #hnLegend dạng position:fixed đè lên
+         bản đồ. RIMS KHÔNG sửa mã đó, mà DỜI hai khối ấy xuống băng dưới
+         sau khi chúng xuất hiện (xem "DỜI THANH THỜI GIAN" ở cuối tệp).
+         Lý do: trình chiếu lên màn lớn, khối trôi nổi che mất vùng đang chỉ.
+
+     KHOÁ API
+       Trình duyệt KHÔNG giữ khoá. Mọi lời gọi RMA đi qua same-origin
+       /api/rma/* ; serve.mjs gắn x-api-key rồi mới chuyển tiếp, và có
+       van tiết lưu + sổ đếm. Bắt buộc chạy bằng start_RIMS.bat (Node),
+       KHÔNG chạy bằng python -m http.server.
+     ===================================================================== -->
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link rel="stylesheet" href="assets/hnt-fonts.css">
+<style>
+:root{
+  --ink:#15181d; --ink2:#1f242c; --ink3:#2a323b;
+  --teal:#0072bb; --tealL:#1f93e3; --tealD:#024e86;
+  --silt:#c89a4a; --crit:#e3564d; --ok:#4caf6a;
+  --line:#2e3540; --txt:#e7e9ec; --txt2:#9aa1ad; --txt3:#6b7280;
+  --dockW:312px; --opsW:0px; --topH:52px; --botH:44px;
+  --fs:13px;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{
+  font-family:"Be Vietnam Pro","Segoe UI",system-ui,-apple-system,sans-serif;
+  font-size:var(--fs); color:var(--txt); background:var(--ink);
+  overflow:hidden;
+}
+button,input,select{font-family:inherit;font-size:inherit}
+
+/* ══════════════ KHUNG BỐN BĂNG ══════════════ */
+#app{
+  display:grid; height:100vh;
+  grid-template-columns:var(--dockW) 1fr var(--opsW);
+  grid-template-rows:var(--topH) 1fr var(--botH);
+  grid-template-areas:
+    "top  top  top"
+    "left map  right"
+    "bot  bot  bot";
+  transition:grid-template-columns .18s ease;
+}
+#topbar{grid-area:top}  #dock{grid-area:left}
+#mapwrap{grid-area:map} #opsPanel{grid-area:right}
+#botbar{grid-area:bot}
+
+/* ── BĂNG TRÊN ── */
+#topbar{
+  display:flex; align-items:center; gap:14px; padding:0 14px;
+  background:var(--ink2); border-bottom:1px solid var(--line); position:relative; z-index:900;
+}
+.brand{display:flex;align-items:center;gap:9px;flex:none}
+.brand .mk{
+  width:28px;height:28px;flex:none;
+  display:flex;align-items:center;justify-content:center;
+}
+.brand .mk img{width:100%;height:100%;display:block}
+.brand .nm{font-weight:800;font-size:15px;letter-spacing:.3px}
+.brand .nm .wm{font-family:'Nunito','Be Vietnam Pro',sans-serif;font-weight:800;font-size:16px;letter-spacing:.3px;background:linear-gradient(90deg,#0072bb,#1f93e3 58%,#5fb6e6);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:#1f93e3}
+.brand .sub{color:var(--txt3);font-size:11.5px;margin-left:2px;white-space:nowrap}
+.tsep{width:1px;height:24px;background:var(--line);flex:none}
+
+#topSearch{position:relative;flex:1;max-width:340px}
+#topSearch input{
+  width:100%;padding:6px 10px 6px 28px;border-radius:7px;
+  border:1px solid var(--line);background:var(--ink);color:var(--txt);outline:none;
+}
+#topSearch input:focus{border-color:var(--tealL)}
+#topSearch .ic{position:absolute;left:9px;top:50%;transform:translateY(-50%);color:var(--txt3);font-size:12px}
+#topSearch .res{
+  position:absolute;top:34px;left:0;right:0;max-height:280px;overflow:auto;display:none;
+  background:var(--ink2);border:1px solid var(--line);border-radius:8px;
+  box-shadow:0 10px 28px rgba(0,0,0,.45);z-index:960;
+}
+#topSearch .res b{display:block;padding:7px 10px;cursor:pointer;font-weight:600}
+#topSearch .res b:hover{background:var(--ink3)}
+#topSearch .res b span{color:var(--txt3);font-weight:400;font-size:11.5px}
+#topSearch .res b.mo{opacity:.5}
+#topSearch .res .none{padding:9px 10px;color:var(--txt3)}
+  /* Ô tìm HỆ THỐNG SÔNG — bên trái ô tìm hồ chứa, cùng phong cách, rộng cố định. */
+  #sysSearch{position:relative;flex:none;width:230px}
+  #sysSearch input{width:100%;padding:6px 10px 6px 28px;border-radius:7px;border:1px solid var(--line);background:var(--ink);color:var(--txt);outline:none}
+  #sysSearch input:focus{border-color:var(--tealL)}
+  #sysSearch .ic{position:absolute;left:9px;top:50%;transform:translateY(-50%);color:var(--txt3);font-size:12px}
+  #sysSearch .res{position:absolute;top:34px;left:0;right:0;max-height:320px;overflow:auto;display:none;background:var(--ink2);border:1px solid var(--line);border-radius:8px;box-shadow:0 10px 28px rgba(0,0,0,.45);z-index:960}
+  #sysSearch .res b{display:block;padding:7px 10px;cursor:pointer;font-weight:600}
+  #sysSearch .res b:hover{background:var(--ink3)}
+  #sysSearch .res b span{color:var(--txt3);font-weight:400;font-size:11.5px}
+  #sysSearch .res .none{padding:9px 10px;color:var(--txt3)}
+
+#scope{
+  padding:6px 8px;border-radius:7px;border:1px solid var(--line);
+  background:var(--ink);color:var(--txt);flex:none;
+}
+.spacer{flex:1}
+#liveState{display:flex;align-items:center;gap:7px;flex:none;color:var(--txt2);font-size:12px;white-space:nowrap}
+#liveDot{width:8px;height:8px;border-radius:50%;background:var(--txt3);flex:none}
+#liveDot.ok{background:var(--ok);box-shadow:0 0 0 3px rgba(62,158,107,.18)}
+#liveDot.warn{background:var(--silt);box-shadow:0 0 0 3px rgba(200,129,63,.18)}
+#liveDot.err{background:var(--crit);box-shadow:0 0 0 3px rgba(196,69,63,.18)}
+.tbtn{
+  padding:6px 10px;border-radius:7px;border:1px solid var(--line);
+  background:var(--ink);color:var(--txt2);cursor:pointer;text-decoration:none;flex:none;
+}
+.tbtn:hover{border-color:var(--tealL);color:var(--txt)}
+
+/* ── Điều khiển thả xuống ở băng trên — theo đúng ngôn ngữ của HydroNet
+      (app/viewer/index.html, khối #hnt-topbar-css): nút biểu tượng + dấu
+      mũi, menu thả xuống có dấu ✓ ở mục đang chọn. Dùng chung cho Nền bản
+      đồ và Phạm vi; sau này thêm Ngôn ngữ / Tài khoản chỉ là thêm một
+      khối .tb-ctrl, không phải viết lại.                                */
+.tb-ctrls{display:flex;align-items:center;gap:3px;flex:none}
+.tb-ctrl{position:relative}
+.tb-ib{
+  display:inline-flex;align-items:center;gap:6px;height:34px;padding:0 9px;
+  border-radius:9px;border:1px solid transparent;background:transparent;
+  color:var(--txt2);cursor:pointer;transition:.13s;font:inherit;
+}
+.tb-ib:hover{background:rgba(255,255,255,.07);color:var(--txt)}
+.tb-ctrl.open>.tb-ib{background:rgba(255,255,255,.09);color:var(--txt);border-color:rgba(255,255,255,.14)}
+.tb-ib .lb{font-size:12.5px;font-weight:600;white-space:nowrap}
+.tb-ib svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;display:block;flex:none}
+.tb-ib svg.cr{width:13px;height:13px;stroke-width:2.2;color:var(--txt3)}
+.tb-menu{
+  position:absolute;top:calc(100% + 7px);right:0;min-width:186px;z-index:30;display:none;
+  background:var(--ink3);border:1px solid rgba(255,255,255,.1);border-radius:11px;
+  box-shadow:0 12px 30px rgba(0,0,0,.5);padding:6px;
+}
+.tb-ctrl.open .tb-menu{display:block}
+.tb-menu .mh{font-size:10px;text-transform:uppercase;letter-spacing:.6px;color:var(--txt3);padding:5px 9px}
+.tb-menu .mi{
+  display:flex;align-items:center;gap:9px;padding:8px 9px;border-radius:8px;
+  color:var(--txt2);font-size:13px;font-weight:500;cursor:pointer;white-space:nowrap;
+}
+.tb-menu .mi:hover{background:rgba(255,255,255,.07)}
+.tb-menu .mi .ck{width:15px;height:15px;margin-left:auto;opacity:0;flex:none;
+  fill:none;stroke:var(--ok);stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
+.tb-menu .mi.on{color:var(--txt)}
+.tb-menu .mi.on .ck{opacity:1}
+.tb-menu .note{font-size:11px;color:var(--txt3);line-height:1.5;padding:6px 9px 4px;border-top:1px solid var(--line);margin-top:4px}
+.ver{font-size:10px;font-weight:700;color:#7cc0ee;background:rgba(31,147,227,.14);border:1px solid rgba(31,147,227,.4);border-radius:20px;padding:1px 6px;margin-left:2px;-webkit-text-fill-color:#7cc0ee}
+#tbClock{display:flex;align-items:center;gap:7px;flex:none;color:var(--txt2);font-size:12px;white-space:nowrap}
+#tbClock svg{width:15px;height:15px;fill:none;stroke:var(--txt3);stroke-width:1.8}
+#tbClock .t{font-weight:800;font-size:14px;color:var(--txt);font-variant-numeric:tabular-nums;letter-spacing:.5px}
+#tbClock .d{color:var(--txt3);font-variant-numeric:tabular-nums}
+.tb-ib .av{width:24px;height:24px;border-radius:50%;background:var(--teal);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:11px;flex:none}
+.tb-menu a.mi{text-decoration:none}
+.tb-menu .acc-hd{padding:7px 9px 8px;border-bottom:1px solid var(--line);margin-bottom:4px}
+.tb-menu .acc-hd b{display:block;font-size:13px;color:var(--txt)}
+.tb-menu .acc-hd span{font-size:11px;color:var(--txt3)}
+.tb-menu .tb-sep2{height:1px;background:var(--line);margin:5px 0}
+@media(max-width:1240px){.tb-ib .lb{display:none}}
+
+/* ── BĂNG TRÁI: thanh biểu tượng + ngăn nội dung ──────────────────────
+      Theo cách của HydroNet. Thanh trái luôn thấy được có mấy họ lớp;
+      ngăn phải chỉ hiện họ đang chọn.                                  */
+#dock{
+  background:var(--ink2);border-right:1px solid var(--line);
+  display:grid;grid-template-columns:58px 1fr;grid-template-rows:1fr auto;
+  grid-template-areas:"rail panel" "rail foot";
+  min-height:0;position:relative;z-index:800;
+}
+#rail{
+  grid-area:rail;background:var(--ink);border-right:1px solid var(--line);
+  display:flex;flex-direction:column;padding-top:6px;gap:2px;
+}
+.rtab{
+  display:flex;flex-direction:column;align-items:center;gap:3px;
+  padding:9px 2px 8px;background:none;border:0;border-left:2px solid transparent;
+  color:var(--txt3);cursor:pointer;font:inherit;transition:.13s;
+}
+.rtab svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.7;
+  stroke-linecap:round;stroke-linejoin:round;display:block}
+.rtab span{font-size:9.5px;font-weight:600;line-height:1.15;text-align:center}
+.rtab:hover{color:var(--txt2);background:rgba(255,255,255,.04)}
+.rtab.on{color:var(--txt);border-left-color:var(--tealL);background:var(--ink2)}
+#railCollapse{margin-top:auto;margin-bottom:6px;border-left-color:transparent!important}
+#railCollapse:hover{color:var(--txt)}
+#app{transition:grid-template-columns .2s ease}
+#app.dock-collapsed #dockGrip{display:none}
+#app.dock-collapsed #panel{opacity:0;pointer-events:none;transition:opacity .15s}
+.set-item{display:flex;align-items:center;gap:10px;width:100%;text-align:left;background:var(--ink);border:1px solid var(--line);border-radius:9px;padding:10px 12px;color:var(--txt);font:inherit;font-size:13px;cursor:pointer;margin:2px 0}
+.set-item:hover{border-color:var(--tealL)}
+.set-item svg{width:17px;height:17px;flex:none;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;color:var(--txt2)}
+.set-item .lbl{font-weight:600}
+.set-item .st{margin-left:auto;font-size:11px;color:var(--txt3)}
+.set-item .st b{color:var(--txt)}
+
+#panel{grid-area:panel;overflow:auto;min-height:0}
+#panel section{display:none}
+#panel section.show{display:block}
+.p-title{
+  font-size:12.5px;font-weight:700;color:var(--txt);
+  padding:11px 12px 9px;border-bottom:1px solid var(--line);
+  position:sticky;top:0;background:var(--ink2);z-index:2;
+}
+.p-body{padding:8px 12px 16px}
+.p-sub{
+  font-size:10.5px;font-weight:700;letter-spacing:.9px;text-transform:uppercase;
+  color:var(--txt3);margin:13px 0 5px;
+}
+.p-body>.p-sub:first-child{margin-top:3px}
+
+/* dòng chọn lớp GIS */
+.chk{display:flex;align-items:center;gap:8px;padding:4px 0;cursor:pointer;line-height:1.35}
+.chk input{flex:none;margin:0}
+.chk span{flex:1}
+.chk i{
+  font-style:normal;font-size:9.5px;font-weight:600;letter-spacing:.3px;flex:none;
+  color:var(--txt3);border:1px solid var(--line);border-radius:20px;padding:1px 6px;
+}
+.chk b.n{font-style:normal;font-size:10px;font-weight:700;color:var(--txt3);
+  font-variant-numeric:tabular-nums;flex:none}
+.chk input:disabled{opacity:.4}
+.ghi{font-size:11px;color:var(--txt3);line-height:1.5;margin:4px 0 2px}
+/* ═══════════ NHÃN CHỦ QUYỀN VIỆT NAM ═══════════
+   Bê từ HydroNet. Chữ nghiêng, giãn chữ, có bóng đổ để nổi trên mọi nền.
+
+   ⚑ KHÁC HYDRONET ĐÚNG MỘT ĐIỂM: màu chữ đổi theo nền bản đồ. HydroNet
+   chỉ có nền tối nên để trắng là đủ. RIMS có thêm nền "Sáng" (Esri Light
+   Gray) — chữ trắng trên nền xám sáng thì gần như không đọc được, mà nhãn
+   không đọc được thì coi như không có. Nền sáng: chữ sẫm, bóng trắng.  */
+.vn-lab-root{pointer-events:none;background:none;border:0}
+.vn-lab{
+  position:absolute;left:0;top:0;transform:translate(-50%,-50%);
+  white-space:nowrap;font-family:inherit;font-style:italic;user-select:none;
+  color:rgba(255,255,255,.92);
+  text-shadow:0 1px 3px rgba(0,0,0,.78),0 0 3px rgba(0,0,0,.62);
+}
+.vn-sea{font-size:15px;font-weight:700;letter-spacing:3px;color:rgba(255,255,255,.82)}
+.vn-isl{font-size:11.5px;font-weight:600}
+body[data-nen="light"] .vn-lab{
+  color:#243542;
+  text-shadow:0 1px 2px rgba(255,255,255,.95),0 0 4px rgba(255,255,255,.9);
+}
+body[data-nen="light"] .vn-sea{color:#33485a}
+
+/* Thang màu mật độ nhà. Bản đồ tô màu mà không có thang thì không đọc
+   được — người xem chỉ thấy chỗ đậm chỗ nhạt, không biết đậm là bao nhiêu.
+   Bày dạng dải liền, chỉ ghi số ở các mốc, không viết chữ giải thích.   */
+#thangMatDo{margin:4px 0 2px;padding-left:22px}
+#thangMatDo .dai{display:flex;height:9px;border-radius:2px;overflow:hidden}
+#thangMatDo .dai i{flex:1}
+#thangMatDo .moc{display:flex;justify-content:space-between;margin-top:3px;
+  font-size:9.5px;color:var(--txt3);font-variant-numeric:tabular-nums}
+
+/* Bộ lọc công trình — mục con của nhóm "Hồ đập, công trình", thụt vào
+   cho thấy nó ăn theo bốn dòng ngay trên chứ không phải một nhóm riêng. */
+.loc-row{display:flex;align-items:center;gap:8px;margin:6px 0 2px;padding-left:22px}
+.loc-row label{font-size:11px;color:var(--txt3);flex:none}
+.loc-row select{
+  flex:1;min-width:0;font:inherit;font-size:11.5px;
+  background:var(--ink);color:var(--txt2);border:1px solid var(--line);
+  border-radius:5px;padding:3px 5px;cursor:pointer;
+}
+.loc-row select:hover{border-color:var(--tealL);color:var(--txt)}
+.loc-row select:focus{outline:none;border-color:var(--teal)}
+.loc-row.dang-loc select{border-color:var(--teal);color:var(--txt)}
+
+#scopeChip{display:none;align-items:center;gap:7px;margin:2px 0 8px;padding:6px 9px;border-radius:8px;background:rgba(31,147,227,.14);border:1px solid var(--teal);color:#b8d8f0;font-size:11.5px;font-weight:600}
+#scopeChip.on{display:flex}
+#scopeChip .lv{flex:1;line-height:1.3}
+#scopeChip .lv em{font-style:normal;color:#fff;font-weight:700}
+#scopeChip .x{flex:none;cursor:pointer;width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#b8d8f0;border:1px solid rgba(184,224,225,.4)}
+#scopeChip .x:hover{background:rgba(255,255,255,.1);color:#fff}
+.chips{display:flex;flex-wrap:wrap;gap:5px;margin:2px 0 4px}
+.chip{
+  font-size:11px;font-weight:600;padding:3px 9px;border-radius:20px;cursor:pointer;
+  border:1px solid var(--line);background:var(--ink);color:var(--txt2);
+}
+.chip:hover{border-color:var(--tealL);color:var(--txt)}
+.chip.on{background:var(--teal);border-color:var(--teal);color:#fff}
+.chip i{font-style:normal;margin-left:6px;opacity:.7;font-variant-numeric:tabular-nums}
+.chk.chua-ve span,.chk.chua-ve b.n{opacity:.42}
+
+/* Biểu tượng công trình co theo mức phóng. Ở mức toàn quốc, 665 hình thang
+   cỡ thật chồng lên nhau thành một mảng không đọc được — nhưng thu nhỏ thì
+   vẫn giữ đúng hình dáng đập, người xem vẫn nhận ra đó là công trình gì. */
+.gis-ic{transition:transform .12s ease}
+body[data-z="xa"]   .gis-ic{transform:scale(.45)}
+body[data-z="vua"]  .gis-ic{transform:scale(.68)}
+body[data-z="gan"]  .gis-ic{transform:scale(1)}
+
+/* popup thuộc tính công trình — cách bày của HydroNet */
+.gis-popup .leaflet-popup-content-wrapper{background:#1b2429;color:#e7e9ec;border-radius:10px}
+.gis-popup .leaflet-popup-tip{background:#1b2429}
+.gis-popup .leaflet-popup-content{margin:11px 13px;font-family:inherit}
+.gis-pop b{font-size:13.5px}
+.gis-pop .sub{color:#9aa1a9;font-size:10.5px;margin:2px 0 4px}
+.gis-pop table{border-collapse:collapse;font-size:11.5px;line-height:1.35;margin-top:5px}
+.gis-pop td.k{padding:2px 10px 2px 0;color:#9aa1a9;vertical-align:top}
+.gis-pop td.u{padding:2px 8px 2px 0;color:#7f8b91;white-space:nowrap;vertical-align:top}
+.gis-pop td.v{padding:2px 0;font-weight:600;vertical-align:top}
+.gis-pop td.g{padding:7px 0 1px;color:#4a93d8;font-weight:700;font-size:9.5px;letter-spacing:.5px}
+.gis-pop .thieu{margin-top:7px;color:#E4C39C;font-size:11px;line-height:1.45}
+.chk:has(input:disabled){cursor:default}
+.chk:has(input:disabled) span{color:var(--txt3)}
+
+.grp{
+  font-size:10.5px;font-weight:700;letter-spacing:.9px;text-transform:uppercase;
+  color:var(--txt3);margin:12px 0 6px;
+}
+.row{display:flex;align-items:center;gap:8px;padding:4px 0}
+.row label{cursor:pointer}
+.hint{color:var(--txt3);font-size:11.5px;line-height:1.5}
+.flag{
+  border-left:2px solid var(--silt);background:rgba(200,129,63,.09);
+  padding:7px 9px;border-radius:0 6px 6px 0;color:#E4C39C;font-size:11.5px;line-height:1.5;margin-top:8px;
+}
+
+/* danh mục hồ */
+#hoFilter{
+  width:100%;padding:6px 9px;border-radius:7px;border:1px solid var(--line);
+  background:var(--ink);color:var(--txt);outline:none;margin-bottom:9px;
+}
+.hoCard{
+  border:1px solid var(--line);border-radius:8px;padding:9px 10px;margin-bottom:8px;
+  background:var(--ink3);cursor:pointer;
+}
+.hoCard:hover{border-color:var(--tealL)}
+.hoCard .t{font-weight:700;display:flex;align-items:center;gap:6px}
+.hoCard .m{color:var(--txt3);font-size:11.5px;margin-top:3px}
+.pill{
+  font-size:9.5px;font-weight:700;letter-spacing:.5px;padding:2px 6px;border-radius:20px;
+  background:rgba(31,147,227,.16);color:#8fc7ee;flex:none;
+}
+.pill.anqg{background:rgba(196,69,63,.16);color:#E79892}
+.hoCard .no{color:var(--txt3);font-size:11px;margin-top:5px;font-style:italic}
+
+/* ── BẢN ĐỒ ── */
+#mapwrap{position:relative;min-width:0;min-height:0;background:#0b0e12}
+#map{position:absolute;inset:0}
+.leaflet-container{background:#0b0e12;font-family:inherit}
+
+/* bảng lớp KTTV do weather-layers.js cắm vào — bỏ khung nổi, cho hoà vào dock */
+#wxMount .wx-panel,#wxMount .wxpanel,#wxMount .panel,#wxMount>div{
+  position:static!important;max-height:none!important;
+  box-shadow:none!important;border-radius:8px;
+}
+
+/* ── BĂNG PHẢI ── */
+#opsTab{
+  position:fixed;right:0;top:calc(var(--topH) + 14px);z-index:850;
+  writing-mode:vertical-rl;padding:14px 6px;border-radius:8px 0 0 8px;
+  background:var(--teal);color:#fff;border:0;cursor:pointer;
+  font-weight:700;letter-spacing:1.6px;font-size:11px;
+  box-shadow:-2px 2px 12px rgba(0,0,0,.4);
+}
+#app.ops-open ~ #opsTab{display:none}   /* #opsTab là ANH EM của #app, không phải con */
+#opsPanel{
+  background:var(--ink2);border-left:1px solid var(--line);
+  display:flex;flex-direction:column;min-width:0;overflow:hidden;
+}
+#app:not(.ops-open) #opsPanel{display:none}
+#opsHd{
+  display:flex;align-items:center;gap:6px;padding:8px 10px;
+  border-bottom:1px solid var(--line);flex:none;
+}
+#opsTitle{font-weight:700;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mini{
+  background:var(--ink);border:1px solid var(--line);color:var(--txt2);
+  border-radius:6px;width:26px;height:26px;cursor:pointer;flex:none;
+}
+.mini:hover{border-color:var(--tealL);color:var(--txt)}
+#opsRail{display:flex;gap:6px;padding:7px 10px;border-bottom:1px solid var(--line);flex:none;overflow-x:auto}
+#opsRail:empty{display:none}
+#opsFrame{flex:1;border:0;width:100%;background:#fff;min-height:0}
+#opsEmpty{flex:1;display:flex;align-items:center;justify-content:center;padding:26px;text-align:center}
+#opsEmpty[hidden]{display:none}   /* hidden bị display:flex ở trên đè — khi mở module phải ẩn thật, không thì lòi ô trống dưới console (RIMS-20) */
+#opsEmpty p{color:var(--txt3);line-height:1.65;max-width:270px}
+
+/* ── BĂNG DƯỚI ── */
+#botbar{
+  background:var(--ink2);border-top:1px solid var(--line);
+  display:grid;grid-template-columns:minmax(180px,300px) 1fr minmax(210px,auto);
+  align-items:center;gap:14px;padding:0 14px;position:relative;z-index:900;overflow:hidden;
+}
+#legendSlot{overflow:hidden;max-height:calc(var(--botH) - 12px)}
+#legendSlot{display:flex;align-items:center}
+#legendHint{color:var(--txt3);font-size:11.5px}
+#timeSlot{display:flex;align-items:center;justify-content:center;min-width:0}
+#timeSlot:empty::after{content:""}
+#botStat{display:flex;flex-direction:column;align-items:flex-end;gap:2px;font-size:11.5px;color:var(--txt2);white-space:nowrap}
+#botStat .b{font-weight:700;color:var(--txt);font-variant-numeric:tabular-nums}
+#botStat .sub{color:var(--txt3)}
+#botRight{display:flex;align-items:center;gap:14px;justify-content:flex-end;font-size:11.5px;color:var(--txt2);white-space:nowrap}
+#apiHealth{display:flex;align-items:center;gap:12px}
+#apiHealth .api{display:inline-flex;align-items:center;gap:5px;color:var(--txt3);font-size:11px;font-weight:600;cursor:default}
+#apiHealth .api .d{width:8px;height:8px;border-radius:50%;background:var(--txt3);flex:none}
+#apiHealth .api .d.ok{background:var(--ok);box-shadow:0 0 0 3px rgba(62,158,107,.16)}
+#apiHealth .api .d.warn{background:var(--silt);box-shadow:0 0 0 3px rgba(200,129,63,.16)}
+#apiHealth .api .d.err{background:var(--crit);box-shadow:0 0 0 3px rgba(196,69,63,.16)}
+#dataAge{color:var(--txt2);font-variant-numeric:tabular-nums}
+
+/* gỡ kiểu trôi nổi của #hnTimeBar / #hnLegend sau khi dời xuống băng dưới */
+#botbar #hnTimeBar{
+  position:static!important;transform:none!important;left:auto!important;bottom:auto!important;
+  background:transparent!important;border:0!important;box-shadow:none!important;
+  backdrop-filter:none!important;-webkit-backdrop-filter:none!important;padding:0!important;
+}
+#botbar #hnLegend{
+  position:static!important;right:auto!important;bottom:auto!important;
+  background:transparent!important;border:0!important;box-shadow:none!important;
+  padding:0!important;min-width:0!important;display:flex;gap:14px;
+}
+#botbar #hnLegend .hn-lg-sec+.hn-lg-sec{margin-top:0;padding-top:0;border-top:0;border-left:1px solid var(--line);padding-left:14px}
+#botbar #hnLegend .hn-lg-cap{color:var(--txt2)}
+#botbar #hnLegend .hn-lg-bar{min-width:88px}
+</style>
+<style id="rims-dem-ui">
+#demCtl{margin:4px 0 8px;padding:8px 10px;border:1px solid var(--line,#2a323b);border-radius:8px;background:rgba(255,255,255,.03)}
+#demCtl .dc-row{margin:7px 0}
+#demCtl .dc-row:first-child{margin-top:0}
+#demCtl .dc-row label{display:block;font-size:11px;color:#9aa1ad;margin:0 0 4px}
+#demCtl .dc-row label b{color:#e7e9ec;font-weight:600}
+#demCtl input[type=range]{display:block;width:100%;box-sizing:border-box;margin:0;accent-color:#3aa0ff}
+#demCtl .dc-con{display:flex;align-items:center;gap:6px;font-size:12px;color:#d6dae1;margin-top:9px;flex-wrap:wrap}
+#demCtl .dc-con .dc-sp{margin-left:auto;font-size:11px;color:#9aa1ad}
+#demCtl .dc-con select{background:#15181d;color:#e7e9ec;border:1px solid #2a323b;border-radius:5px;padding:1px 5px}
+#demCtl .dc-busy{color:#e0a53a;font-size:11px}
+#dockGrip{position:absolute;top:0;right:-3px;width:7px;height:100%;cursor:ew-resize;z-index:850}
+#dockGrip::before{content:"";position:absolute;left:3px;top:50%;transform:translateY(-50%);width:2px;height:46px;border-radius:2px;background:transparent;transition:background .15s}
+#dockGrip:hover::before,#dockGrip.drag::before{background:#3aa0ff}
+#app.dock-dragging{transition:none}#app.dock-dragging *{user-select:none}
+</style>
+</head>
+<body>
+
+<div id="app">
+
+  <!-- ══════════ BĂNG TRÊN ══════════ -->
+  <header id="topbar">
+    <div class="brand">
+      <div class="mk"><img src="assets/brand/RIMS_icon.svg" alt="RIMS"></div>
+      <div class="nm"><span class="wm">RIMS</span> <span class="ver">v0.5</span></div>
+      <div class="sub">Hệ thống tích hợp quản lý hồ chứa</div>
+    </div>
+    <div class="tsep"></div>
+
+    <div id="sysSearch">
+      <span class="ic">🔍</span>
+      <input id="sysBox" type="search" placeholder="Tìm hệ thống sông…" autocomplete="off">
+      <div class="res" id="sysRes"></div>
+    </div>
+
+    <div id="topSearch">
+      <span class="ic">🔍</span>
+      <input id="qBox" type="search" placeholder="Tìm hồ chứa…" autocomplete="off">
+      <div class="res" id="qRes"></div>
+    </div>
+
+    <div class="spacer"></div>
+
+    <div id="tbClock" title="Giờ hệ thống"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span class="t" id="tbClkT">--:--:--</span><span class="d" id="tbClkD"></span></div>
+
+    <div class="tb-ctrls">
+      <div class="tb-ctrl" id="tbView">
+        <button class="tb-ib" title="Khung nhìn">
+          <svg viewBox="0 0 24 24"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+          <span class="lb" id="tbViewLb">Toàn quốc</span>
+          <svg viewBox="0 0 24 24" class="cr"><path d="M6 9.5l6 6 6-6"/></svg>
+        </button>
+        <div class="tb-menu"><div class="mh">Khung nhìn</div><div id="tbViewItems"></div></div>
+      </div>
+
+      <div class="tb-ctrl" id="tbBase">
+        <button class="tb-ib" title="Nền bản đồ">
+          <svg viewBox="0 0 24 24"><path d="M12 3l9 5-9 5-9-5 9-5z"/><path d="M3 13l9 5 9-5"/></svg>
+          <span class="lb" id="tbBaseLb">Vệ tinh</span>
+          <svg viewBox="0 0 24 24" class="cr"><path d="M6 9.5l6 6 6-6"/></svg>
+        </button>
+        <div class="tb-menu">
+          <div class="mh">Nền bản đồ</div>
+          <div id="tbBaseItems"></div>
+          <div class="note">Cả ba nền đều của Esri, không nhãn địa danh và không cần khoá.</div>
+        </div>
+      </div>
+
+      <div class="tb-ctrl" id="tbLang">
+        <button class="tb-ib" title="Ngôn ngữ">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3.5 3 14.5 0 18M12 3c-3 3.5-3 14.5 0 18"/></svg>
+          <span class="lb" id="tbLangLb">VI</span>
+          <svg viewBox="0 0 24 24" class="cr"><path d="M6 9.5l6 6 6-6"/></svg>
+        </button>
+        <div class="tb-menu">
+          <div class="mh">Ngôn ngữ</div>
+          <div class="mi on" data-lang="VI">Tiếng Việt<svg viewBox="0 0 24 24" class="ck"><path d="M5 12l5 5 9-11"/></svg></div>
+          <div class="mi" data-lang="EN" style="opacity:.5;cursor:default">English<span style="margin-left:auto;font-size:9px;color:var(--txt3)">SẮP CÓ</span></div>
+        </div>
+      </div>
+
+      <div class="tb-ctrl" id="tbAcc">
+        <button class="tb-ib" title="Tài khoản">
+          <span class="av">K</span>
+          <span class="lb">Khách</span>
+          <svg viewBox="0 0 24 24" class="cr"><path d="M6 9.5l6 6 6-6"/></svg>
+        </button>
+        <div class="tb-menu">
+          <div class="acc-hd"><b>Khách</b><span>Chưa đăng nhập</span></div>
+          <a class="mi" href="settings.html">Nguồn dữ liệu</a>
+          <div class="mi" data-act="caidat">Cài đặt</div>
+          <div class="tb-sep2"></div>
+          <div class="mi" data-act="dangxuat">Đăng xuất</div>
+        </div>
+      </div>
+    </div>
+
+  </header>
+
+  <!-- ══════════ BĂNG TRÁI ══════════ -->
+  <aside id="dock">
+    <div id="dockGrip" title="Kéo để đổi bề rộng băng"></div>
+    <!-- ══ THANH BIỂU TƯỢNG — mỗi menu một mục ══════════════════════════
+         Theo cách tổ chức của HydroNet (app/viewer/index.html: #rail +
+         #panel + section[data-panel]). Tách hẳn hai họ lớp:
+           · Lớp GIS      — nền địa lý, công trình, dân sinh. Ít đổi.
+           · Khí tượng    — số liệu sống, đổi từng giờ.
+         Trộn hai họ này vào một danh sách thì người dùng phải cuộn qua
+         mười mấy dòng mới tới thứ mình cần. Thêm lớp về sau chỉ là thêm
+         một dòng vào đúng nhóm, không phải sắp lại menu.               -->
+    <nav id="rail">
+      <button class="rtab on" data-panel="gis" title="Lớp dữ liệu GIS">
+        <svg viewBox="0 0 24 24"><path d="M12 3 3 8l9 5 9-5-9-5Z"/><path d="M3 13l9 5 9-5"/></svg>
+        <span>Lớp GIS</span>
+      </button>
+      <button class="rtab" data-panel="kttv" title="Khí tượng – Thủy văn">
+        <svg viewBox="0 0 24 24"><path d="M7 16a4 4 0 1 1 1-7.9A5 5 0 0 1 18 9a3.5 3.5 0 0 1-.5 7H7Z"/><path d="M9 20l-1 2M13 20l-1 2M17 20l-1 2"/></svg>
+        <span>Khí tượng</span>
+      </button>
+      <button class="rtab" data-panel="tool" title="Bộ công cụ phân tích">
+        <svg viewBox="0 0 24 24"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.3 2.3-2-2 2.3-2.3z"/></svg>
+        <span>Công cụ</span>
+      </button>
+      <button class="rtab" data-panel="settings" title="Cài đặt">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-1.8-.3 1.6 1.6 0 0 0-1 1.5V21a2 2 0 0 1-4 0v-.1a1.6 1.6 0 0 0-1-1.5 1.6 1.6 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.6 1.6 0 0 0 .3-1.8 1.6 1.6 0 0 0-1.5-1H3a2 2 0 0 1 0-4h.1a1.6 1.6 0 0 0 1.5-1 1.6 1.6 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.6 1.6 0 0 0 1.8.3H9a1.6 1.6 0 0 0 1-1.5V3a2 2 0 0 1 4 0v.1a1.6 1.6 0 0 0 1 1.5 1.6 1.6 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0-.3 1.8V15z"/></svg>
+        <span>Cài đặt</span>
+      </button>
+      <button class="rtab" data-panel="help" title="Trợ giúp">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>
+        <span>Trợ giúp</span>
+      </button>
+      <button class="rtab" id="railCollapse" title="Thu gọn băng" aria-label="Thu gọn băng">
+        <svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg>
+      </button>
+    </nav>
+
+    <div id="panel">
+
+      <!-- ── LỚP DỮ LIỆU GIS ─────────────────────────────────────────── -->
+      <section data-panel="gis" class="show">
+        <div class="p-title">Lớp dữ liệu GIS</div>
+        <div class="p-body">
+
+          <div class="p-sub">Ranh giới hành chính</div>
+          <label class="chk"><input type="checkbox" data-gis="hc_tinh"><span>Tỉnh, thành phố</span><b class="n">34</b></label>
+          <label class="chk"><input type="checkbox" data-gis="hc_xa"><span>Phường, xã</span><b class="n">3.321</b></label>
+
+          <div class="p-sub">Địa hình</div>
+          <label class="chk"><input type="checkbox" data-gis="dem"><span>Bản đồ địa hình (DEM)</span></label>
+          <div id="demCtl" style="display:none">
+            <div class="dc-row"><label>Độ mờ <b id="demOpV">85</b> %</label><input type="range" id="demOp" min="0.3" max="1" step="0.05"></div>
+            <div class="dc-row"><label>Đáy dải màu <b id="demLo">–</b> m</label><input type="range" id="demSLo"></div>
+            <div class="dc-row"><label>Đỉnh dải màu <b id="demHi">–</b> m</label><input type="range" id="demSHi"></div>
+            <label class="dc-con"><input type="checkbox" id="demCon"><span>Đường đồng mức</span><span class="dc-sp">bước</span><select id="demInt"><option>50</option><option selected>100</option><option>200</option><option>500</option></select><span>m</span><span id="demBusy" class="dc-busy">…</span></label>
+          </div>
+
+          <div class="p-sub">Sông ngòi</div>
+          <label class="chk"><input type="checkbox" data-gis="song_chinh"><span>Sông chính, sông lớn</span><b class="n">434</b></label>
+          <label class="chk"><input type="checkbox" data-gis="song_nhanh"><span>Sông nhánh, suối</span><b class="n">64.051</b></label>
+          <label class="chk"><input type="checkbox" data-gis="luu_vuc"><span>Lưu vực</span><b class="n">100</b></label>
+          <label class="chk"><input type="checkbox" data-gis="tieu_luu_vuc"><span>Tiểu lưu vực</span><b class="n">206</b></label>
+
+          <div class="p-sub">Hồ đập, công trình</div>
+          <div id="scopeChip"><span class="lv">Đang lọc theo <em id="scopeName">—</em></span><span class="x" id="scopeClear" title="Gỡ lọc, hiện lại toàn mạng">✕</span></div>
+          <label class="chk"><input type="checkbox" data-gis="ho_thuyloi"><span>Hồ chứa thuỷ lợi</span><b class="n">558</b></label>
+          <label class="chk"><input type="checkbox" data-gis="ho_thuydien"><span>Hồ chứa thuỷ điện</span><b class="n">637</b></label>
+          <label class="chk"><input type="checkbox" data-gis="cong"><span>Cống</span><b class="n">362</b></label>
+          <label class="chk"><input type="checkbox" data-gis="tram_bom"><span>Trạm bơm</span><b class="n">438</b></label>
+          <div class="loc-row">
+            <label for="gisLoc">Lọc</label>
+            <select id="gisLoc"></select>
+          </div>
+
+          <div class="p-sub">Dân sinh</div>
+          <label class="chk"><input type="checkbox" data-gis="matdo_nha"><span>Mật độ nhà cửa (theo xã)</span><b class="n">3.321</b></label>
+          <div id="thangMatDo" hidden></div>
+          <label class="chk"><input type="checkbox" data-gis="nha_cua"><span>Nhà cửa, công trình</span><b class="n"></b></label>
+
+          <div class="p-sub">Chưa có dữ liệu</div>
+          <label class="chk"><input type="checkbox" disabled><span>Vùng ngập hạ du</span><i>chưa có</i></label>
+          <label class="chk"><input type="checkbox" disabled><span>Khu dân cư, điểm xung yếu</span><i>chưa có</i></label>
+          <label class="chk"><input type="checkbox" disabled><span>Giao thông, cầu cống</span><i>chưa có</i></label>
+        </div>
+      </section>
+
+      <!-- ── KHÍ TƯỢNG – THỦY VĂN ────────────────────────────────────── -->
+      <section data-panel="kttv">
+        <div class="p-title">Khí tượng – Thủy văn</div>
+        <div class="p-body">
+          <!-- weather-layers.js tự dựng bảng lớp và cắm vào đây -->
+          <div id="wxMount"></div>
+          <div id="rimsTramNote" class="hint" style="margin-top:8px"></div>
+          <div id="wxFallback" class="flag" hidden>
+            Chưa nạp được bảng lớp khí tượng – thủy văn.
+          </div>
+        </div>
+      </section>
+
+      <!-- ── BỘ CÔNG CỤ (rims-toolbox.js tự dựng launcher + tool vào đây) ── -->
+      <section data-panel="tool"></section>
+
+      <!-- ── CÀI ĐẶT ── -->
+      <section data-panel="settings">
+        <div class="p-title">Cài đặt</div>
+        <div class="p-body">
+          <button class="set-item" type="button" onclick="location.href='settings.html'">
+            <svg viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v14c0 1.7 3.6 3 8 3s8-1.3 8-3V5"/><path d="M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/></svg>
+            <span class="lbl">Nguồn dữ liệu</span>
+            <span class="st" id="srcSummary">…</span>
+          </button>
+        </div>
+      </section>
+
+      <!-- ── TRỢ GIÚP ── -->
+      <section data-panel="help">
+        <div class="p-title">Trợ giúp</div>
+        <div class="p-body">
+          <div class="set-item" style="cursor:default"><span class="lbl">Phiên bản</span><span class="st">RIMS v0.5</span></div>
+        </div>
+      </section>
+
+    </div>
+
+  </aside>
+
+  <!-- ══════════ BẢN ĐỒ ══════════ -->
+  <main id="mapwrap"><div id="map"></div></main>
+
+  <!-- ══════════ BĂNG PHẢI ══════════ -->
+  <aside id="opsPanel">
+    <div id="opsHd">
+      <span id="opsTitle">Không gian làm việc</span>
+      <button class="mini" id="opsDetach" title="Tách ra cửa sổ riêng">⧉</button>
+      <button class="mini" id="opsClose"  title="Đóng">✕</button>
+    </div>
+    <div id="opsRail"></div>
+    <iframe id="opsFrame" title="Không gian làm việc từng hồ" hidden></iframe>
+    <div id="opsEmpty">
+      <p>Chọn một hồ trong <b>Danh mục hồ</b> để mở không gian làm việc riêng của hồ đó.</p>
+    </div>
+  </aside>
+
+  <!-- ══════════ BĂNG DƯỚI ══════════ -->
+  <footer id="botbar">
+    <div id="legendSlot"></div>
+    <div id="timeSlot"></div>
+    <div id="botRight">
+      <div id="apiHealth"></div>
+      <span id="dataAge">—</span>
+    </div>
+  </footer>
+
+</div>
+
+<button id="opsTab" title="Mở không gian làm việc">KHÔNG GIAN HỒ</button>
+
+<!-- ═══════════ NẠP THEO ĐÚNG THỨ TỰ ═══════════ -->
+<!-- 1) khoá cục bộ — CHỈ dùng khi chạy tạm không qua máy chủ Node. Bình thường KHÔNG cần. -->
+<script src="secret.local.js" onerror="console.info('[RIMS] không có secret.local.js — đúng như thiết kế, khoá nằm ở máy chủ')"></script>
+<!-- 2) cấu hình -->
+<script src="config.js"></script>
+<!-- 3) sổ đăng ký nguồn dữ liệu (trước mọi lớp gọi API) -->
+<script src="core/rims-sources.js"></script>
+<script src="core/adapters/openmeteo.js"></script>
+<!-- 4) thư viện bản đồ -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/@turf/turf@6/turf.min.js"></script>
+
+<script>
+/* ══════════════ KHỞI TẠO BẢN ĐỒ ══════════════
+   PHẢI đặt window.HYDRO_MAP trước khi nạp weather-layers.js — đó là hợp
+   đồng của các module bê từ HydroNet.                                   */
+(function () {
+  var C = window.RIMS_CONFIG;
+  var map = L.map('map', { zoomControl: true, preferCanvas: true })
+             .setView([C.CENTER_LAT, C.CENTER_LNG], C.DEFAULT_ZOOM);
+  window.HYDRO_MAP = map;
+  window.RIMS_MAP  = map;
+
+  /* Nền bản đồ — cả ba lớp của Esri, không nhãn, không cần khoá.
+     Xem chú thích trong config.js về việc BỎ CARTO ngày 30/8/2026.     */
+  var bases = {}, curKey = null, cur = null;
+  Object.keys(C.BASEMAPS).forEach(function (k) {
+    bases[k] = L.tileLayer(C.BASEMAPS[k].url, C.BASEMAPS[k].opts);
+  });
+
+  window.RIMS_setBasemap = function (k) {
+    if (!bases[k] || k === curKey) return;
+    if (cur) map.removeLayer(cur);
+    cur = bases[k]; curKey = k; cur.addTo(map);
+    /* Nhãn chủ quyền phải đọc được trên CẢ BA nền — xem khối bên dưới. */
+    document.body.dataset.nen = k;
+    try { localStorage.setItem('rims.basemap', k); } catch (e) {}
+  };
+  window.RIMS_getBasemap = function () { return curKey; };
+
+  var want = null; try { want = localStorage.getItem('rims.basemap'); } catch (e) {}
+  window.RIMS_setBasemap(bases[want] ? want : C.BASEMAP_DEFAULT);
+
+  /* ══════════════ NHÃN CHỦ QUYỀN VIỆT NAM ══════════════
+     BÊ TỪ HydroNet (app/viewer/index.html, khối "Nhãn chủ quyền VN").
+     Cùng toạ độ, cùng cách gọi tên, cùng cách dựng.
+
+     ⚑ KHÔNG ĐƯỢC TẮT, KHÔNG ĐƯA VÀO MENU LỚP, KHÔNG GẮN NGƯỠNG ZOOM.
+     Đây là yêu cầu pháp lý đối với mọi bản đồ xuất bản ở Việt Nam, không
+     phải một lớp dữ liệu để người dùng chọn. Ai sửa file này về sau xin
+     đừng "dọn cho gọn" ba dòng dưới đây.
+
+     Ba nền bản đồ đều là bản KHÔNG NHÃN của Esri (World_Imagery và hai
+     bản Canvas *_Base) — cố ý, để nền không tự vẽ tên "South China Sea"
+     hay địa danh theo cách gọi của nước khác. Tên do ta tự đặt, ở đây.
+
+     Ranh giới hành chính (data/hanhchinh/tinh.geojson) đã bao gồm cả hai
+     quần đảo: huyện Hoàng Sa thuộc Đà Nẵng (kinh độ tới 112,8°Đ), huyện
+     Trường Sa thuộc Khánh Hoà (tới 117,4°Đ). Nhãn và ranh giới khớp nhau.
+     ═══════════════════════════════════════════════════ */
+  map.createPane('vnlabels');
+  map.getPane('vnlabels').style.zIndex = 645;      // trên mọi lớp, dưới tooltip/popup
+  map.getPane('vnlabels').style.pointerEvents = 'none';
+  (function () {
+    function nhan(lat, lon, chu, kieu) {
+      return L.marker([lat, lon], {
+        pane: 'vnlabels', interactive: false, keyboard: false,
+        icon: L.divIcon({ className: 'vn-lab-root', iconSize: [0, 0],
+          html: '<span class="vn-lab ' + (kieu || '') + '">' + chu + '</span>' })
+      });
+    }
+    window.RIMS_VNLABELS = L.layerGroup([
+      nhan(13.6, 114.2, 'BIỂN ĐÔNG', 'vn-sea'),
+      nhan(16.5, 112.0, 'Quần đảo Hoàng Sa', 'vn-isl'),
+      nhan(9.6,  114.0, 'Quần đảo Trường Sa', 'vn-isl')
+    ]).addTo(map);
+  })();
+
+  L.control.scale({ imperial: false, position: 'bottomleft' }).addTo(map);
+
+  /* ── NÚT DỌN MÀN HÌNH (chỉ hiện khi có vết tích tính toán) ── */
+  (function () {
+    var st = document.createElement('style');
+    st.textContent = '.rims-don{border:0!important;background:none!important;box-shadow:none!important;margin-top:8px!important}'
+      + '.rims-don button{display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;padding:0;background:var(--ink2);border:1px solid var(--line);color:var(--txt);border-radius:8px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.35)}'
+      + '.rims-don button:hover{border-color:var(--crit);color:#fff}'
+      + '.rims-don button svg{color:var(--txt2)}.rims-don button:hover svg{color:#fff}';
+    document.head.appendChild(st);
+    var ctl = L.control({ position: 'topleft' });
+    ctl.onAdd = function () {
+      var d = L.DomUtil.create('div', 'rims-don');
+      d.innerHTML = '<button type="button" id="btnDonMH" title="Dọn màn hình — tắt mọi lớp, về nền trơn" aria-label="Dọn màn hình">'
+        + '<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m7 21-4.3-4.3a1.98 1.98 0 0 1 0-2.8l9.6-9.6a1.98 1.98 0 0 1 2.8 0l5.6 5.6a1.98 1.98 0 0 1 0 2.8L13 21"/><path d="M22 21H8"/><path d="m5 11 9 9"/></svg></button>';
+      L.DomEvent.disableClickPropagation(d);
+      d.querySelector('#btnDonMH').addEventListener('click', function () { if (window.RIMS_donManHinh) window.RIMS_donManHinh(); capNhatDon(); });
+      return d;
+    };
+    ctl.addTo(map);
+    function capNhatDon(){ var b=document.getElementById('btnDonMH'); if(!b) return; b.style.display = (window.RIMS_coVetTich && window.RIMS_coVetTich()) ? '' : 'none'; }
+    capNhatDon(); setInterval(capNhatDon, 600);
+
+    /* Thu gọn / mở băng trái bằng nút ở đáy thanh icon */
+    (function () {
+      var app = document.getElementById('app'), btn = document.getElementById('railCollapse');
+      if (!app || !btn) return; var savedW = null;
+      function railW(){ var r = document.getElementById('rail'); return r ? r.offsetWidth : 58; }
+      function isCol(){ return app.classList.contains('dock-collapsed'); }
+      function icon(c){ var sv = btn.querySelector('svg'); if (sv) sv.innerHTML = c ? '<path d="M9 6l6 6-6 6"/>' : '<path d="M15 6l-6 6 6 6"/>'; btn.title = c ? 'Mở băng' : 'Thu gọn băng'; }
+      function reSize(){ setTimeout(function(){ try { map.invalidateSize({ pan:false }); } catch(e){} }, 210); }
+      function collapse(){ savedW = getComputedStyle(app).getPropertyValue('--dockW'); app.classList.add('dock-collapsed'); app.style.setProperty('--dockW', railW() + 'px'); icon(true); reSize(); }
+      function expand(){ app.classList.remove('dock-collapsed'); if (savedW) app.style.setProperty('--dockW', savedW.trim()); icon(false); reSize(); }
+      btn.addEventListener('click', function(){ isCol() ? expand() : collapse(); });
+      document.querySelectorAll('#rail .rtab').forEach(function(t){ if (t !== btn) t.addEventListener('click', function(){ if (isCol()) expand(); }); });
+    })();
+  })();
+})();
+</script>
+
+<!-- 5) độ tươi dữ liệu — PHẢI nạp TRƯỚC weather-layers.js vì lớp trạm hỏi
+        HHTFresh để quyết định giọt nào là trễ (mốc RIMS-04) -->
+<script src="core/hht-freshness.js"></script>
+<!-- 6) lớp bản đồ bê từ HydroNet -->
+<script src="layers/weather-layers.js"></script>
+<script src="layers/hht-overlays.js"></script>
+<!-- 7) lớp dữ liệu GIS: sông ngòi, công trình thuỷ lợi -->
+<script src="vendor/georaster.browser.bundle.min.js"></script>
+  <script src="vendor/georaster-layer-for-leaflet.min.js"></script>
+  <script src="vendor/d3-contour.min.js"></script>
+  <script src="vendor/d3-delaunay.min.js"></script>
+  <script src="core/rims-gis.js"></script>
+  <script src="core/rims-dem-layer.js"></script>
+  <script src="core/rims-toolbox.js"></script>
+
+<script>
+/* ══════════════ LỚP GIS: BẬT/TẮT VÀ LỌC ══════════════ */
+(function () {
+  function san() { return window.RIMSGis; }
+
+  document.querySelectorAll('input[data-gis]').forEach(function (cb) {
+    if (cb.disabled) return;
+    cb.addEventListener('change', function () {
+      if (!san()) return;
+      var id = cb.dataset.gis;
+      /* Đang lọc theo hệ thống sông: hai lớp hồ KHÔNG bật lớp toàn mạng (sẽ
+         trùng marker với đám basin), chỉ đổi bộ lọc loại trên đám basin. */
+      if ((id === 'ho_thuyloi' || id === 'ho_thuydien') && window.RIMS_scopeState && window.RIMS_scopeState().heThong) {
+        window.RIMS_scopeSetLoai(id === 'ho_thuyloi' ? 'loi' : 'dien', cb.checked);
+        return;
+      }
+      cb.parentElement.classList.add('dangtai');
+      RIMSGis.bat(id, cb.checked)
+        .then(function () {
+          capNhatDem();
+          if (id === 'matdo_nha') thangMatDo(cb.checked);
+          var dn = RIMSGis.dinhNghia[id];
+          if (dn && dn.zoomToiThieu && window.RIMS_gisNhipZoom)
+            /* Lớp đã tắt thì KHÔNG làm mờ dòng — mờ là để báo "đã bật
+               nhưng chưa tới mức phóng", nói về lớp đang tắt thì vô nghĩa. */
+            RIMS_gisNhipZoom(id, !cb.checked || HYDRO_MAP.getZoom() >= dn.zoomToiThieu);
+        })
+        .catch(function (e) {
+          cb.checked = false;
+          var b = cb.parentElement.querySelector('b.n');
+          if (b) { b.textContent = 'lỗi'; b.style.color = 'var(--crit)'; }
+          console.warn('[gis] không nạp được', id, e);
+        })
+        .then(function () { cb.parentElement.classList.remove('dangtai'); });
+    });
+  });
+
+  /* Bộ lọc — một ô chọn thay cho tám cái chip. Số đếm nằm ngay trong dòng
+     ("Trọng điểm quốc gia — 4"), không viết thành câu diễn giải bên dưới. */
+  var host = document.getElementById('gisLoc');
+
+  function dungLoc() {
+    if (!san() || !host) return;
+    var L = RIMSGis.boLoc, cur = RIMSGis.locHienTai();
+    host.innerHTML = Object.keys(L).map(function (k) {
+      var n = (k === 'tat_ca') ? null : RIMSGis.demTheoLoc(k);
+      return '<option value="' + k + '"' + (k === cur ? ' selected' : '') + '>' +
+             L[k].ten + (n != null ? ' — ' + n.toLocaleString('vi-VN') : '') + '</option>';
+    }).join('');
+    host.parentElement.classList.toggle('dang-loc', cur !== 'tat_ca');
+  }
+  if (host) host.addEventListener('change', function () {
+    if (!san()) return;
+    RIMSGis.datLoc(host.value);
+    dungLoc();
+  });
+  var capNhatDem = dungLoc;
+
+  /* Lớp chưa tới mức phóng thì LÀM MỜ chính dòng đó — không viết câu nào.
+     Lý do vì sao đặt trong title, ai cần thì rê chuột.                  */
+  window.RIMS_gisNhipZoom = function (id, dangVe) {
+    var cb = document.querySelector('input[data-gis="' + id + '"]');
+    if (!cb) return;
+    cb.parentElement.classList.toggle('chua-ve', !dangVe);
+    cb.parentElement.title = dangVe ? '' : 'Phóng gần hơn để hiện lớp này';
+  };
+
+  /* mức phóng -> cỡ biểu tượng */
+  function nhipCo() {
+    var z = window.HYDRO_MAP ? HYDRO_MAP.getZoom() : 6;
+    document.body.dataset.z = (z < 7.5) ? 'xa' : (z < 9.5 ? 'vua' : 'gan');
+  }
+  if (window.HYDRO_MAP) { HYDRO_MAP.on('zoomend', nhipCo); nhipCo(); }
+
+  /* Lớp cần dữ liệu chưa dựng thì khoá dòng lại kèm nhãn "chưa có" — y
+     như các dòng chưa có dữ liệu khác. Không để người dùng bấm vào rồi
+     nhận một lỗi mạng.                                                 */
+  /* Thang màu chỉ hiện khi lớp mật độ đang bật — không chiếm chỗ lúc tắt. */
+  function thangMatDo(hien) {
+    var el = document.getElementById('thangMatDo');
+    if (!el || !san() || !RIMSGis.thangMatDo) return;
+    if (!el.dataset.dung) {
+      var t = RIMSGis.thangMatDo();
+      el.innerHTML =
+        '<div class="dai">' + t.map(function (x) {
+          return '<i style="background:' + x[1] + '"></i>'; }).join('') + '</div>' +
+        '<div class="moc"><span>0</span>' +
+        t.slice(1).map(function (x) { return '<span>' + x[0].toLocaleString('vi-VN') + '</span>'; }).join('') +
+        '<span>nhà/km²</span></div>';
+      el.dataset.dung = '1';
+    }
+    el.hidden = !hien;
+  }
+
+  window.RIMS_gisKhoaLop = function (co) {
+    Object.keys(co).forEach(function (id) {
+      var cb = document.querySelector('input[data-gis="' + id + '"]');
+      if (!cb) return;
+      var dong = cb.parentElement;
+      cb.disabled = !co[id];
+      var b = dong.querySelector('b.n');
+      if (!co[id]) {
+        if (b) b.remove();
+        if (!dong.querySelector('i')) {
+          var i = document.createElement('i'); i.textContent = 'chưa có'; dong.appendChild(i);
+        }
+      }
+    });
+  };
+
+  var cho = setInterval(function () {
+    if (!san()) return;
+    clearInterval(cho); dungLoc();
+    if (RIMSGis.doDuLieu) RIMSGis.doDuLieu();
+  }, 250);
+  setTimeout(function () { clearInterval(cho); }, 15000);
+})();
+
+/* ══════════════ SCOPE DÙNG CHUNG: HỆ THỐNG SÔNG ↔ LỚP ĐẬP ══════════════
+   Một nguồn sự thật (scope) cho "đang xem lưu vực nào + loại đập nào".
+   · Chọn hệ thống sông (băng trên) → tự bật lớp đập, lọc về lưu vực, fit;
+     băng trái tự tick + hiện chip. (R1)
+   · Băng trái tick/bỏ khi đang lọc → chỉ đổi loại trên đám basin. (R3)
+   · Gỡ chip / xoá ô sông → về toàn mạng, giữ lớp đang bật. (R5)
+   Chỉ MỘT hệ vẽ marker: khi lọc theo hệ thì tắt lớp toàn mạng (khỏi trùng). */
+(function(){
+  var scope = { heThong:null, ten:null, loai:{ loi:false, dien:false } };
+  function cbx(loai){ return document.querySelector('input[data-gis="ho_'+(loai==='loi'?'thuyloi':'thuydien')+'"]'); }
+  function tick(loai,on){ var c=cbx(loai); if(c) c.checked=!!on; }
+  function veChip(){
+    var el=document.getElementById('scopeChip'); if(!el) return;
+    el.classList.toggle('on', !!scope.heThong);
+    if(scope.heThong){ var nm=document.getElementById('scopeName'); if(nm) nm.textContent=scope.ten||''; }
+  }
+  window.RIMS_scopeState = function(){ return scope; };
+
+  /* Bật/tắt một loại khi ĐANG lọc theo hệ (không đụng lớp toàn mạng). */
+  window.RIMS_scopeSetLoai = function(loai,on){
+    scope.loai[loai]=!!on; tick(loai,on);
+    if(window.RIMS_scopeLoai) window.RIMS_scopeLoai(scope.loai);
+  };
+
+  /* Trung tâm: đặt (hoặc gỡ) hệ thống sông đang xem. */
+  window.RIMS_datHeThong = function(id, ten){
+    var G=window.RIMSGis;
+    if(!id){                                   // GỠ: về toàn mạng
+      if(window.RIMS_chonHeThong) window.RIMS_chonHeThong(null);
+      if(G){ G.bat('ho_thuyloi', scope.loai.loi); G.bat('ho_thuydien', scope.loai.dien); }
+      scope.heThong=null; scope.ten=null; veChip(); return;
+    }
+    // Đọc trạng thái checkbox hiện tại vào scope (tôn trọng loại đã bật sẵn).
+    var cl=cbx('loi'), cd=cbx('dien');
+    scope.loai.loi = !!(cl && cl.checked);
+    scope.loai.dien = !!(cd && cd.checked);
+    // Quyết định (anh Tuấn duyệt): chỉ tự bật CẢ HAI khi đang tắt hết.
+    if(!scope.loai.loi && !scope.loai.dien){ scope.loai.loi=true; scope.loai.dien=true; }
+    scope.heThong=id; scope.ten=ten;
+    tick('loi',scope.loai.loi); tick('dien',scope.loai.dien);
+    // Tắt lớp toàn mạng để khỏi trùng marker với đám basin.
+    if(G){ G.bat('ho_thuyloi', false); G.bat('ho_thuydien', false); }
+    // Đặt bộ lọc loại TRƯỚC khi vẽ (chonHeThong áp apLoaiHT khi vẽ xong).
+    if(window.RIMS_scopeLoai) window.RIMS_scopeLoai(scope.loai);
+    if(window.RIMS_chonHeThong) window.RIMS_chonHeThong(id, ten);
+    veChip();
+  };
+
+  /* Bấm ✕ trên chip → gỡ lọc. */
+  document.addEventListener('click', function(e){
+    if(e.target && e.target.id==='scopeClear'){
+      var sb=document.getElementById('sysBox'); if(sb) sb.value='';
+      if(window.RIMS_datHeThong) window.RIMS_datHeThong(null);
+      if(window.RIMS_locHoTheoHeThong) window.RIMS_locHoTheoHeThong(null);
+    }
+  });
+})();
+
+/* ══════════════ CHUYỂN MENU Ở BĂNG TRÁI ══════════════
+   Ba họ lớp, mỗi họ một section. Thêm họ mới về sau = thêm một nút vào
+   #rail và một <section data-panel="..."> — không phải sửa mã này.    */
+(function () {
+  var tabs = document.querySelectorAll('#rail .rtab');
+  var secs = document.querySelectorAll('#panel section[data-panel]');
+  function show(k) {
+    var co = false;
+    secs.forEach(function (x) { if (x.dataset.panel === k) co = true; });
+    if (!co) return;
+    tabs.forEach(function (b) { b.classList.toggle('on', b.dataset.panel === k); });
+    secs.forEach(function (x) { x.classList.toggle('show', x.dataset.panel === k); });
+    document.getElementById('panel').scrollTop = 0;
+    try { localStorage.setItem('rims.menu', k); } catch (e) {}
+  }
+  tabs.forEach(function (b) { b.addEventListener('click', function () { show(b.dataset.panel); }); });
+  var saved = null; try { saved = localStorage.getItem('rims.menu'); } catch (e) {}
+  if (saved) show(saved);
+  window.RIMS_moMenu = show;   // để chỗ khác gọi tới, ví dụ bấm hồ trên bản đồ
+})();
+
+/* ══════════════ ĐIỀU KHIỂN THẢ XUỐNG Ở BĂNG TRÊN ══════════════
+   Bê nguyên cách làm của HydroNet (app/viewer/index.html): mỗi điều khiển
+   là một .tb-ctrl, mở một cái thì đóng các cái khác, bấm ra ngoài thì đóng
+   hết. Mục đang chọn có dấu ✓.                                          */
+(function () {
+  var CK = '<svg viewBox="0 0 24 24" class="ck"><path d="M5 12l5 5 9-11"/></svg>';
+
+  function closeAll(except) {
+    document.querySelectorAll('#topbar .tb-ctrl.open').forEach(function (c) {
+      if (c !== except) c.classList.remove('open');
+    });
+  }
+  document.querySelectorAll('#topbar .tb-ctrl').forEach(function (c) {
+    c.querySelector('.tb-ib').addEventListener('click', function (e) {
+      e.stopPropagation();
+      var was = c.classList.contains('open');
+      closeAll(c); c.classList.toggle('open', !was);
+    });
+    c.querySelector('.tb-menu').addEventListener('click', function (e) { e.stopPropagation(); });
+  });
+  document.addEventListener('click', function () { closeAll(null); });
+
+  /* dựng một danh sách chọn: opts = [[mã, nhãn], …] */
+  function menu(hostId, ctrlId, labId, opts, getCur, onPick) {
+    var host = document.getElementById(hostId);
+    function render() {
+      var c = getCur();
+      host.innerHTML = opts.map(function (o) {
+        return '<div class="mi' + (o[0] === c ? ' on' : '') + '" data-v="' + o[0] + '">' +
+               '<span>' + o[1] + '</span>' + CK + '</div>';
+      }).join('');
+      var lab = document.getElementById(labId);
+      if (lab) {
+        var hit = opts.filter(function (o) { return o[0] === c; })[0];
+        if (hit) lab.textContent = hit[1];
+      }
+      host.querySelectorAll('.mi').forEach(function (el) {
+        el.addEventListener('click', function () {
+          onPick(el.dataset.v);
+          render();
+          document.getElementById(ctrlId).classList.remove('open');
+        });
+      });
+    }
+    render();
+    return render;
+  }
+
+  /* --- Nền bản đồ --- */
+  var C = window.RIMS_CONFIG;
+  var bmOpts = Object.keys(C.BASEMAPS).map(function (k) { return [k, C.BASEMAPS[k].label]; });
+  menu('tbBaseItems', 'tbBase', 'tbBaseLb', bmOpts,
+       function () { return window.RIMS_getBasemap(); },
+       function (v) { window.RIMS_setBasemap(v); });
+
+  /* --- Khung nhìn ---
+     Mới nhảy khung nhìn bản đồ. Việc lọc danh mục hồ và lưới trạm theo
+     địa bàn phải chờ ranh giới hành chính từ NAWAPI — chưa nối vội để
+     khỏi hứa suông trên giao diện.                                     */
+  var VIEWS = {
+    vn:     { ten: 'Toàn quốc',                    c: [16.0, 107.5], z: 6 },
+    bac:    { ten: 'Miền Bắc',                     c: [21.3, 105.6], z: 7 },
+    trung:  { ten: 'Bắc Trung Bộ',                 c: [18.6, 105.8], z: 7 },
+    ntrung: { ten: 'Nam Trung Bộ · Tây Nguyên',    c: [13.6, 108.4], z: 7 },
+    nam:    { ten: 'Đông Nam Bộ',                  c: [11.4, 106.7], z: 8 }
+  };
+  var curView = 'vn';
+  try { curView = localStorage.getItem('rims.view') || 'vn'; } catch (e) {}
+  if (!VIEWS[curView]) curView = 'vn';
+
+  menu('tbViewItems', 'tbView', 'tbViewLb',
+       Object.keys(VIEWS).map(function (k) { return [k, VIEWS[k].ten]; }),
+       function () { return curView; },
+       function (v) {
+         curView = v;
+         try { localStorage.setItem('rims.view', v); } catch (e) {}
+         if (window.HYDRO_MAP) window.HYDRO_MAP.setView(VIEWS[v].c, VIEWS[v].z);
+       });
+})();
+
+/* ══════════════ BĂNG PHẢI ══════════════ */
+(function () {
+  var app = document.getElementById('app'), tab = document.getElementById('opsTab');
+  var OPS_W = 520;
+  function relayout() {
+    document.documentElement.style.setProperty('--opsW', app.classList.contains('ops-open') ? OPS_W + 'px' : '0px');
+    setTimeout(function () { if (window.HYDRO_MAP) window.HYDRO_MAP.invalidateSize({ pan: false }); }, 200);
+  }
+  window.RIMS_opsOpen  = function () { app.classList.add('ops-open'); relayout(); };
+  window.RIMS_opsClose = function () { app.classList.remove('ops-open'); relayout(); };
+  tab.addEventListener('click', window.RIMS_opsOpen);
+  document.getElementById('opsClose').addEventListener('click', window.RIMS_opsClose);
+
+  /* Mở không gian làm việc của một hồ. Ưu tiên host module (modules.json);
+     chưa có module thì báo trung thực, KHÔNG mở khung trắng. */
+  /* Hồ nào ĐÃ có không gian làm việc — đọc thẳng modules.json.
+     Không hỏi host, vì host im lặng khi không tìm thấy id, và khung phải
+     sẽ đứng nguyên câu chào chung — người xem tưởng bấm hụt.            */
+  var COMO = null;
+  fetch('modules.json', { cache: 'no-store' })
+    .then(function (r) { return r.json(); })
+    .then(function (j) { COMO = new Set((j.modules || []).map(function (m) { return m.id; })); })
+    .catch(function () { COMO = new Set(); });
+
+  window.RIMS_openModule = function (id, title) {
+    window.RIMS_opsOpen();
+    document.getElementById('opsTitle').textContent = title || id;
+    if (window.RIMS_noiBatDap && title) window.RIMS_noiBatDap(title);   /* đập đang mở nảy lên trên bản đồ */
+    var fr = document.getElementById('opsFrame'), em = document.getElementById('opsEmpty');
+
+    if (COMO && COMO.has(id) && window.HHTHost && window.HHTHost.openModule) {
+      try { window.HHTHost.openModule(id); fr.hidden = false; em.hidden = true; return; } catch (e) {}
+    }
+    fr.hidden = true; em.hidden = false;
+    em.querySelector('p').innerHTML =
+      '<b>' + (title || id) + '</b><br><br>Chưa dựng không gian làm việc cho hồ này. ' +
+      'Khi dựng xong, khai một khối trong <code>modules.json</code> — không phải sửa mã lõi. ' +
+      '<br><br><span style="font-size:11.5px">Mã module: <code>' + id + '</code></span>';
+  };
+
+  document.getElementById('opsDetach').addEventListener('click', function () {
+    var fr = document.getElementById('opsFrame');
+    if (fr.hidden || !fr.src) return;
+    window.open(fr.src.replace('mode=embed', 'mode=detach'), 'rimsOps', 'width=1400,height=920');
+  });
+  relayout();
+})();
+
+/* ══════════════ DANH MỤC HỒ + TÌM KIẾM ══════════════ */
+(function () {
+  var HO = [];
+  var list = document.getElementById('hoList');
+
+  function card(h) {
+    var d = document.createElement('div');
+    d.className = 'hoCard';
+    var pills = '';
+    if (h.anqg) pills += '<span class="pill anqg">ANQG</span>';
+    if (h.nhom === 'DSS_DAY_DU') pills += '<span class="pill">DSS đầy đủ</span>';
+    var meta = [h.tinh, h.song, (h.flv_km2 ? h.flv_km2.toLocaleString('vi-VN') + ' km²' : null)]
+               .filter(Boolean).join(' · ');
+    d.innerHTML = '<div class="t">' + h.ten + pills + '</div>' +
+                  '<div class="m">' + meta + '</div>' +
+                  (h.toa_do ? '' : '<div class="no">chưa có toạ độ — chưa đặt được lên bản đồ</div>');
+    d.addEventListener('click', function () {
+      window.RIMS_openModule('dam.' + String(h.ma_tam || '').toLowerCase(), h.ten);
+    });
+    return d;
+  }
+
+  function paint(q) {
+    if (!list) return;
+    list.textContent = '';
+    var k = (q || '').trim().toLowerCase();
+    var rows = HO.filter(function (h) {
+      if (!k) return true;
+      return [h.ten, h.tinh, h.song, h.ma_tam].filter(Boolean)
+             .join(' ').toLowerCase().indexOf(k) >= 0;
+    });
+    if (!rows.length) {
+      var e = document.createElement('div'); e.className = 'hint';
+      e.textContent = 'Không có hồ nào khớp.'; list.appendChild(e); return;
+    }
+    rows.forEach(function (h) { list.appendChild(card(h)); });
+  }
+
+  fetch('data/reservoirs/reservoirs_rims.json', { cache: 'no-store' })
+    .then(function (r) { return r.json(); })
+    .then(function (j) {
+      HO = j.ho || [];
+      if (list) {
+        paint('');
+        var note = document.createElement('div');
+        note.className = 'flag';
+        note.innerHTML = '<b>' + HO.length + '</b> hồ · danh mục 235 hồ chưa có';
+        list.appendChild(note);
+      }
+    })
+    .catch(function () {
+      if (list) list.innerHTML = '<div class="flag">Không đọc được <code>data/reservoirs/reservoirs_rims.json</code>.</div>';
+    });
+
+  var hoFilterEl = document.getElementById('hoFilter'); if (hoFilterEl) hoFilterEl.addEventListener('input', function (e) { paint(e.target.value); });
+
+  /* tìm nhanh ở băng trên — có thể bị GIỚI HẠN theo hệ thống sông đang chọn.
+     Chọn hệ thống ở ô bên trái → RIMS_locHoTheoHeThong() giới hạn ô này về hệ
+     thống đó và bày ngay danh sách hồ để chọn. Bản đồ hồ→hệ thống để TẠM ở đây
+     tới khi danh mục hồ có trường he_thong (nay mới có 4 hồ ANQG). */
+  var qb = document.getElementById('qBox'), qr = document.getElementById('qRes');
+  var heThongLoc = null;
+  var HO_HT = { CUADAT:'ma', NGANTRUOI:'ca', TATRACH:'huong', DAUTIENG:'dongnai' };
+  function thuocHT(h){ return !heThongLoc || HO_HT[String(h.ma_tam||'').toUpperCase()] === heThongLoc; }
+  function closeRes() { qr.style.display = 'none'; }
+
+  /* NGUỒN DANH SÁCH HỒ cho ô tìm — hai đường:
+     · Hệ thống ĐÃ CÓ danh mục liên hồ luật định (window.RIMS_ROSTER[id]):
+       liệt kê ĐỦ các hồ thành viên (vd hệ Mã = 11 công trình theo QĐ 214/2018).
+       Bấm hồ → nảy marker trên bản đồ; hồ ANQG có console thì mở thêm console.
+     · Chưa có roster: giữ đúng đường cũ — danh mục 4 hồ ANQG, lọc theo HO_HT. */
+  function rosterCua(){ return (heThongLoc && window.RIMS_ROSTER && window.RIMS_ROSTER[heThongLoc]) || null; }
+  function nguonHo(){
+    var r = rosterCua();
+    if (r) return r.ds;                       // hồ của hệ thống (roster)
+    return HO.filter(thuocHT);                // 4 hồ ANQG (đường cũ)
+  }
+  function chonHo(h){
+    closeRes(); qb.value = '';
+    /* Khi công cụ đang mở đăng ký cầu chọn hồ (vd Sử dụng nước) → hồ rơi vào giỏ công cụ, KHÔNG mở console. */
+    if (typeof window.RIMS_hoPicker === 'function' && window.RIMS_hoPicker(h) === true) return;
+    var _chanConsole = !!(window.RIMS_noConsoleEl && document.body.contains(window.RIMS_noConsoleEl));
+    /* R2: bảo đảm đập HIỆN RA. Chưa lọc hệ nào mà biết hệ của đập thì kích
+       hoạt hệ đó — đám basin vẽ xong sẽ tự nảy đập (pendingBat trong gis). */
+    var sysDap = heThongLoc || HO_HT[String(h.ma_tam||'').toUpperCase()];
+    if (sysDap && window.RIMS_scopeState && !window.RIMS_scopeState().heThong && window.RIMS_datHeThong) {
+      var sysTen = (window.RIMS_TEN_HETHONG && window.RIMS_TEN_HETHONG[sysDap]) || '';
+      window.RIMS_datHeThong(sysDap, sysTen);
+    }
+    if (h.ten_ban_do) {                       // hồ có trên bản đồ → định vị + đánh dấu + bung popup thông số (console mở qua nút Theo dõi trong popup, KHÔNG mở ở đây)
+      if (window.RIMS_noiBatDap) window.RIMS_noiBatDap(h.ten_ban_do);
+      if (window.RIMS_moPopupDap) window.RIMS_moPopupDap(h.ten_ban_do);
+    }
+    /* hồ chưa có trên bản đồ (tren_ban_do=false) / chỉ có ma_tam: chưa nảy được — vẫn nằm trong ô tìm. */
+  }
+  function veHo(rows){
+    qr.textContent = '';
+    if (!rows.length) { qr.innerHTML = '<div class="none">' + (heThongLoc ? 'Chưa có hồ trong danh mục' : 'Không tìm thấy') + '</div>'; qr.style.display='block'; return; }
+    rows.forEach(function (h) {
+      var b = document.createElement('b');
+      /* phụ đề: ANQG có tỉnh; hồ hệ Mã có nhánh sông; hồ hệ khác hiện loại;
+         hồ luật định chưa có trên bản đồ thì nói rõ. */
+      var phu = (h.tren_ban_do === false) ? 'chưa có trên bản đồ' : (h.nhanh || h.tinh || h.loai || '');
+      var sao = h.anqg ? ' ★' : '';            // hồ trọng điểm quốc gia
+      if (h.tren_ban_do === false) b.className = 'mo';   // làm mờ hồ chưa lên bản đồ
+      b.innerHTML = h.ten + sao + (phu ? ' <span>· ' + phu + '</span>' : '');
+      b.addEventListener('mousedown', function (e) { e.preventDefault(); });
+      b.addEventListener('click', function () { chonHo(h); });
+      qr.appendChild(b);
+    });
+    qr.style.display = 'block';
+  }
+  qb.addEventListener('input', function () {
+    var k = qb.value.trim().toLowerCase();
+    if (!k && !heThongLoc) return closeRes();
+    var rows = nguonHo().filter(function (h) {
+      if (!k) return true;
+      return [h.ten, h.tinh, h.nhanh, h.song].filter(Boolean).join(' ').toLowerCase().indexOf(k) >= 0;
+    }).slice(0, 20);
+    veHo(rows);
+  });
+  qb.addEventListener('blur', function () { setTimeout(closeRes, 160); });
+  /* Focus lai o tim ho khi da chon he thong (o dang trong) -> no lai danh sach ho, khong phai chon lai he thong. */
+  qb.addEventListener('focus', function () { if (heThongLoc && !qb.value.trim()) veHo(nguonHo().slice(0, 24)); });
+  window.RIMS_locHoTheoHeThong = function (sysId) {
+    heThongLoc = sysId || null;
+    qb.value = '';
+    /* Xoá giới hạn (sysId rỗng): chỉ reset, KHÔNG mở dropdown hồ và KHÔNG
+       gọi qb.focus() — trước đây focus() ở đây cướp focus khỏi ô hệ thống
+       ngay khi bấm vào ô rỗng, khiến không gõ được (RIMS-19 sửa). */
+    if (!heThongLoc) { closeRes(); return; }
+    veHo(nguonHo().slice(0, 24));
+    qb.focus();
+  };
+
+  /* NẠP DANH MỤC LIÊN HỒ LUẬT ĐỊNH.
+     Hiện có hệ Mã (QĐ 214/2018). Thêm hệ khác về sau = thêm một dòng vào
+     đăng ký này + một file data/hethong/<id>.json, KHÔNG sửa mã.
+     '_tenSet' để rims-gis lọc nhanh đám đập theo tên khớp geojson.        */
+  window.RIMS_ROSTER = window.RIMS_ROSTER || {};
+  var DANG_KY_LIENHO = {
+    hong: 'data/hethong/lienho_hong.json',
+    ma:   'data/hethong/lienho_ma.json',
+    ca:   'data/hethong/lienho_ca.json',
+    huong:'data/hethong/lienho_huong.json',
+    vugia_thubon:'data/hethong/lienho_vugia_thubon.json',  /* QĐ 1865/2019 — nguồn ngoài DB SEHO (RIMS-18/23) */
+    trakhuc:     'data/hethong/lienho_trakhuc.json',
+    kon_hathanh: 'data/hethong/lienho_kon_hathanh.json',
+    ba:    'data/hethong/lienho_ba.json',
+    sesan: 'data/hethong/lienho_sesan.json',
+    srepok:'data/hethong/lienho_srepok.json',
+    dongnai:'data/hethong/lienho_dongnai.json'
+  };
+  Object.keys(DANG_KY_LIENHO).forEach(function (id) {
+    fetch(DANG_KY_LIENHO[id]).then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (j) {
+        if (!j || !j.ho) return;
+        var tenSet = {};
+        j.ho.forEach(function (h) { if (h.ten_ban_do) tenSet[h.ten_ban_do] = 1; });
+        window.RIMS_ROSTER[id] = { ds: j.ho, _tenSet: tenSet, meta: j };
+        /* Nếu người dùng đang đứng ở hệ thống này lúc roster vừa về thì vẽ lại. */
+        if (heThongLoc === id) veHo(nguonHo().slice(0, 24));
+      }).catch(function () {});
+  });
+})();
+
+/* TÌM HỆ THỐNG SÔNG (băng trên) — tiền đề chức năng chọn lưu vực (RIMS-18).
+   Ô đứng BÊN TRÁI ô tìm hồ chứa; dropdown ĐỦ 11 hệ thống liên hồ luật định +
+   tìm theo tên (bỏ dấu). BẮT BUỘC có Vu Gia - Thu Bồn (QĐ 1865/2019). Chọn một
+   hệ thống: lưu RIMS_heThongDangChon, giới hạn ô hồ chứa về hệ thống đó
+   (RIMS_locHoTheoHeThong) để chọn hồ ngay, và gọi hook RIMS_chonHeThong(id,ten)
+   nếu đã nối (zoom + focus tính toán nối sau). */
+(function () {
+  var HT = [
+    { id:'hong', ten:'Sông Hồng', qd:'QĐ 740/2019' },
+    { id:'ma', ten:'Sông Mã', qd:'QĐ 214/2018' },
+    { id:'ca', ten:'Sông Cả', qd:'QĐ 1605/2019' },
+    { id:'huong', ten:'Sông Hương', qd:'QĐ 1606/2019' },
+    { id:'vugia_thubon', ten:'Sông Vu Gia \u2013 Thu Bồn', qd:'QĐ 1865/2019' },
+    { id:'trakhuc', ten:'Sông Trà Khúc', qd:'QĐ 911/2018' },
+    { id:'kon_hathanh', ten:'Sông Kôn \u2013 Hà Thanh', qd:'QĐ 936/2018' },
+    { id:'ba', ten:'Sông Ba', qd:'QĐ 878/2018' },
+    { id:'sesan', ten:'Sông Sê San', qd:'QĐ 215/2018' },
+    { id:'srepok', ten:'Sông Srêpôk', qd:'QĐ 1612/2019' },
+    { id:'dongnai', ten:'Sông Đồng Nai', qd:'QĐ 1895/2019' }
+  ];
+  var sb = document.getElementById('sysBox'), sr = document.getElementById('sysRes');
+  window.RIMS_TEN_HETHONG = {}; HT.forEach(function(x){ window.RIMS_TEN_HETHONG[x.id]=x.ten; });
+  function boDau(x){ x=(x||'').normalize('NFD'); var o=''; for(var i=0;i<x.length;i++){ var c=x.charCodeAt(i); if(c>=768&&c<=879) continue; o+=x[i]; } return o.replace(/đ/g,'d').replace(/Đ/g,'d').toLowerCase(); }
+  function dong(){ sr.style.display='none'; }
+  function ve(rows){
+    sr.textContent='';
+    if(!rows.length){ sr.innerHTML='<div class="none">Không tìm thấy</div>'; sr.style.display='block'; return; }
+    rows.forEach(function(h){
+      var b=document.createElement('b');
+      b.innerHTML = h.ten;   /* chỉ tên hệ thống — KHÔNG hiện số QĐ (dễ lạc hậu) */
+      b.addEventListener('mousedown', function(e){ e.preventDefault(); });
+      b.addEventListener('click', function(){
+        dong(); sb.value = h.ten;
+        window.RIMS_heThongDangChon = { id:h.id, ten:h.ten };
+        if (typeof window.RIMS_locHoTheoHeThong === 'function') window.RIMS_locHoTheoHeThong(h.id);
+        if (typeof window.RIMS_datHeThong === 'function') window.RIMS_datHeThong(h.id, h.ten);
+        else if (typeof window.RIMS_chonHeThong === 'function') window.RIMS_chonHeThong(h.id, h.ten);
+      });
+      sr.appendChild(b);
+    });
+    sr.style.display='block';
+  }
+  function loc(){
+    var k=boDau(sb.value.trim());
+    ve(!k ? HT : HT.filter(function(h){ return boDau(h.ten).indexOf(k)>=0; }));
+    if(!sb.value.trim() && typeof window.RIMS_locHoTheoHeThong==='function') window.RIMS_locHoTheoHeThong(null);
+    if(!sb.value.trim() && typeof window.RIMS_datHeThong==='function') window.RIMS_datHeThong(null);
+    else if(!sb.value.trim() && typeof window.RIMS_chonHeThong==='function') window.RIMS_chonHeThong(null);
+  }
+  sb.addEventListener('focus', loc);
+  sb.addEventListener('input', loc);
+  sb.addEventListener('blur', function(){ setTimeout(dong,160); });
+})();
+
+/* ══════════════ PHẠM VI TÍNH MƯA TÍCH LUỸ ══════════════
+   Mạng RMA có 3.713 trạm mưa toàn quốc. Tính mưa tích luỹ là MỘT LỜI GỌI
+   MỖI TRẠM, nên quét cả nước mỗi vòng là 3.713 lời gọi — gateway không
+   chịu nổi và van tiết lưu ở serve.mjs sẽ chặn, khiến hầu hết trạm bị tô
+   "lỗi" oan (đúng lỗi đã gặp ngày 03/9).
+
+   ⚑ TỪ 03/9/2026 KHỐI NÀY CHỈ CÒN LÀ ĐƯỜNG DỰ PHÒNG (mốc RIMS-05).
+   Hoá ra station/status đã trả sẵn TỔNG lượng mưa của khoảng from→to
+   trong trường last_data, cho cả mạng, trong một lời gọi — nên không còn
+   phải quét từng trạm ở bất kỳ cửa sổ nào, kể cả chế độ Lịch.
+   Hàm dưới đây chỉ chạy khi station/status hỏng hoặc trả rỗng.          */
+(function () {
+  var NGUONG_ZOOM = 9;
+  var CAP = 400;                    // trần số trạm tính mỗi vòng
+  fetch('/api/settings', { cache: 'no-store' })
+    .then(function (r) { return r.json(); })
+    .then(function (j) {
+      var v = j && j.chinh_sach && j.chinh_sach.gioi_han && j.chinh_sach.gioi_han.tram_toi_da_moi_vong;
+      if (isFinite(+v)) CAP = +v;
+    }).catch(function () {});
+
+  function note(html, kind) {
+    var el = document.getElementById('rimsTramNote');
+    if (!el) return;
+    el.className = kind === 'warn' ? 'flag' : 'hint';
+    el.innerHTML = html;
+  }
+  function so(n) { return Number(n).toLocaleString('vi-VN'); }
+  window.RIMS_ghiChuTram = note;   // để khối trạng thái bên dưới dùng lại
+
+  /* Móc mà weather-layers.js gọi (mốc RIMS-01). Trả về tập trạm CẦN TÍNH
+     mưa tích luỹ. Trả mảng rỗng = không tính, nhưng vẫn giữ nguyên màu và
+     số đo gần nhất của toàn mạng.                                        */
+  window.RIMS_LOC_TRAM = function (list) {
+    var map = window.HYDRO_MAP;
+    if (!map) return list;
+
+    if (map.getZoom() < NGUONG_ZOOM) {
+      note('Số mưa chưa đủ · phóng to để xem theo vùng', 'warn');
+      return [];
+    }
+
+    /* Bản đồ chưa có kích thước (khung ẩn, cửa sổ thu nhỏ, tab nền) thì
+       getBounds() suy biến thành một điểm — sẽ báo "không có trạm nào"
+       trong khi thật ra là chưa đo được. Thà không tính còn hơn nói sai. */
+    var sz = map.getSize();
+    if (!sz || sz.x < 40 || sz.y < 40) {
+      note('Cửa sổ quá nhỏ');
+      return [];
+    }
+    var b = map.getBounds().pad(0.12);
+    var trong = list.filter(function (s) {
+      var la = Number(s.latitude != null ? s.latitude : s.lat);
+      var lo = Number(s.longitude != null ? s.longitude : s.lon);
+      return isFinite(la) && isFinite(lo) && b.contains([la, lo]);
+    });
+
+    if (!trong.length) { note('Không có trạm trong vùng này'); return []; }
+    if (trong.length > CAP) {
+      note('<b>' + so(trong.length) + '</b> trạm · mới hiện ' + so(CAP), 'warn');
+      return trong.slice(0, CAP);
+    }
+    note('Đang lấy số · <b>' + so(trong.length) + '</b> trạm');
+    return trong;
+  };
+
+  /* Di chuyển bản đồ thì tính lại — gộp nhịp 800ms, và chỉ khi đã phóng đủ
+     gần. Ở mức toàn quốc KHÔNG gọi lại, vì station/status nặng 2,2 MB;
+     kéo bản đồ vài lần là tải về chục MB vô ích.                          */
+  var hen = null, bandTruoc = null;
+  function nhipLai() {
+    var map = window.HYDRO_MAP; if (!map) return;
+    var band = map.getZoom() >= NGUONG_ZOOM ? 'gan' : 'xa';
+    var doiBand = (band !== bandTruoc); bandTruoc = band;
+    if (band === 'xa' && !doiBand) return;          // vẫn ở mức toàn quốc: không làm gì
+    var cb = document.querySelector('#wxMount input[data-wx="stations"]');
+    if (!cb || !cb.checked) return;
+    var btn = document.getElementById('wxRefreshNow');
+    if (btn) btn.click();
+  }
+  function batDauHen() { clearTimeout(hen); hen = setTimeout(nhipLai, 800); }
+  if (window.HYDRO_MAP) {
+    window.HYDRO_MAP.on('moveend', batDauHen);
+    window.HYDRO_MAP.on('zoomend', batDauHen);
+  }
+})();
+
+/* ══════════════ SỔ ĐĂNG KÝ NGUỒN — tóm tắt ở dock ══════════════ */
+(function () {
+  var el = document.getElementById('srcSummary');
+  if (!window.RIMSSources || !RIMSSources.load) { el.textContent = 'Chưa nạp được sổ đăng ký nguồn.'; return; }
+  Promise.resolve(RIMSSources.load()).then(function () {
+    var all = RIMSSources.all() || [];
+    var live = all.filter(function (s) { return s.trang_thai === 'hoat_dong'; }).length;
+    el.innerHTML = '<b>' + live + '</b>/' + all.length + ' hoạt động';
+  }).catch(function () { el.textContent = 'Chưa đọc được sổ đăng ký nguồn.'; });
+})();
+
+/* ══════════════ DỜI THANH THỜI GIAN & CHÚ GIẢI XUỐNG BĂNG DƯỚI ══════════════
+   weather-layers.js tạo #hnTimeBar và #hnLegend dạng position:fixed đè lên
+   bản đồ, và tạo LƯỜI (chỉ khi bật lớp cần đến). RIMS không sửa mã đó — chỉ
+   rình hai khối ấy xuất hiện rồi dời vào băng dưới. CSS ở trên gỡ phần
+   trôi nổi. Nếu HydroNet đổi id, khối vẫn chạy như cũ ở vị trí nổi,
+   không vỡ giao diện.                                                    */
+(function () {
+  var moved = { hnTimeBar: false, hnLegend: false };
+  var slot  = { hnTimeBar: 'timeSlot', hnLegend: 'legendSlot' };
+  function tryMove() {
+    var done = true;
+    Object.keys(moved).forEach(function (id) {
+      if (moved[id]) return;
+      var n = document.getElementById(id);
+      if (n) { document.getElementById(slot[id]).appendChild(n); moved[id] = true; }
+      else done = false;
+    });
+    return done;
+  }
+  if (!tryMove()) {
+    var mo = new MutationObserver(function () { if (tryMove()) mo.disconnect(); });
+    mo.observe(document.body, { childList: true });
+    setTimeout(function () { mo.disconnect(); }, 120000);   // thôi rình sau 2 phút
+  }
+})();
+
+/* ══════════════ ĐỒNG HỒ · TRẠNG THÁI · TẢI API ══════════════ */
+(function () {
+  var ageEl = document.getElementById('dataAge');
+  var apiBox = document.getElementById('apiHealth');
+  var API_DS = [
+    { id:'rma', ten:'RMA' }, { id:'rainlab', ten:'RainLab QC' },
+    { id:'resources', ten:'Tile khí tượng' }, { id:'tank', ten:'TankModel' },
+    { id:'hnt', ten:'HNT' }
+  ];
+  if (apiBox) apiBox.innerHTML = API_DS.map(function (x) {
+    return '<span class="api" data-id="' + x.id + '" title="' + x.ten + '"><i class="d"></i>' + x.ten + '</span>';
+  }).join('');
+
+
+  /* Đèn kết nối 4 API — server tự kiểm ở /api/health (tránh CORS + ẩn khoá). */
+  function pollHealth() {
+    if (!apiBox) return;
+    fetch('/api/health', { cache: 'no-store' })
+      .then(function (r) { return r.json(); })
+      .then(function (j) {
+        var h = (j && j.nguon) || {};
+        API_DS.forEach(function (x) {
+          var el = apiBox.querySelector('.api[data-id="' + x.id + '"]'); if (!el) return;
+          var st = h[x.id] || {};
+          var cls = st.ok === true ? 'ok' : (st.ok === false ? 'err' : 'warn');
+          el.querySelector('.d').className = 'd ' + cls;
+          el.title = x.ten + ': ' + (st.note || (cls === 'ok' ? 'kết nối tốt' : cls === 'err' ? 'mất kết nối' : 'chưa rõ'));
+        });
+      })
+      .catch(function () {
+        API_DS.forEach(function (x) {
+          var el = apiBox.querySelector('.api[data-id="' + x.id + '"]'); if (!el) return;
+          el.querySelector('.d').className = 'd warn'; el.title = x.ten + ': chưa gọi được /api/health — đã restart server chưa?';
+        });
+      });
+  }
+  pollHealth(); setInterval(pollHealth, 30000);
+
+
+  /* mốc số liệu gần nhất do weather-layers.js ghi (#wxLastUpd) */
+  setInterval(function () {
+    var u = document.getElementById('wxLastUpd');
+    var t = u && u.textContent.trim();
+    if (ageEl) ageEl.textContent = t ? t : '—';
+
+    /* #hnLegend được weather-layers.js tạo sẵn lúc nạp rồi ẩn đi, chỉ hiện khi
+       bật lớp có thang màu. Dòng gợi ý nhường chỗ đúng lúc đó.            */
+    var lg = document.getElementById('hnLegend'), hint = document.getElementById('legendHint');
+    if (hint) hint.style.display = (lg && lg.style.display !== 'none') ? 'none' : '';
+
+    /* Mốc RIMS-03: khi API đã cấp tổng 12h/24h thì lớp trạm lấy thẳng, không
+       quét từng trạm — và cũng không gọi RIMS_LOC_TRAM, nên lời nhắn phải
+       viết từ đây.                                                        */
+    var ng = window.RIMS_NGUON_TICHLUY;
+    if (ng && ng.cach === 'tong_tu_status' && window.RIMS_ghiChuTram) {
+      var khoang = ng.lich ? 'khoảng đã chọn' : ('<b>' + ng.han + 'h</b> qua');
+      window.RIMS_ghiChuTram('Tổng mưa ' + khoang + ' · <b>' +
+        Number(ng.so_tram).toLocaleString('vi-VN') + '</b> trạm');
+    }
+  }, 3000);
+})();
+
+/* ══════════════ KIỂM TRA BẢNG LỚP ĐÃ CẮM CHƯA ══════════════ */
+setTimeout(function () {
+  var m = document.getElementById('wxMount');
+  if (m && !m.children.length) document.getElementById('wxFallback').hidden = false;
+}, 2500);
+</script>
+
+<!-- 7) host module theo hồ (đọc modules.json cạnh index.html) -->
+<script src="core/hht-modulehost.js"></script>
+<script>
+(function(){
+  var app=document.getElementById('app'), grip=document.getElementById('dockGrip'), dock=document.getElementById('dock');
+  if(!app||!grip||!dock)return;
+  var MIN=240, MAX=560;
+  try{ var sv=localStorage.getItem('rims_dockW'); if(sv) app.style.setProperty('--dockW', Math.max(MIN,Math.min(MAX,parseInt(sv,10)))+'px'); }catch(e){}
+  grip.addEventListener('mousedown', function(e){
+    e.preventDefault();
+    var startX=e.clientX, startW=dock.getBoundingClientRect().width;
+    app.classList.add('dock-dragging'); grip.classList.add('drag');
+    var ov=document.createElement('div'); ov.style.cssText='position:fixed;inset:0;z-index:4000;cursor:ew-resize'; document.body.appendChild(ov);
+    function mv(ev){ var w=Math.max(MIN,Math.min(MAX, startW+(ev.clientX-startX))); app.style.setProperty('--dockW', w+'px'); if(window.HYDRO_MAP&&window.HYDRO_MAP.invalidateSize)window.HYDRO_MAP.invalidateSize({pan:false}); }
+    function up(){ document.removeEventListener('mousemove',mv); document.removeEventListener('mouseup',up); app.classList.remove('dock-dragging'); grip.classList.remove('drag'); ov.remove();
+      try{ localStorage.setItem('rims_dockW', parseInt(getComputedStyle(app).getPropertyValue('--dockW'),10)); }catch(e){}
+      if(window.HYDRO_MAP&&window.HYDRO_MAP.invalidateSize)window.HYDRO_MAP.invalidateSize({pan:false}); }
+    document.addEventListener('mousemove',mv); document.addEventListener('mouseup',up);
+  });
+})();
+</script>
+<script>
+/* Đồng hồ thời gian thực trên băng trên */
+(function(){
+  var t=document.getElementById('tbClkT'), d=document.getElementById('tbClkD'); if(!t) return;
+  function p(n){return String(n).padStart(2,'0');}
+  function tick(){ var x=new Date();
+    t.textContent=p(x.getHours())+':'+p(x.getMinutes())+':'+p(x.getSeconds());
+    if(d) d.textContent=p(x.getDate())+'/'+p(x.getMonth()+1)+'/'+x.getFullYear(); }
+  tick(); setInterval(tick,1000);
+})();
+/* Ngôn ngữ (EN chờ) + đóng menu Tài khoản/Ngôn ngữ khi bấm mục */
+(function(){
+  document.querySelectorAll('#topbar #tbLang .mi, #topbar #tbAcc .mi').forEach(function(mi){
+    mi.addEventListener('click', function(){
+      if(mi.dataset.lang==='EN') return;                 // English: sắp có
+      var ctrl=mi.closest('.tb-ctrl'); if(ctrl) ctrl.classList.remove('open');
+    });
+  });
+})();
+</script>
+
+<!-- ▼▼ DEMO LIÊN HỒ (mock, TRÌNH DIỄN) — GỠ: xoá khối script này + thư mục _demo_lienho/ ▼▼ -->
+<script src="_demo_lienho/demo.js" defer></script>
+<!-- ▲▲ hết DEMO LIÊN HỒ ▲▲ -->
+<!-- ▼▼ DEMO DỰ BÁO THỦY VĂN (mock, TRÌNH DIỄN) — GỠ: xoá khối script này + thư mục _demo_dubao/ ▼▼ -->
+<script src="_demo_dubao/demo_dubao.js" defer></script>
+<!-- ▲▲ hết DEMO DỰ BÁO THỦY VĂN ▲▲ -->
+</body>
+</html>

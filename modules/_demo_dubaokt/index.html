@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="vi"><head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dự báo khí tượng — Phân tích hình thế & Đánh giá mô hình</title>
+<!-- ====================================================================
+     RIMS · DEMO "Hỗ trợ dự báo viên" → Dự báo khí tượng
+     2 tab: Nhận định hình thái · Đánh giá mô hình.
+     GỠ: xoá thư mục modules/_demo_dubaokt/ + khối DEMO trong rims-toolbox.js
+     Dữ liệu bản đồ: ảnh synop mẫu (WeatherPlus, phiên 26/05/2026 01Z).
+     ==================================================================== -->
+<script src="vendor/chart.umd.min.js"></script>
+<style>
+:root{--ink:#15181d;--ink2:#1f242c;--ink3:#2a323b;--teal:#0072bb;--tealL:#1f93e3;--tealD:#024e86;
+--silt:#c89a4a;--crit:#e3564d;--ok:#4caf6a;--line:#2e3540;--txt:#e7e9ec;--txt2:#9aa1ad;--txt3:#6b7280;}
+*{box-sizing:border-box}html,body{height:100%}
+body{margin:0;background:var(--ink);color:var(--txt);font:13.5px/1.5 -apple-system,"Segoe UI",system-ui,sans-serif}
+.bar{display:flex;align-items:center;gap:12px;padding:10px 16px;background:var(--ink2);border-bottom:1px solid var(--line)}
+.bar .ttl{font-weight:700;font-size:15px}.bar .ttl span{color:var(--txt3);font-weight:500;font-size:12.5px;margin-left:6px}
+.bar .sp{flex:1}.bar .meta{color:var(--txt2);font-size:12px}
+/* tab bar */
+.tabbar{display:flex;gap:4px;padding:8px 14px 0;background:var(--ink2);border-bottom:1px solid var(--line)}
+.tabbar button{border:1px solid var(--line);border-bottom:none;background:var(--ink);color:var(--txt2);
+  padding:8px 16px;border-radius:9px 9px 0 0;font:inherit;font-weight:700;cursor:pointer}
+.tabbar button.on{background:var(--ink3);color:var(--txt);border-color:var(--tealD)}
+.tabpage{display:none}.tabpage.on{display:block}
+.cols{display:grid;grid-template-columns:1fr 430px;gap:14px;padding:14px;align-items:start}
+@media(max-width:1150px){.cols{grid-template-columns:1fr}}
+.card{background:var(--ink2);border:1px solid var(--line);border-radius:12px}
+.card-hd{display:flex;align-items:center;gap:10px;padding:11px 14px;border-bottom:1px solid var(--line)}
+.card-hd .h{font-weight:700}.card-hd .m{color:var(--txt3);font-size:11.5px}.card-hd .sp{flex:1}
+.btn{display:inline-flex;align-items:center;gap:7px;border:0;border-radius:8px;padding:8px 13px;font:inherit;font-weight:700;cursor:pointer}
+.btn-teal{background:var(--teal);color:#fff}.btn-teal:hover{background:var(--tealL)}
+.btn-ai{background:linear-gradient(90deg,var(--tealD),var(--teal));color:#fff}.btn-ai:hover{background:linear-gradient(90deg,var(--teal),var(--tealL))}
+.btn svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.btn:disabled{opacity:.6;cursor:default}
+.lm-row{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:12px 14px}
+@media(max-width:820px){.lm-row{grid-template-columns:repeat(2,1fr)}}
+.lm{background:var(--ink3);border:1px solid var(--line);border-radius:9px;padding:9px 10px}
+.lm .n{font-weight:700;font-size:12px}.lm .s{color:var(--txt3);font-size:10.5px;margin-bottom:6px}
+.lm select{width:100%;background:var(--ink);border:1px solid var(--line);color:var(--txt);border-radius:6px;padding:5px 7px;font:inherit;font-size:12px}
+.grid-body{padding:2px 14px 16px}
+.empty{color:var(--txt3);text-align:center;padding:40px 4px}
+.empty svg{width:42px;height:42px;stroke:var(--txt3);fill:none;stroke-width:1.5;margin-bottom:8px}
+.lay-block{margin-top:14px}
+.lay-hd{display:flex;align-items:baseline;gap:9px;margin:4px 0 8px}
+.lay-name{font-weight:800;font-size:12px;letter-spacing:.4px;text-transform:uppercase;color:var(--tealL)}
+.lay-sub{color:var(--txt2);font-size:11.5px}
+.lay-model{margin-left:auto;color:var(--txt3);font-size:11px;border:1px solid var(--line);border-radius:20px;padding:1px 8px}
+.lay-grid{display:grid;grid-template-columns:repeat(9,1fr);gap:8px}
+@media(max-width:1150px){.lay-grid{grid-template-columns:repeat(5,1fr)}}
+@media(max-width:640px){.lay-grid{grid-template-columns:repeat(3,1fr)}}
+.thumb{margin:0;background:var(--ink);border:1px solid var(--line);border-radius:8px;overflow:hidden;cursor:pointer;transition:.13s}
+.thumb:hover{border-color:var(--tealL);transform:translateY(-1px)}
+.thumb img{width:100%;display:block;aspect-ratio:1/1;object-fit:cover;background:#fff}
+.thumb .ph{aspect-ratio:1/1;display:flex;align-items:center;justify-content:center;background:var(--ink3)}
+.thumb figcaption{font-size:10px;color:var(--txt2);padding:4px 6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center}
+.thumb.miss{cursor:default;opacity:.5}.thumb.miss:hover{border-color:var(--line);transform:none}
+.thumb .phm{aspect-ratio:1/1;display:flex;align-items:center;justify-content:center;color:var(--txt3);font-size:10.5px;border-bottom:1px dashed var(--line)}
+.kl-body{padding:12px 14px 16px}
+.kl-sec{font-size:10.5px;font-weight:800;letter-spacing:.7px;text-transform:uppercase;color:var(--txt3);margin:14px 0 8px}
+.kl-sec:first-child{margin-top:2px}
+.kl-fld{margin-bottom:11px}.kl-fld label{display:block;font-size:11.5px;font-weight:600;color:var(--txt2);margin-bottom:4px}
+.kl-box{width:100%;background:var(--ink);border:1px solid var(--line);border-radius:8px;padding:8px 10px;font:inherit;font-size:12.5px;line-height:1.55;color:var(--txt);resize:vertical}
+.kl-box:focus{outline:none;border-color:var(--tealL)}.kl-box.filled{border-color:var(--tealD);background:rgba(0,114,187,.07)}
+.ai-note{display:none;align-items:center;gap:7px;margin:0 14px;padding:7px 11px;border-radius:8px;background:rgba(200,154,74,.12);border:1px solid var(--silt);color:#E4C39C;font-size:11.5px}
+.ai-note.on{display:flex}
+.spin,.spin2{border-radius:50%;animation:sp .7s linear infinite}
+.spin{width:14px;height:14px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;display:none}
+.spin2{width:20px;height:20px;border:2px solid var(--line);border-top-color:var(--tealL)}
+.btn.loading .spin{display:inline-block}@keyframes sp{to{transform:rotate(360deg)}}
+.lb{position:fixed;inset:0;background:rgba(0,0,0,.88);display:none;align-items:center;justify-content:center;z-index:60;flex-direction:column;gap:10px;padding:22px}
+.lb.on{display:flex}.lb img{max-width:92vw;max-height:80vh;border-radius:8px;background:#fff}.lb .cap{color:#fff;font-size:13px}
+.lb .cls{position:absolute;top:14px;right:18px;color:#fff;font-size:26px;cursor:pointer;background:none;border:0}
+.lb .nav{position:absolute;top:50%;transform:translateY(-50%);color:#fff;font-size:38px;cursor:pointer;background:none;border:0;opacity:.8;padding:0 14px}
+.lb .nav:hover{opacity:1}.lb .prev{left:8px}.lb .next{right:8px}
+/* ===== tab Đánh giá mô hình ===== */
+.mev{padding:14px}
+.mev-ctl{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:14px}
+.mev-ctl label{font-size:12px;color:var(--txt2);font-weight:600}
+.mev-ctl select{background:var(--ink);border:1px solid var(--line);color:var(--txt);border-radius:7px;padding:6px 10px;font:inherit;font-size:13px}
+.mev-meta{color:var(--txt3);font-size:12px}
+.sec-h{font-size:11px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;color:var(--txt3);margin:6px 0 9px;display:flex;align-items:center;gap:8px}
+.sec-h .no{width:19px;height:19px;border-radius:50%;background:var(--ink3);color:var(--tealL);display:inline-flex;align-items:center;justify-content:center;font-size:11px;border:1px solid var(--line)}
+/* scorecard */
+.score{display:grid;grid-template-columns:repeat(5,1fr);gap:9px;margin-bottom:8px}
+@media(max-width:900px){.score{grid-template-columns:repeat(2,1fr)}}
+.sc{background:var(--ink3);border:1px solid var(--line);border-radius:10px;padding:11px 12px}
+.sc .m{font-weight:800;font-size:13px;display:flex;align-items:center;gap:6px}
+.sc .m .dot{width:10px;height:10px;border-radius:50%}
+.sc .bias{font-size:19px;font-weight:800;margin:6px 0 2px;font-variant-numeric:tabular-nums}
+.sc .lbl{font-size:11px;color:var(--txt2)}
+.sc .rate{margin-top:8px;font-size:10.5px;font-weight:700;border-radius:20px;padding:2px 9px;display:inline-block}
+.rate.hi{background:rgba(76,175,106,.16);color:#7fd39a;border:1px solid #3c7a52}
+.rate.md{background:rgba(200,154,74,.16);color:#e4c39c;border:1px solid #8a6a34}
+.rate.lo{background:rgba(227,86,77,.16);color:#f0a09a;border:1px solid #8a3a34}
+.rec{background:rgba(0,114,187,.10);border:1px solid var(--tealD);border-radius:9px;padding:9px 12px;font-size:12.5px;color:#bfe0f5;margin:6px 0 20px}
+.rec b{color:#fff}
+.mcard{background:var(--ink2);border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:20px}
+.mcard-hd{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.mcard-hd .h{font-weight:700}.mcard-hd .sp{flex:1}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:7px;overflow:hidden}
+.seg button{border:0;background:var(--ink);color:var(--txt2);padding:5px 11px;font:inherit;font-size:12px;font-weight:600;cursor:pointer}
+.seg button.on{background:var(--teal);color:#fff}
+.chart-wrap{position:relative;height:300px}
+.legend{display:flex;gap:14px;flex-wrap:wrap;margin-top:10px;font-size:12px;color:var(--txt2)}
+.lg{display:inline-flex;align-items:center;gap:6px;cursor:pointer;user-select:none}
+.lg .ln{width:18px;height:3px;border-radius:2px}.lg .dt{width:9px;height:9px;border-radius:50%}
+.lg.off{opacity:.4;text-decoration:line-through}
+table.tot{width:100%;border-collapse:collapse;font-size:13px}
+table.tot th,table.tot td{padding:7px 9px;text-align:center;border-bottom:1px solid var(--line)}
+table.tot th{background:var(--ink3);color:var(--txt);font-weight:700;font-size:12px}
+table.tot td:first-child,table.tot th:first-child{text-align:left;font-weight:700}
+.sp-narrow{color:#7fd39a}.sp-mid{color:#e4c39c}.sp-wide{color:#f0a09a}
+.win{border:1px solid var(--line);border-radius:9px;margin-bottom:12px;overflow:hidden}
+.win-head{display:flex;justify-content:space-between;align-items:center;cursor:pointer;padding:10px 14px;background:var(--ink3);user-select:none}
+.win-head h4{margin:0;font-size:13.5px}.win-head .hint{font-size:12px;color:var(--txt2);font-weight:600}
+.win-body{padding:14px;display:none}.win.open .win-body{display:block}.win.open .chev{transform:rotate(90deg)}
+.chev{transition:transform .15s;display:inline-block;color:var(--txt3)}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;align-items:center}
+.chips .lbl{font-size:11.5px;color:var(--txt3);font-weight:700}
+.chip{background:var(--ink);border:1px solid var(--line);border-radius:20px;padding:3px 10px;font-size:12px}
+.frow{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:12px}
+.frow2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:2px}
+.fld label{display:block;font-size:12px;color:var(--txt2);font-weight:600;margin-bottom:4px}
+.fld input,.fld textarea,.fld select{width:100%;padding:7px 9px;border:1px solid var(--line);border-radius:7px;font-size:13px;background:var(--ink);color:var(--txt);font-family:inherit}
+.fld textarea{resize:vertical;min-height:52px}
+.confseg{display:inline-flex;border:1px solid var(--line);border-radius:7px;overflow:hidden}
+.confseg button{border:0;background:var(--ink);padding:7px 13px;font:inherit;font-size:13px;cursor:pointer;color:var(--txt2);font-weight:600}
+.confseg button.lo.on{background:var(--crit);color:#fff}.confseg button.md.on{background:var(--silt);color:#20140a}.confseg button.hi.on{background:var(--ok);color:#0e2114}
+.autosave{font-size:12px;color:var(--txt3)}
+</style></head>
+<body>
+<div class="bar">
+  <div class="ttl">Dự báo khí tượng <span>· Hỗ trợ dự báo viên</span></div>
+  <div class="sp"></div>
+  <div class="meta">Phiên 26/05/2026 01Z · nguồn WeatherPlus</div>
+</div>
+
+<div class="tabbar">
+  <button class="on" data-tab="tab-hinhthai">Nhận định hình thái</button>
+  <button data-tab="tab-mohinh">Đánh giá mô hình</button>
+</div>
+
+<!-- ============ TAB 1: NHẬN ĐỊNH HÌNH THÁI ============ -->
+<div class="tabpage on" id="tab-hinhthai">
+<div class="cols">
+  <div class="card">
+    <div class="card-hd">
+      <div><div class="h">Bản đồ synop</div><div class="m">4 lớp × 9 mốc dự báo</div></div>
+      <div class="sp"></div>
+      <button class="btn btn-teal" id="pullBtn"><span class="spin"></span>
+        <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Tải bản đồ</button>
+    </div>
+    <div class="lm-row">
+      <div class="lm"><div class="n">wind10m</div><div class="s">Gió 10m + áp</div><select><option>GFS 0.25°</option><option>GFS 0.5°</option><option>ICON</option></select></div>
+      <div class="lm"><div class="n">rh850</div><div class="s">Đường dòng 850mb</div><select><option>GFS 0.25°</option><option>GFS 0.5°</option><option>ICON</option></select></div>
+      <div class="lm"><div class="n">rh500</div><div class="s">Đường dòng 500mb</div><select><option>ICON</option><option>GFS 0.25°</option><option>GFS 0.5°</option></select></div>
+      <div class="lm"><div class="n">rain24</div><div class="s">Mưa tích lũy 24h</div><select><option>GFS 0.25°</option><option>GFS 0.5°</option><option>ICON</option></select></div>
+    </div>
+    <div class="grid-body" id="gridBody">
+      <div class="empty">
+        <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+        <div>Chưa tải bản đồ</div>
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-hd">
+      <div><div class="h">Kết luận hình thế</div><div class="m">Xem bản đồ rồi nhận định</div></div>
+      <div class="sp"></div>
+      <button class="btn btn-ai" id="aiBtn"><span class="spin"></span>
+        <svg viewBox="0 0 24 24"><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2 2M16.4 16.4l2 2M5.6 18.4l2-2M16.4 7.6l2-2"/></svg>
+        AI phân tích</button>
+    </div>
+    <div class="ai-note" id="aiNote">⚠ Kết quả mô phỏng — nội dung do AI tạo, dự báo viên rà soát trước khi dùng.</div>
+    <div class="kl-body"><div class="kl-sec">Dự báo 24h tới</div><div class="kl-fld"><label>Hình thế mặt đất</label><textarea class="kl-box" data-fid="mat_dat_24h" rows="3" placeholder="—"></textarea></div><div class="kl-fld"><label>Hình thế trên cao</label><textarea class="kl-box" data-fid="tren_cao_24h" rows="3" placeholder="—"></textarea></div><div class="kl-sec">Dự báo 9 ngày tiếp theo</div><div class="kl-fld"><label>Hình thế mặt đất</label><textarea class="kl-box" data-fid="mat_dat_9d" rows="3" placeholder="—"></textarea></div><div class="kl-fld"><label>Hình thế trên cao</label><textarea class="kl-box" data-fid="tren_cao_9d" rows="3" placeholder="—"></textarea></div></div>
+  </div>
+</div>
+</div>
+
+<!-- ============ TAB 2: ĐÁNH GIÁ MÔ HÌNH ============ -->
+<div class="tabpage" id="tab-mohinh">
+<div class="mev">
+  <div class="mev-ctl">
+    <label>Hệ thống sông:</label>
+    <select id="riverSel"></select>
+    <span class="mev-meta" id="riverMeta"></span>
+    <div class="sp" style="flex:1"></div>
+    <button class="btn btn-teal" id="mevLoad"><span class="spin"></span>↻ Tải lại</button>
+  </div>
+
+  <div class="sec-h"><span class="no">1</span> Chấm điểm mô hình — đối chiếu dự báo với quan trắc 48h qua</div>
+  <div class="score" id="scoreCards"></div>
+  <div class="rec" id="recLine"></div>
+
+  <div class="mcard">
+    <div class="mcard-hd"><div class="h">Diễn biến mưa lưu vực — quan trắc &amp; 5 mô hình</div><div class="sp"></div>
+      <div class="seg" id="modeSeg"><button class="on" data-mode="hourly">Mưa giờ</button><button data-mode="cumul">Tích lũy</button></div>
+    </div>
+    <div class="chart-wrap"><canvas id="tsChart"></canvas></div>
+    <div class="legend" id="mevLegend"></div>
+  </div>
+
+  <div class="sec-h"><span class="no">2</span> Tích lũy dự báo (mm) — 5 mô hình × 4 cửa sổ</div>
+  <div class="mcard"><table class="tot" id="totTable"></table></div>
+
+  <div class="sec-h"><span class="no">3</span> Nhận định lượng mưa lưu vực</div>
+  <div class="mcard"><div id="winForms"></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px">
+      <span class="autosave" id="mevSave">Mọi thay đổi tự lưu.</span>
+      <button class="btn btn-teal">Lưu nhận định</button>
+    </div>
+  </div>
+</div>
+</div>
+
+<div class="lb" id="lb">
+  <button class="cls" onclick="cl()">✕</button>
+  <button class="nav prev" onclick="nav(-1)">‹</button>
+  <img id="lbImg" src="" alt="">
+  <button class="nav next" onclick="nav(1)">›</button>
+  <div class="cap" id="lbCap"></div>
+</div>
+
+<script>
+/* ---------- Tabs ---------- */
+document.querySelectorAll('.tabbar button').forEach(function(b){
+  b.addEventListener('click', function(){
+    document.querySelectorAll('.tabbar button').forEach(function(x){x.classList.remove('on');});
+    document.querySelectorAll('.tabpage').forEach(function(p){p.classList.remove('on');});
+    b.classList.add('on');
+    document.getElementById(b.dataset.tab).classList.add('on');
+    if(b.dataset.tab==='tab-mohinh' && !mevReady){ mevInit(); }
+  });
+});
+
+/* ---------- TAB 1: synop maps + kết luận ---------- */
+var GRID = '<div class="lay-block"><div class="lay-hd"><span class="lay-name">wind10m</span><span class="lay-sub">Gió 10m + áp bề mặt</span><span class="lay-model">GFS 0.25°</span></div><div class="lay-grid"><figure class="thumb" data-src="maps/wind10m_d2.png" data-cap="wind10m · +2 ngày · valid 28/05"><div class="ph"><span class="spin2"></span></div><figcaption>+2 · 28/05</figcaption></figure><figure class="thumb" data-src="maps/wind10m_d3.png" data-cap="wind10m · +3 ngày · valid 29/05"><div class="ph"><span class="spin2"></span></div><figcaption>+3 · 29/05</figcaption></figure><figure class="thumb" data-src="maps/wind10m_d4.png" data-cap="wind10m · +4 ngày · valid 30/05"><div class="ph"><span class="spin2"></span></div><figcaption>+4 · 30/05</figcaption></figure><figure class="thumb" data-src="maps/wind10m_d5.png" data-cap="wind10m · +5 ngày · valid 31/05"><div class="ph"><span class="spin2"></span></div><figcaption>+5 · 31/05</figcaption></figure><figure class="thumb" data-src="maps/wind10m_d6.png" data-cap="wind10m · +6 ngày · valid 01/06"><div class="ph"><span class="spin2"></span></div><figcaption>+6 · 01/06</figcaption></figure><figure class="thumb" data-src="maps/wind10m_d7.png" data-cap="wind10m · +7 ngày · valid 02/06"><div class="ph"><span class="spin2"></span></div><figcaption>+7 · 02/06</figcaption></figure><figure class="thumb" data-src="maps/wind10m_d8.png" data-cap="wind10m · +8 ngày · valid 03/06"><div class="ph"><span class="spin2"></span></div><figcaption>+8 · 03/06</figcaption></figure><figure class="thumb" data-src="maps/wind10m_d9.png" data-cap="wind10m · +9 ngày · valid 04/06"><div class="ph"><span class="spin2"></span></div><figcaption>+9 · 04/06</figcaption></figure><figure class="thumb" data-src="maps/wind10m_d10.png" data-cap="wind10m · +10 ngày · valid 05/06"><div class="ph"><span class="spin2"></span></div><figcaption>+10 · 05/06</figcaption></figure></div></div><div class="lay-block"><div class="lay-hd"><span class="lay-name">rh850</span><span class="lay-sub">Đường dòng + ẩm 850mb</span><span class="lay-model">GFS 0.25°</span></div><div class="lay-grid"><figure class="thumb" data-src="maps/rh850_d2.png" data-cap="rh850 · +2 ngày · valid 28/05"><div class="ph"><span class="spin2"></span></div><figcaption>+2 · 28/05</figcaption></figure><figure class="thumb" data-src="maps/rh850_d3.png" data-cap="rh850 · +3 ngày · valid 29/05"><div class="ph"><span class="spin2"></span></div><figcaption>+3 · 29/05</figcaption></figure><figure class="thumb" data-src="maps/rh850_d4.png" data-cap="rh850 · +4 ngày · valid 30/05"><div class="ph"><span class="spin2"></span></div><figcaption>+4 · 30/05</figcaption></figure><figure class="thumb" data-src="maps/rh850_d5.png" data-cap="rh850 · +5 ngày · valid 31/05"><div class="ph"><span class="spin2"></span></div><figcaption>+5 · 31/05</figcaption></figure><figure class="thumb" data-src="maps/rh850_d6.png" data-cap="rh850 · +6 ngày · valid 01/06"><div class="ph"><span class="spin2"></span></div><figcaption>+6 · 01/06</figcaption></figure><figure class="thumb" data-src="maps/rh850_d7.png" data-cap="rh850 · +7 ngày · valid 02/06"><div class="ph"><span class="spin2"></span></div><figcaption>+7 · 02/06</figcaption></figure><figure class="thumb" data-src="maps/rh850_d8.png" data-cap="rh850 · +8 ngày · valid 03/06"><div class="ph"><span class="spin2"></span></div><figcaption>+8 · 03/06</figcaption></figure><figure class="thumb" data-src="maps/rh850_d9.png" data-cap="rh850 · +9 ngày · valid 04/06"><div class="ph"><span class="spin2"></span></div><figcaption>+9 · 04/06</figcaption></figure><figure class="thumb" data-src="maps/rh850_d10.png" data-cap="rh850 · +10 ngày · valid 05/06"><div class="ph"><span class="spin2"></span></div><figcaption>+10 · 05/06</figcaption></figure></div></div><div class="lay-block"><div class="lay-hd"><span class="lay-name">rh500</span><span class="lay-sub">Đường dòng + ẩm 500mb</span><span class="lay-model">ICON</span></div><div class="lay-grid"><figure class="thumb" data-src="maps/rh500_d2.png" data-cap="rh500 · +2 ngày · valid 28/05"><div class="ph"><span class="spin2"></span></div><figcaption>+2 · 28/05</figcaption></figure><figure class="thumb" data-src="maps/rh500_d3.png" data-cap="rh500 · +3 ngày · valid 29/05"><div class="ph"><span class="spin2"></span></div><figcaption>+3 · 29/05</figcaption></figure><figure class="thumb" data-src="maps/rh500_d4.png" data-cap="rh500 · +4 ngày · valid 30/05"><div class="ph"><span class="spin2"></span></div><figcaption>+4 · 30/05</figcaption></figure><figure class="thumb" data-src="maps/rh500_d5.png" data-cap="rh500 · +5 ngày · valid 31/05"><div class="ph"><span class="spin2"></span></div><figcaption>+5 · 31/05</figcaption></figure><figure class="thumb" data-src="maps/rh500_d6.png" data-cap="rh500 · +6 ngày · valid 01/06"><div class="ph"><span class="spin2"></span></div><figcaption>+6 · 01/06</figcaption></figure><figure class="thumb" data-src="maps/rh500_d7.png" data-cap="rh500 · +7 ngày · valid 02/06"><div class="ph"><span class="spin2"></span></div><figcaption>+7 · 02/06</figcaption></figure><figure class="thumb miss"><div class="phm">thiếu data</div><figcaption>+8 · 03/06</figcaption></figure><figure class="thumb miss"><div class="phm">thiếu data</div><figcaption>+9 · 04/06</figcaption></figure><figure class="thumb miss"><div class="phm">thiếu data</div><figcaption>+10 · 05/06</figcaption></figure></div></div><div class="lay-block"><div class="lay-hd"><span class="lay-name">rain24</span><span class="lay-sub">Mưa tích lũy 24h</span><span class="lay-model">GFS 0.25°</span></div><div class="lay-grid"><figure class="thumb" data-src="maps/rain24_d2.png" data-cap="rain24 · +2 ngày · valid 28/05"><div class="ph"><span class="spin2"></span></div><figcaption>+2 · 28/05</figcaption></figure><figure class="thumb" data-src="maps/rain24_d3.png" data-cap="rain24 · +3 ngày · valid 29/05"><div class="ph"><span class="spin2"></span></div><figcaption>+3 · 29/05</figcaption></figure><figure class="thumb" data-src="maps/rain24_d4.png" data-cap="rain24 · +4 ngày · valid 30/05"><div class="ph"><span class="spin2"></span></div><figcaption>+4 · 30/05</figcaption></figure><figure class="thumb" data-src="maps/rain24_d5.png" data-cap="rain24 · +5 ngày · valid 31/05"><div class="ph"><span class="spin2"></span></div><figcaption>+5 · 31/05</figcaption></figure><figure class="thumb" data-src="maps/rain24_d6.png" data-cap="rain24 · +6 ngày · valid 01/06"><div class="ph"><span class="spin2"></span></div><figcaption>+6 · 01/06</figcaption></figure><figure class="thumb" data-src="maps/rain24_d7.png" data-cap="rain24 · +7 ngày · valid 02/06"><div class="ph"><span class="spin2"></span></div><figcaption>+7 · 02/06</figcaption></figure><figure class="thumb" data-src="maps/rain24_d8.png" data-cap="rain24 · +8 ngày · valid 03/06"><div class="ph"><span class="spin2"></span></div><figcaption>+8 · 03/06</figcaption></figure><figure class="thumb" data-src="maps/rain24_d9.png" data-cap="rain24 · +9 ngày · valid 04/06"><div class="ph"><span class="spin2"></span></div><figcaption>+9 · 04/06</figcaption></figure><figure class="thumb" data-src="maps/rain24_d10.png" data-cap="rain24 · +10 ngày · valid 05/06"><div class="ph"><span class="spin2"></span></div><figcaption>+10 · 05/06</figcaption></figure></div></div>';
+var KL = {'mat_dat_24h':'Áp thấp nóng phía Tây phát triển và mở rộng về phía Đông, kết hợp rãnh áp thấp có trục 19-21N qua Bắc Bộ. Gió mùa Tây Nam bắt đầu thiết lập trên Nam Bộ và phía nam Biển Đông cấp 5-6.','tren_cao_24h':'Áp cao cận nhiệt đới có trục 18-19N. Đới gió Tây 500mb có rãnh sóng ngắn phía bắc Bắc Bộ. Gió Tây Nam 850mb hội tụ ẩm trên Nam Bộ và Tây Nguyên.','mat_dat_9d':'Gió mùa Tây Nam tăng cường mạnh cấp 6-7 từ 30/05. Bão ngoài Biển Đông 31/05-02/06.','tren_cao_9d':'Áp cao cận nhiệt đới duy trì trục 17-19N, hội tụ ẩm Tây Nam 850mb mạnh.'};
+document.getElementById('pullBtn').addEventListener('click', function(){
+  var b=this; b.classList.add('loading'); b.disabled=true;
+  setTimeout(function(){
+    document.getElementById('gridBody').innerHTML = GRID;
+    document.querySelectorAll('.thumb[data-src]').forEach(function(fig){
+      var img=new Image();
+      img.onload=function(){ var ph=fig.querySelector('.ph'); if(ph)ph.replaceWith(img); };
+      img.src=fig.getAttribute('data-src'); img.alt=fig.getAttribute('data-cap');
+      fig.addEventListener('click', function(){ openLb(fig); });
+    });
+    b.classList.remove('loading'); b.disabled=false;
+  }, 1200);
+});
+document.getElementById('aiBtn').addEventListener('click', function(){
+  var b=this; b.classList.add('loading'); b.disabled=true;
+  setTimeout(function(){
+    document.querySelectorAll('.kl-box').forEach(function(el){
+      var v=KL[el.getAttribute('data-fid')]; if(v){ el.value=v; el.classList.add('filled'); }
+    });
+    document.getElementById('aiNote').classList.add('on');
+    b.classList.remove('loading'); b.disabled=false;
+  }, 1900);
+});
+var lbList=[], lbIdx=0;
+function openLb(fig){ lbList=Array.prototype.slice.call(document.querySelectorAll('.thumb[data-src]')); lbIdx=lbList.indexOf(fig); show(); document.getElementById('lb').classList.add('on'); }
+function show(){ var fig=lbList[lbIdx]; document.getElementById('lbImg').src=fig.getAttribute('data-src'); document.getElementById('lbCap').textContent=fig.getAttribute('data-cap'); }
+function nav(d){ lbIdx=(lbIdx+d+lbList.length)%lbList.length; show(); }
+function cl(){ document.getElementById('lb').classList.remove('on'); }
+document.addEventListener('keydown',function(e){ if(!document.getElementById('lb').classList.contains('on'))return; if(e.key==='Escape')cl(); if(e.key==='ArrowLeft')nav(-1); if(e.key==='ArrowRight')nav(1); });
+document.getElementById('lb').addEventListener('click',function(e){ if(e.target.id==='lb')cl(); });
+
+/* ---------- TAB 2: đánh giá mô hình ---------- */
+var mevReady=false, chart=null;
+var MODELS=["GFS","ICON","IFS","AIFS","WRF"];
+var COLORS={GFS:'#4C9AFF',ICON:'#FF6B6B',IFS:'#3DDC97',AIFS:'#FBBF24',WRF:'#C084FC'};
+var C_RADAR='#F5F7FA', C_STN='#9aa1ad';
+var BIASF={GFS:-0.12,ICON:0.18,IFS:0.03,AIFS:-0.06,WRF:0.25};
+var PEAK={GFS:[3,8],ICON:[4,12],IFS:[5,15],AIFS:[3.5,10],WRF:[4.5,13]};
+var PAST=48, FUT=120;
+var RIVERS=[
+  {code:'hong', name:'Sông Hồng', meta:'7 hồ · quy trình vận hành liên hồ chứa'},
+  {code:'ma', name:'Sông Mã', meta:'11 hồ · quy trình vận hành liên hồ chứa'},
+  {code:'ca', name:'Sông Cả', meta:'11 hồ · quy trình vận hành liên hồ chứa'},
+  {code:'huong', name:'Sông Hương', meta:'15 hồ · quy trình vận hành liên hồ chứa'},
+  {code:'vugia_thubon', name:'Sông Vu Gia - Thu Bồn', meta:'24 hồ · quy trình vận hành liên hồ chứa'},
+  {code:'trakhuc', name:'Sông Trà Khúc', meta:'5 hồ · quy trình vận hành liên hồ chứa'},
+  {code:'kon_hathanh', name:'Sông Kôn - Hà Thanh', meta:'10 hồ · quy trình vận hành liên hồ chứa'},
+  {code:'ba', name:'Sông Ba', meta:'12 hồ · quy trình vận hành liên hồ chứa'},
+  {code:'sesan', name:'Sông Sê San', meta:'8 hồ · quy trình vận hành liên hồ chứa'},
+  {code:'srepok', name:'Sông Srêpôk', meta:'12 hồ · quy trình vận hành liên hồ chứa'},
+  {code:'dongnai', name:'Sông Đồng Nai', meta:'21 hồ · quy trình vận hành liên hồ chứa'}
+];
+var river='hong', data=null, mode='hourly', hidden={};
+
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;var t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+function seeded(str){var h=2166136261;for(var i=0;i<str.length;i++){h^=str.charCodeAt(i);h=Math.imul(h,16777619);}return mulberry32(h>>>0);}
+function r2(v){return Math.round(v*100)/100;}
+function rainCurve(rng,n,peak){
+  var s=new Array(n).fill(0), nStorms=[1,1,2,0][Math.floor(rng()*4)];
+  for(var k=0;k<nStorms;k++){var c=6+Math.floor(rng()*Math.max(1,n-12)),w=3+rng()*5,h=peak*(0.5+rng()*0.5);
+    for(var i=0;i<n;i++){var d=(i-c)/w;s[i]+=h*Math.exp(-d*d);}}
+  for(var i2=0;i2<n;i2++){if(rng()<0.3)s[i2]+=0.05+rng()*0.25;s[i2]=Math.max(0,s[i2]+(rng()*0.25-0.1));}
+  return s.map(function(v){return r2(v);});
+}
+function genRiver(code){
+  var radar=rainCurve(seeded(code+'_radar'),PAST,6);
+  var rs=seeded(code+'_stn');
+  var stations=radar.map(function(v){return Math.max(0,r2(v*(0.6+rs()*0.7)+(rs()*0.6-0.3)));});
+  var modelsPast={}, models={};
+  for(var i=0;i<MODELS.length;i++){var m=MODELS[i];
+    var rng=seeded(code+'_'+m);
+    var bj=BIASF[m]+(rng()-0.5)*0.08;
+    modelsPast[m]=radar.map(function(v){return Math.max(0,r2(v*(1+bj)*(0.85+rng()*0.3)));});
+    var pk=PEAK[m];
+    models[m]=rainCurve(seeded(code+'_fut_'+m),FUT,pk[0]+rng()*(pk[1]-pk[0]));
+  }
+  return {radar:radar,stations:stations,modelsPast:modelsPast,models:models};
+}
+function sum(a){var s=0;for(var i=0;i<a.length;i++)s+=a[i];return s;}
+function cumulate(a){var s=0;return a.map(function(v){s+=v;return Math.round(s*10)/10;});}
+
+/* --- scorecard --- */
+function biasPct(m){var o=sum(data.radar);if(o<=0)return 0;return (sum(data.modelsPast[m])/o-1)*100;}
+function drawScore(){
+  var best=null, bestAbs=1e9, html='';
+  var biases={};
+  MODELS.forEach(function(m){var b=biasPct(m);biases[m]=b;if(Math.abs(b)<bestAbs){bestAbs=Math.abs(b);best=m;}});
+  MODELS.forEach(function(m){
+    var b=biases[m], ab=Math.abs(b);
+    var rate = ab<=8?'hi':(ab<=20?'md':'lo');
+    var rateTxt = ab<=8?'Tin cậy cao':(ab<=20?'Tin cậy TB':'Tin cậy thấp');
+    var tag = ab<=8?'Sát quan trắc':(b>0?'Báo lớn':'Báo nhỏ');
+    var sign = b>0?'+':'';
+    html+='<div class="sc"><div class="m"><span class="dot" style="background:'+COLORS[m]+'"></span>'+m+'</div>'
+      +'<div class="bias" style="color:'+COLORS[m]+'">'+sign+b.toFixed(0)+'%</div>'
+      +'<div class="lbl">'+tag+' vs quan trắc</div>'
+      +'<div class="rate '+rate+'">'+rateTxt+'</div></div>';
+  });
+  document.getElementById('scoreCards').innerHTML=html;
+  document.getElementById('recLine').innerHTML='Khuyến nghị: bám <b>'+best+'</b> (lệch quan trắc thấp nhất, '+(biases[best]>0?'+':'')+biases[best].toFixed(0)+'%). '
+    +'Các mô hình báo lớn: <b>'+MODELS.filter(function(m){return biases[m]>8;}).join(', ')+'</b> — cân nhắc hạ khi ra bản tin.';
+}
+
+/* --- chart --- */
+var nowLine={id:'nowLine',afterDraw:function(c){
+  var x=c.scales.x.getPixelForValue(0),top=c.chartArea.top,bot=c.chartArea.bottom,ctx=c.ctx;ctx.save();
+  ctx.strokeStyle='#8aa0b0';ctx.lineWidth=1.5;ctx.setLineDash([5,4]);ctx.beginPath();ctx.moveTo(x,top);ctx.lineTo(x,bot);ctx.stroke();
+  ctx.setLineDash([]);ctx.fillStyle='#c7d2da';ctx.font='bold 11px sans-serif';ctx.textAlign='center';ctx.fillText('NOW',x,top-3);
+  ctx.fillStyle='#6b7280';ctx.font='10px sans-serif';ctx.textAlign='left';ctx.fillText('◄ quan trắc',c.chartArea.left+4,top+12);
+  ctx.textAlign='right';ctx.fillText('dự báo ►',c.chartArea.right-4,top+12);ctx.restore();
+}};
+function buildDatasets(){
+  var ds=[], cum=mode==='cumul';
+  var radar=cum?cumulate(data.radar):data.radar;
+  var stn=cum?cumulate(data.stations):data.stations;
+  ds.push({label:'Radar',data:radar.map(function(v,i){return {x:i-PAST,y:v};}),borderColor:C_RADAR,backgroundColor:C_RADAR,borderWidth:2.6,pointRadius:0,tension:.3,order:1,hidden:!!hidden['Radar']});
+  ds.push({label:'Trạm đo',data:stn.map(function(v,i){return {x:i-PAST,y:v};}),borderColor:C_STN,backgroundColor:C_STN,showLine:false,pointRadius:2.4,order:2,hidden:!!hidden['Trạm đo']});
+  MODELS.forEach(function(m){
+    var past=cum?cumulate(data.modelsPast[m]):data.modelsPast[m];
+    var fut=cum?cumulate(data.models[m]):data.models[m];
+    ds.push({label:m+'·qk',data:past.map(function(v,i){return {x:i-PAST,y:v};}),borderColor:COLORS[m],borderWidth:1.3,borderDash:[4,3],pointRadius:0,tension:.3,hidden:!!hidden[m],_m:m});
+    ds.push({label:m,data:fut.map(function(v,i){return {x:i+1,y:v};}),borderColor:COLORS[m],backgroundColor:COLORS[m],borderWidth:1.8,pointRadius:0,tension:.3,hidden:!!hidden[m],_m:m});
+  });
+  return ds;
+}
+function drawChart(){
+  if(chart)chart.destroy();
+  chart=new Chart(document.getElementById('tsChart'),{type:'line',data:{datasets:buildDatasets()},plugins:[nowLine],
+    options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
+      scales:{x:{type:'linear',min:-PAST,max:FUT,title:{display:true,text:'Giờ so với NOW',color:'#9aa1ad',font:{size:11}},
+          ticks:{stepSize:24,color:'#9aa1ad',callback:function(v){return v===0?'NOW':(v>0?'+'+v+'h':v+'h');},font:{size:10}},grid:{color:'#2e3540'}},
+        y:{beginAtZero:true,title:{display:true,text:mode==='hourly'?'mm/h':'mm tích lũy',color:'#9aa1ad',font:{size:11}},grid:{color:'#2e3540'},ticks:{color:'#9aa1ad',font:{size:10}}}},
+      plugins:{legend:{display:false},tooltip:{filter:function(it){return it.dataset.label.indexOf('·qk')<0 || true;},callbacks:{
+        title:function(items){var x=items[0].parsed.x;return x===0?'NOW':(x>0?'Dự báo +'+x+'h':'Quan trắc '+x+'h');},
+        label:function(i){var lb=i.dataset.label.replace('·qk',' (quá khứ)');return lb+': '+i.parsed.y.toFixed(1)+(mode==='hourly'?' mm/h':' mm');}
+      }}}}});
+}
+function buildLegend(){
+  var items=[{k:'Radar',t:'ln',c:C_RADAR},{k:'Trạm đo',t:'dt',c:C_STN}].concat(MODELS.map(function(m){return {k:m,t:'ln',c:COLORS[m]};}));
+  document.getElementById('mevLegend').innerHTML=items.map(function(it){
+    return '<span class="lg '+(hidden[it.k]?'off':'')+'" data-k="'+it.k+'"><span class="'+it.t+'" style="background:'+it.c+'"></span>'+it.k+'</span>';
+  }).join('');
+  document.querySelectorAll('#mevLegend .lg').forEach(function(el){el.onclick=function(){var k=el.dataset.k;hidden[k]=!hidden[k];buildLegend();drawChart();};});
+}
+
+/* --- bảng tích lũy --- */
+var WINS=[24,48,72,120];
+function winTotals(){var out={};WINS.forEach(function(w){out[w]={};MODELS.forEach(function(m){var s=0;for(var i=0;i<w;i++)s+=data.models[m][i];out[w][m]=Math.round(s*10)/10;});});return out;}
+function drawTable(){
+  var t=winTotals(),h='<thead><tr><th>Cửa sổ</th>';
+  MODELS.forEach(function(m){h+='<th style="color:'+COLORS[m]+'">'+m+'</th>';});h+='<th>Phân kỳ</th></tr></thead><tbody>';
+  WINS.forEach(function(w){var vals=MODELS.map(function(m){return t[w][m];});var sp=Math.max.apply(null,vals)-Math.min.apply(null,vals);
+    var cls=sp<10?'sp-narrow':sp<50?'sp-mid':'sp-wide';var lbl=sp<10?'○ hẹp':sp<50?'◐ vừa':'● rộng';
+    h+='<tr><td>+'+w+'h</td>';MODELS.forEach(function(m){h+='<td>'+t[w][m].toFixed(1)+'</td>';});
+    h+='<td class="'+cls+'" title="Spread '+sp.toFixed(1)+'mm">'+lbl+'</td></tr>';});
+  document.getElementById('totTable').innerHTML=h+'</tbody>';
+}
+
+/* --- form nhận định --- */
+var WINDOWS=[{k:24,label:'+24 giờ',open:true},{k:48,label:'+48 giờ',open:true},{k:72,label:'+72 giờ',open:true},{k:120,label:'+120 giờ',open:false}];
+function drawForms(){
+  var t=winTotals();
+  document.getElementById('winForms').innerHTML=WINDOWS.map(function(win){
+    var vals=MODELS.map(function(m){return t[win.k][m];});
+    var mn=Math.min.apply(null,vals).toFixed(0),mx=Math.max.apply(null,vals).toFixed(0);
+    var chips=MODELS.map(function(m){return '<span class="chip" style="border-color:'+COLORS[m]+'55"><b style="color:'+COLORS[m]+'">'+m+'</b> '+t[win.k][m].toFixed(0)+'</span>';}).join('');
+    return '<div class="win '+(win.open?'open':'')+'"><div class="win-head" onclick="this.parentElement.classList.toggle(\'open\')">'
+      +'<h4><span class="chev">▶</span> Cửa sổ '+win.label+'</h4><span class="hint">Mô hình: '+mn+'–'+mx+' mm</span></div>'
+      +'<div class="win-body"><div class="chips"><span class="lbl">Tham chiếu:</span>'+chips+'</div>'
+      +'<div class="frow"><div class="fld"><label>Giới hạn thấp (mm)</label><input type="number" placeholder="vd '+mn+'"></div>'
+      +'<div class="fld"><label>Khả năng cao nhất (mm)</label><input type="number"></div>'
+      +'<div class="fld"><label>Giới hạn cao (mm)</label><input type="number" placeholder="vd '+mx+'"></div></div>'
+      +'<div class="frow2"><div class="fld"><label>Độ tin cậy</label><div class="confseg">'
+      +'<button class="lo" onclick="setConf(this)">Thấp</button><button class="md on" onclick="setConf(this)">Trung bình</button><button class="hi" onclick="setConf(this)">Cao</button></div></div>'
+      +'<div class="fld"><label>Mô hình tham chiếu chính</label><select><option>GFS</option><option>ICON</option><option selected>IFS</option><option>AIFS</option><option>WRF</option></select></div></div>'
+      +'<div class="frow2"><div class="fld"><label>Lý do từ synop</label><textarea placeholder="vd: rãnh thấp + hội tụ ẩm Tây Nam, IFS xử lý đối lưu tốt hơn..."></textarea></div>'
+      +'<div class="fld"><label>Cảnh báo bất định</label><textarea placeholder="vd: spread rộng ở +72h do lệch vị trí ổ mưa..."></textarea></div></div></div></div>';
+  }).join('');
+  document.querySelectorAll('#winForms input,#winForms textarea,#winForms select').forEach(function(el){el.addEventListener('input',flashSave);el.addEventListener('change',flashSave);});
+}
+function setConf(btn){var p=btn.parentElement;p.querySelectorAll('button').forEach(function(b){b.classList.remove('on');});btn.classList.add('on');flashSave();}
+var saveT;function flashSave(){var el=document.getElementById('mevSave');el.textContent='Đang lưu…';clearTimeout(saveT);saveT=setTimeout(function(){el.textContent='✓ Đã lưu '+new Date().toLocaleTimeString('vi-VN');},700);}
+
+/* --- render + wire --- */
+function mevRender(){ data=genRiver(river); drawScore(); drawChart(); buildLegend(); drawTable(); drawForms(); }
+function mevInit(){
+  var sel=document.getElementById('riverSel');
+  sel.innerHTML=RIVERS.map(function(r){return '<option value="'+r.code+'">'+r.name+'</option>';}).join('');
+  document.getElementById('riverMeta').textContent=RIVERS[0].meta;
+  sel.onchange=function(){river=sel.value;document.getElementById('riverMeta').textContent=(RIVERS.filter(function(r){return r.code===river;})[0]||{}).meta||'';mevRender();};
+  document.getElementById('mevLoad').onclick=function(){var b=this;b.classList.add('loading');b.disabled=true;setTimeout(function(){mevRender();b.classList.remove('loading');b.disabled=false;},700);};
+  document.querySelectorAll('#modeSeg button').forEach(function(b){b.onclick=function(){document.querySelectorAll('#modeSeg button').forEach(function(x){x.classList.remove('on');});b.classList.add('on');mode=b.dataset.mode;drawChart();};});
+  mevRender(); mevReady=true;
+}
+</script>
+</body></html>

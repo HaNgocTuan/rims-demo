@@ -1,0 +1,146 @@
+{
+ "schema": "rims.hethong.lienho/v0.1",
+ "he_thong": "huong",
+ "ten": "Hệ thống liên hồ chứa lưu vực sông Hương",
+ "quyet_dinh": "QĐ 1606/QĐ-TTg (2019)",
+ "cap_nhat": "2026-09-07",
+ "nguon": {
+  "danh_muc_ho": "DB luật SEHO (WP_SEHO_Legal_Master_v2.6) — MD10, Điều 1 QTVH liên hồ",
+  "ten_ban_do + toa_do": "data/congtrinh/*.geojson (khớp tên; bỏ tiền tố TĐ., 'bậc'→'b', alias tên rút gọn)"
+ },
+ "nguyen_tac": "Thành viên theo Điều 1 QTVH luật định. Vẽ marker theo lon/lat đã chốt. tren_ban_do=false = hồ luật định CHƯA có trong geojson nền (chưa xây / đập dâng / thiếu bản ghi).",
+ "ho": [
+  {
+   "ten": "Tả Trạch",
+   "ten_ban_do": "Hồ Tả Trạch",
+   "tren_ban_do": true,
+   "loai": "Thủy lợi",
+   "anqg": true,
+   "lon": 107.63363,
+   "lat": 16.31892,
+   "console_id": "dam.tatrach"
+  },
+  {
+   "ten": "Hương Điền",
+   "ten_ban_do": "Hương Điền",
+   "tren_ban_do": true,
+   "loai": "Thủy điện",
+   "anqg": false,
+   "lon": 107.423396,
+   "lat": 16.460041
+  },
+  {
+   "ten": "Bình Điền",
+   "ten_ban_do": "Bình Điền",
+   "tren_ban_do": true,
+   "loai": "Thủy điện",
+   "anqg": false,
+   "lon": 107.502721,
+   "lat": 16.317285
+  },
+  {
+   "ten": "A Lưới",
+   "ten_ban_do": "A Lưới",
+   "tren_ban_do": true,
+   "loai": "Thủy điện",
+   "anqg": false,
+   "lon": 107.272752,
+   "lat": 16.22656
+  },
+  {
+   "ten": "A Lin Thượng",
+   "ten_ban_do": "A Lin Thượng",
+   "tren_ban_do": true,
+   "loai": "Thủy điện",
+   "anqg": false,
+   "lon": 107.125842,
+   "lat": 16.338474
+  },
+  {
+   "ten": "A Lin 3",
+   "ten_ban_do": "A Lin 3",
+   "tren_ban_do": true,
+   "loai": "Thủy điện",
+   "anqg": false,
+   "lon": 107.149707,
+   "lat": 16.312287
+  },
+  {
+   "ten": "A Lin B1",
+   "ten_ban_do": null,
+   "tren_ban_do": false,
+   "loai": null,
+   "anqg": false
+  },
+  {
+   "ten": "A Lin B2",
+   "ten_ban_do": "A Lin B2",
+   "tren_ban_do": true,
+   "loai": "Thủy điện",
+   "anqg": false,
+   "lon": 107.201587,
+   "lat": 16.403172
+  },
+  {
+   "ten": "Rào Trăng 3",
+   "ten_ban_do": "Rào Trăng 3",
+   "tren_ban_do": true,
+   "loai": "Thủy điện",
+   "anqg": false,
+   "lon": 107.145951,
+   "lat": 16.243309
+  },
+  {
+   "ten": "Rào Trăng 4",
+   "ten_ban_do": "Rào Trăng 4",
+   "tren_ban_do": true,
+   "loai": "Thủy điện",
+   "anqg": false,
+   "lon": 107.297588,
+   "lat": 16.397495
+  },
+  {
+   "ten": "A Roàng",
+   "ten_ban_do": "A ROÀNG",
+   "tren_ban_do": true,
+   "loai": "Thủy điện",
+   "anqg": false,
+   "lon": 107.396321,
+   "lat": 16.122793
+  },
+  {
+   "ten": "Sông Bồ",
+   "ten_ban_do": "Sông Bồ",
+   "tren_ban_do": true,
+   "loai": "Thủy điện",
+   "anqg": false,
+   "lon": 107.372044,
+   "lat": 16.234837
+  },
+  {
+   "ten": "Thượng Nhật",
+   "ten_ban_do": "Thượng Nhật",
+   "tren_ban_do": true,
+   "loai": "Thủy điện",
+   "anqg": false,
+   "lon": 107.694244,
+   "lat": 16.113358
+  },
+  {
+   "ten": "Thượng Lộ",
+   "ten_ban_do": "Thượng Lộ",
+   "tren_ban_do": true,
+   "loai": "Thủy điện",
+   "anqg": false,
+   "lon": 107.749463,
+   "lat": 16.140703
+  },
+  {
+   "ten": "Đập Thảo Long",
+   "ten_ban_do": null,
+   "tren_ban_do": false,
+   "loai": null,
+   "anqg": false
+  }
+ ]
+}

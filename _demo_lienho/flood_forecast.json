@@ -1,0 +1,96 @@
+{
+  "schema": "hht.floodlive.forecast/v0.2",
+  "generated_at": "2026-09-18T12:04:08",
+  "now": "2026-09-18T11:00:00",
+  "horizon_h": 74.0,
+  "method": "ladder 1D (cường độ lũ chung); Hòa Duyệt quy về Chu Lễ tương đương; nội suy tuyến tính",
+  "anchor": {
+    "bankfull": {
+      "chule": 8.0,
+      "hoaduyet": 6.0
+    },
+    "peak": {
+      "chule": 16.4,
+      "hoaduyet": 9.5
+    }
+  },
+  "tier": {
+    "key": "AN_TOAN",
+    "label": "AN TOÀN",
+    "sev": "ok",
+    "confidence": null,
+    "comment": "Cả cửa sổ dự báo đều DƯỚI mức bắt đầu tràn bờ — chưa cụm dân cư nào tràn theo lưới ngập DEM (mực tràn đầu ≈ 8,50 m tại Chu Lễ). Chưa cần hành động.",
+    "overbank_onset_chule": 8.5,
+    "overbanking": [],
+    "clusters_missing_threshold": [],
+    "grid_mismatch_h": 0,
+    "tz_aware_h": 0,
+    "ngantruoi_backwater": null,
+    "overbank_eta": null,
+    "rain_committed_frac": 0.0,
+    "note_s11": "Độ tin cậy ĐỊNH TÍNH (theo lead-time + mưa đã rơi + neo quan trắc); dải xác suất chính thức chờ S-11."
+  },
+  "source": {
+    "forecast_generated_at": "2026-09-18T12:04:04",
+    "forecast_now": "2026-09-18T11:00:00",
+    "hoaduyet_generated_at": "2026-09-18T12:04:04",
+    "hoaduyet_now": "2026-09-18T11:00:00"
+  },
+  "anchored_all": true,
+  "unanchored_stations": [],
+  "stations": {
+    "chule": {
+      "station": "Chu Lễ",
+      "peak_m": 7.42,
+      "peak_t": "2026-09-20T05:00:00",
+      "peak_lead_h": 42,
+      "caveat": "Đỉnh dự báo DƯỚI BĐ1. Sai số điển hình ±0,3–0,5 m ở mực thấp; caveat mực cao (S-05 rating + biên co-lũ Linh Cảm) chưa áp dụng ở dải này.",
+      "bd_next": null,
+      "thresholds": {
+        "BĐI": 11.5,
+        "BĐII": 12.5,
+        "BĐIII": 14.0
+      },
+      "anchored": true,
+      "assim_note": null,
+      "open_loop": false,
+      "obs_status": "ok",
+      "n_obs": 14,
+      "fresh_age_h": 5.1,
+      "rmse_m": 0.455
+    },
+    "hoaduyet": {
+      "station": "Hoa Duyet",
+      "peak_m": 4.815,
+      "peak_t": "2026-09-20T09:00:00",
+      "peak_lead_h": 46,
+      "caveat": "Độ cao đỉnh HD kém neo (massO/I~0,6, S-05-HD); tin THỜI ĐIỂM + 'sẽ vượt BĐ'.",
+      "bd_next": null,
+      "thresholds": {
+        "BĐI": 7.5,
+        "BĐII": 9.0,
+        "BĐIII": 10.5
+      },
+      "anchored": true,
+      "assim_note": null,
+      "open_loop": false,
+      "obs_status": "ok",
+      "n_obs": 21,
+      "fresh_age_h": 5.1,
+      "rmse_m": 0.4318
+    }
+  },
+  "peak": {
+    "chule_intensity": 7.42,
+    "t": "2026-09-20T05:00:00",
+    "lead_h": 42.0,
+    "overbank": false,
+    "households": 0,
+    "buildings_total": 0,
+    "area_km2": 0.0,
+    "clamped": false,
+    "bankfull_chule": 8.0
+  },
+  "leadtimes": [],
+  "n_leadtimes": 0
+}

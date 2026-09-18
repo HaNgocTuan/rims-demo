@@ -1,0 +1,367 @@
+{
+  "schema": "rims.sources/v1",
+  "cap_nhat": "2026-09-01",
+  "muc_dich": "SỔ ĐĂNG KÝ NGUỒN DỮ LIỆU của RIMS. Mọi dữ liệu vào hệ thống phải khai báo tại đây: lấy từ đâu, cấp cái gì, đường dẫn nào, có cần khoá không. Giao diện Cài đặt đọc thẳng file này — không có nguồn nào 'ẩn' trong mã.",
+  "nguyen_tac": [
+    "MINH BẠCH: mỗi nguồn phải ghi rõ nhà cung cấp, dữ liệu cấp ra, đường dẫn API đầy đủ, giấy phép sử dụng.",
+    "KHÔNG CHỨA BÍ MẬT: file này chỉ ghi TÊN khoá (key_ref), TUYỆT ĐỐI không ghi giá trị khoá. Giá trị nằm ở config/secret (prototype) hoặc backend (môi trường thật).",
+    "CẮM ĐƯỢC: thêm một nguồn mới = thêm một khối vào 'nguon' (+ adapter nếu cần biến đổi dữ liệu). Không sửa mã lõi.",
+    "TRUNG THỰC: nguồn chưa kiểm chứng phải để trang_thai='du_kien' và ghi rõ ở 'canh_bao'. Không mô tả thứ chưa xác minh như đã có."
+  ],
+  "phan_loai": {
+    "khi_tuong": "Khí tượng — mưa, gió, mây, bão, vệ tinh, radar",
+    "thuy_van": "Thủy văn — mực nước, lưu lượng, trạm quan trắc",
+    "mo_hinh": "Kết quả mô hình — dự báo mưa, dòng chảy, Q đến hồ",
+    "gis_nen": "GIS nền — bản đồ nền, ảnh viễn thám, DEM",
+    "hanh_chinh": "Hành chính — ranh giới, dân cư, hạ tầng",
+    "ho_chua": "Hồ chứa & công trình — danh mục, thông số, quy trình vận hành"
+  },
+  "muc_tin_cay": {
+    "chinh_thuc": "Nguồn nhà nước hoặc hợp đồng dịch vụ — dùng cho bản tin phát hành chính thức",
+    "tham_khao": "Dùng đối chứng, định hướng — KHÔNG dùng làm căn cứ phát hành",
+    "thu_nghiem": "Đang đánh giá, chưa đưa vào tác nghiệp"
+  },
+  "nguon": [
+    {
+      "id": "wp.rma",
+      "ten": "Gateway RMA — WeatherPlus",
+      "nha_cung_cap": "Công ty CP Giải pháp Thời tiết WeatherPlus",
+      "phan_loai": [
+        "thuy_van",
+        "khi_tuong",
+        "mo_hinh"
+      ],
+      "muc_tin_cay": "chinh_thuc",
+      "trang_thai": "hoat_dong",
+      "cap_du_lieu": [
+        "Danh mục trạm quan trắc kèm ngưỡng báo động BĐ1/BĐ2/BĐ3",
+        "Chuỗi số liệu trạm theo khoảng thời gian (mưa, mực nước, lưu lượng)",
+        "Trạng thái hoạt động của trạm (phân loại LỖI / TRỄ / ĐÚNG GIỜ)",
+        "Danh mục mô hình mưa dự báo và dữ liệu mưa dự báo theo phiên (ô lưới)"
+      ],
+      "pham_vi": {
+        "khong_gian": "Toàn quốc",
+        "thoi_gian": "Thời gian thực + lịch sử",
+        "nhip_cap_nhat": "≈15 phút"
+      },
+      "base_url": "https://wpe-tools.seho.vn/api/portal/gateway/rma",
+      "base_url_cu": "https://wpe-tools.seho.vn/api/rma",
+      "endpoints": [
+        {
+          "method": "GET",
+          "path": "/api/setting/station/getall",
+          "cap": "Danh mục trạm + ngưỡng báo động"
+        },
+        {
+          "method": "POST",
+          "path": "/api/map/station/fromto",
+          "cap": "Chuỗi số liệu trạm theo khoảng thời gian"
+        },
+        {
+          "method": "POST",
+          "path": "/api/map/station/status",
+          "cap": "Trạng thái trạm (last_data, last_data_at)"
+        },
+        {
+          "method": "GET",
+          "path": "/api/map/rain-models/getall",
+          "cap": "Danh mục mô hình mưa dự báo"
+        },
+        {
+          "method": "GET",
+          "path": "/api/weather/GetRainForecastSession",
+          "cap": "Danh sách phiên dự báo mưa"
+        },
+        {
+          "method": "GET",
+          "path": "/api/weather/GetRainForecastDataBySession",
+          "cap": "Dữ liệu mưa dự báo theo phiên (ô lưới)"
+        }
+      ],
+      "auth": {
+        "type": "api_key",
+        "vi_tri": "header",
+        "ten_truong": "x-api-key",
+        "key_ref": "RMA_API_KEY",
+        "bat_buoc_cho": [
+          "Trạm quan trắc",
+          "Mưa dự báo"
+        ],
+        "ghi_chu": "Prototype đọc khoá từ secret.local.js. Môi trường thật: khoá sống ở backend RIMS, trình duyệt KHÔNG thấy khoá."
+      },
+      "giay_phep": "Hợp đồng dịch vụ với WeatherPlus — chưa ký cho RIMS",
+      "suy_giam": "Mất kết nối → giữ bản dữ liệu tốt gần nhất, đánh dấu 'cũ', không ghi đè bằng rỗng.",
+      "ghi_chu_ky_thuat": "Chỉ dùng x-api-key qua gateway mới; cơ chế token cũ đã gỡ.",
+      "nguon_phat_hien": "Trích từ mã HydroNet: app/viewer/weather-layers.js, app/forecast/fetch_inputs.py"
+    },
+    {
+      "id": "wp.resources",
+      "ten": "Resources — tile khí tượng & bão (WeatherPlus)",
+      "nha_cung_cap": "WeatherPlus",
+      "phan_loai": [
+        "khi_tuong"
+      ],
+      "muc_tin_cay": "chinh_thuc",
+      "trang_thai": "hoat_dong",
+      "cap_du_lieu": [
+        "Tile radar thời tiết — cường độ mưa (mm/h)",
+        "Tile mưa phân tích (mm/h)",
+        "Ảnh vệ tinh Himawari (10 phút/khung)",
+        "Tile trường gió 10 m từ NOAA-GFS (u/v mã hoá trong pixel)",
+        "Bão: đường đi quan trắc + dự báo, nón xác suất, cấp bão"
+      ],
+      "pham_vi": {
+        "khong_gian": "Việt Nam + Biển Đông",
+        "thoi_gian": "24 giờ gần nhất (vệ tinh) · theo timeline từng lớp",
+        "nhip_cap_nhat": "10 phút (vệ tinh) · theo lớp"
+      },
+      "base_url": "https://resources.weatherplus.vn",
+      "endpoints": [
+        {
+          "method": "GET",
+          "path": "/api/{type}/timeline?hours=N",
+          "cap": "Trục thời gian của lớp (radar / rainfall / …)"
+        },
+        {
+          "method": "GET",
+          "path": "/api/radar/tiles/{y}/{M}/{d}/{H}/{mm}/{z}/{x}/{y}.webp",
+          "cap": "Tile radar (mm/h)"
+        },
+        {
+          "method": "GET",
+          "path": "/api/rainfall/tiles/{y}/{M}/{d}/{H}/{z}/{x}/{y}.webp",
+          "cap": "Tile mưa phân tích (mm/h)"
+        },
+        {
+          "method": "GET",
+          "path": "/api/satellite/himawari/{y}/{M}/{d}/{H}/{mm}/{z}/{x}/{y}.jpg",
+          "cap": "Ảnh vệ tinh Himawari"
+        },
+        {
+          "method": "GET",
+          "path": "/api/satellite/timeline?lon=&lat=&hours=24",
+          "cap": "Trục thời gian vệ tinh"
+        },
+        {
+          "method": "GET",
+          "path": "/api/wind/noaa-gfs/timeline",
+          "cap": "Trục thời gian trường gió GFS"
+        },
+        {
+          "method": "GET",
+          "path": "/api/wind/noaa-gfs/tiles/webp/10m/{date}/{cycle}/f{HHH}/{z}/{x}/{y}.webp",
+          "cap": "Tile gió 10 m"
+        },
+        {
+          "method": "GET",
+          "path": "/api/storms/latest",
+          "cap": "Bão — track, nón, cường độ"
+        }
+      ],
+      "auth": {
+        "type": "none",
+        "ghi_chu": "Tile và lớp bão không yêu cầu xác thực tại thời điểm khảo sát."
+      },
+      "giai_ma": {
+        "radar_va_mua": "value = (R/255)^gamma × range. ⚑ range ĐỌC TỪ HEADER 'x-{type}-range' của phản hồi — giả định range = palette sẽ sai khoảng 2 lần.",
+        "gio": "speed = (B/255) × 36 (m/s)",
+        "ve_tinh": "maxNativeZoom = 7; lọc frame có available !== false",
+        "ngoai_cua_so": "Ngoài cửa sổ dữ liệu → ẨN lớp, không treo khung cũ."
+      },
+      "giay_phep": "Hợp đồng dịch vụ với WeatherPlus — chưa ký cho RIMS",
+      "suy_giam": "Không có tile → ẩn lớp, ghi nhật ký; không dựng dữ liệu giả.",
+      "nguon_phat_hien": "Trích từ mã HydroNet: app/viewer/weather-layers.js (v0.77)"
+    },
+    {
+      "id": "wp.tank",
+      "ten": "TankModel — dự báo lưu lượng đến hồ (WeatherPlus)",
+      "nha_cung_cap": "WeatherPlus",
+      "phan_loai": [
+        "mo_hinh"
+      ],
+      "muc_tin_cay": "chinh_thuc",
+      "trang_thai": "hoat_dong",
+      "cap_du_lieu": [
+        "Bản dự báo lưu lượng đến hồ (Q đến) theo từng project/hồ",
+        "Danh mục project kèm diện tích lưu vực và danh sách tiểu lưu vực"
+      ],
+      "pham_vi": {
+        "khong_gian": "61 project tại thời điểm khảo sát 12/8/2026 — gồm Cửa Đạt, Ngàn Trươi, Tả Trạch (thiếu Dầu Tiếng)",
+        "thoi_gian": "Bản dự báo mới nhất theo phiên",
+        "nhip_cap_nhat": "Theo lịch chạy mô hình"
+      },
+      "base_url": "https://wpe-tools.seho.vn/api/wtm/api/TankModel",
+      "endpoints": [
+        {
+          "method": "GET",
+          "path": "/inflow-forecast/files?project={proj}&limit=1",
+          "cap": "Danh sách bản dự báo, mới nhất trước"
+        },
+        {
+          "method": "GET",
+          "path": "/inflow-forecast/content?project={proj}&file={file_name}",
+          "cap": "Nội dung bản dự báo Q đến"
+        }
+      ],
+      "auth": {
+        "type": "none",
+        "key_ref": null,
+        "canh_bao": "⚑ Không thấy token trong mã HydroNet. PHẢI kiểm tra lại trước khi đưa vào môi trường thật — một API dự báo không xác thực là rủi ro cả về lạm dụng lẫn toàn vẹn dữ liệu."
+      },
+      "snapshot_cuc_bo": "app/services/tank/tank_projects.json (61 project, chụp 12/8/2026)",
+      "giay_phep": "Hợp đồng dịch vụ với WeatherPlus — chưa ký cho RIMS",
+      "suy_giam": "Lấy hỏng → GIỮ BẢN TỐT trước đó, không ghi đè bằng rỗng (nguyên tắc kế thừa từ HydroNet).",
+      "nguon_phat_hien": "Trích từ mã HydroNet: app/forecast/fetch_inputs.py"
+    },
+    {
+      "id": "basemap.esri",
+      "ten": "Esri ArcGIS Online — ba nền bản đồ (vệ tinh · sáng · tối)",
+      "nha_cung_cap": "Esri / ArcGIS Online",
+      "phan_loai": [
+        "gis_nen"
+      ],
+      "muc_tin_cay": "tham_khao",
+      "trang_thai": "hoat_dong",
+      "cap_du_lieu": [
+        "Nền vệ tinh (World Imagery)",
+        "Nền sáng không nhãn (Canvas World Light Gray Base)",
+        "Nền tối không nhãn (Canvas World Dark Gray Base)"
+      ],
+      "pham_vi": {
+        "khong_gian": "Toàn cầu",
+        "thoi_gian": "Ảnh ghép, không theo thời gian thực",
+        "nhip_cap_nhat": "Không áp dụng"
+      },
+      "base_url": "https://server.arcgisonline.com/ArcGIS/rest/services",
+      "endpoints": [
+        {
+          "method": "GET",
+          "path": "/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+          "cap": "Tile ảnh vệ tinh (tới mức 19)"
+        },
+        {
+          "method": "GET",
+          "path": "/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}",
+          "cap": "Tile nền sáng không nhãn (tile gốc tới mức 16)"
+        },
+        {
+          "method": "GET",
+          "path": "/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}",
+          "cap": "Tile nền tối không nhãn (tile gốc tới mức 16)"
+        }
+      ],
+      "auth": {
+        "type": "none"
+      },
+      "giay_phep": "Miễn phí kèm ghi công '© Esri'. ⚑ CẦN RÀ SOÁT điều khoản ở quy mô sản xuất khi hệ thống đặt tại NAWAPI.",
+      "ghi_cong": "© Esri",
+      "canh_bao": "Dịch vụ tile đặt ở nước ngoài. Với 04 hồ liên quan an ninh quốc gia, cân nhắc self-host tile hoặc dùng nguồn nền trong nước. Hai nền Canvas chỉ có tile gốc tới mức 16 — mức sâu hơn là ảnh phóng to, không phải lỗi.",
+      "nguon_phat_hien": "Kế thừa HydroNet Hà Tĩnh (app/viewer/index.html). HydroNet chuyển sang bộ ba Esri ngày 30/8/2026 sau khi CARTO đòi khoá; RIMS theo cùng ngày 01/9/2026.",
+      "ghi_chu_thay_the": "THAY THẾ nguồn 'basemap.carto' đã gỡ. CARTO Basemaps chuyển sang yêu cầu khoá truy cập nên hai nền voyager_nolabels / dark_nolabels không dùng được nữa. Nay cả ba nền cùng một nhà cung cấp, cùng đặc tính KHÔNG nhãn địa danh (chuẩn hoá tên / Biển Đông)."
+    },
+    {
+      "id": "nawapi.vnwis",
+      "ten": "VN-WIS — Hệ thống thông tin thủy lợi Việt Nam",
+      "nha_cung_cap": "Bộ Nông nghiệp và Môi trường / NAWAPI",
+      "phan_loai": [
+        "ho_chua",
+        "hanh_chinh",
+        "thuy_van"
+      ],
+      "muc_tin_cay": "chinh_thuc",
+      "trang_thai": "du_kien",
+      "cap_du_lieu": [
+        "Danh mục hồ chứa và mã định danh thống nhất toàn quốc",
+        "Thông số công trình, cửa van, quan hệ Z-F-W",
+        "Quy trình vận hành đơn hồ và liên hồ",
+        "Dữ liệu CSDL an toàn đập"
+      ],
+      "pham_vi": {
+        "khong_gian": "Toàn quốc — 235 hồ có cửa van",
+        "thoi_gian": "—",
+        "nhip_cap_nhat": "—"
+      },
+      "base_url": null,
+      "endpoints": [],
+      "auth": {
+        "type": "chua_xac_dinh",
+        "key_ref": "VNWIS_TOKEN"
+      },
+      "chuan_du_lieu": "JSON theo Quyết định 1805 (04/2026); mã định danh phải thống nhất với VN-WIS",
+      "giay_phep": "Nội bộ ngành — theo phân quyền",
+      "canh_bao": "⚑ CHƯA CÓ ĐƯỜNG DẪN. Đây là nguồn quan trọng nhất của RIMS nhưng chưa được cung cấp. Theo Yêu cầu kỹ thuật 07/8/2026, NAWAPI chịu trách nhiệm kết nối. Cần đưa vào danh mục việc cần làm với NAWAPI.",
+      "phu_thuoc": "Toàn bộ danh mục hồ và mã định danh của RIMS phụ thuộc nguồn này."
+    },
+    {
+      "id": "nawapi.gis_nen",
+      "ten": "Dữ liệu nền NAWAPI — GIS, viễn thám, DEM",
+      "nha_cung_cap": "NAWAPI",
+      "phan_loai": [
+        "gis_nen",
+        "hanh_chinh"
+      ],
+      "muc_tin_cay": "chinh_thuc",
+      "trang_thai": "du_kien",
+      "cap_du_lieu": [
+        "Ranh giới hành chính hiện hành (sau sáp nhập 2025) kèm dân số, diện tích",
+        "Ranh lưu vực và tiểu lưu vực, mạng sông suối, điểm kiểm soát dòng chảy",
+        "DEM, ảnh viễn thám, bản đồ sử dụng đất, dân cư, hạ tầng",
+        "Danh mục trạm khí tượng, thủy văn, quan trắc chuyên dùng"
+      ],
+      "pham_vi": {
+        "khong_gian": "Toàn quốc",
+        "thoi_gian": "—",
+        "nhip_cap_nhat": "Theo đợt cập nhật"
+      },
+      "base_url": null,
+      "endpoints": [],
+      "auth": {
+        "type": "chua_xac_dinh"
+      },
+      "giay_phep": "Dữ liệu nhà nước — theo phân quyền",
+      "canh_bao": "⚑ CHƯA CÓ. Thư mục app/web/data/ đang trống chờ nguồn này. Xem app/web/data/README.md để biết yêu cầu kỹ thuật (CRS 4326, UTF-8, cắt theo vùng, tile hoá lớp nặng).",
+      "quy_tac_ky_thuat": "EPSG:4326 · UTF-8 (dữ liệu MapInfo cũ mã TCVN3/ABC phải giải mã trước) · làm tròn 6 chữ số · lớp nặng dùng tile/index tiền tính"
+    },
+    {
+      "id": "openmeteo",
+      "ten": "Open-Meteo — dự báo khí tượng mở (VÍ DỤ CẮM NGUỒN)",
+      "nha_cung_cap": "Open-Meteo",
+      "phan_loai": [
+        "khi_tuong",
+        "mo_hinh"
+      ],
+      "muc_tin_cay": "tham_khao",
+      "trang_thai": "du_kien",
+      "cap_du_lieu": [
+        "Dự báo mưa theo điểm (đối chứng với mưa dự báo của WP)"
+      ],
+      "pham_vi": {
+        "khong_gian": "Toàn cầu, theo điểm toạ độ",
+        "thoi_gian": "Dự báo nhiều ngày",
+        "nhip_cap_nhat": "Theo chu kỳ mô hình toàn cầu"
+      },
+      "base_url": "https://api.open-meteo.com",
+      "endpoints": [
+        {
+          "method": "GET",
+          "path": "/v1/forecast?latitude={lat}&longitude={lon}&hourly=precipitation",
+          "cap": "Mưa dự báo theo giờ tại một điểm"
+        }
+      ],
+      "auth": {
+        "type": "none"
+      },
+      "adapter": "core/adapters/openmeteo.js",
+      "giay_phep": "Miễn phí cho sử dụng phi thương mại kèm ghi công — ⚑ CẦN ĐỌC ĐIỀU KHOẢN trước khi dùng trong hệ thống nhà nước",
+      "canh_bao": "⚑ ĐÂY LÀ VÍ DỤ MINH HOẠ cơ chế cắm nguồn mở, CHƯA KIỂM CHỨNG trong RIMS. Không dùng làm căn cứ phát hành bản tin. Bật/tắt trong Cài đặt.",
+      "ly_do_co_mat": "Chứng minh rằng thêm một nguồn mở = thêm một khối JSON + một adapter nhỏ, không đụng mã lõi."
+    }
+  ],
+  "khoa_khai_bao": {
+    "ghi_chu": "Danh sách TÊN khoá mà các nguồn tham chiếu qua 'key_ref'. Giá trị KHÔNG nằm ở đây — xem app/web/config.js (khối KEYS) để biết nguồn cấp giá trị.",
+    "danh_sach": [
+      "RMA_API_KEY",
+      "VNWIS_TOKEN"
+    ]
+  }
+}

@@ -1,0 +1,200 @@
+{
+ "schema": "rims.hethong.lienho/v0.1",
+ "he_thong": "dongnai",
+ "ten": "Hệ thống liên hồ chứa lưu vực sông Đồng Nai",
+ "quyet_dinh": "QĐ 1895/QĐ-TTg (2019)",
+ "cap_nhat": "2026-09-07",
+ "nguon": {
+  "danh_muc_ho": "DB luật SEHO (WP_SEHO_Legal_Master_v2.6) — MD10, Điều 1 QTVH liên hồ",
+  "ten_ban_do + toa_do": "data/congtrinh/*.geojson (khớp tên; bỏ tiền tố TĐ., 'bậc'→'b', alias tên rút gọn)"
+ },
+ "nguyen_tac": "Thành viên theo Điều 1 QTVH luật định. Vẽ marker theo lon/lat đã chốt. tren_ban_do=false = hồ luật định CHƯA có trong geojson nền (chưa xây / đập dâng / thiếu bản ghi).",
+ "ho": [
+  {
+   "ten": "Thác Mơ",
+   "ten_ban_do": "Thác Mơ",
+   "tren_ban_do": true,
+   "loai": "Thủy điện",
+   "anqg": false,
+   "lon": 107.019336,
+   "lat": 11.857762
+  },
+  {
+   "ten": "Cần Đơn",
+   "ten_ban_do": "Cần Đơn",
+   "tren_ban_do": true,
+   "loai": "Thủy điện",
+   "anqg": false,
+   "lon": 106.843134,
+   "lat": 11.968814
+  },
+  {
+   "ten": "Srok Phu Miêng",
+   "ten_ban_do": "Srok Phu Miêng",
+   "tren_ban_do": true,
+   "loai": "Thủy điện",
+   "anqg": false,
+   "lon": 106.754692,
+   "lat": 11.768207
+  },
+  {
+   "ten": "Phước Hòa",
+   "ten_ban_do": null,
+   "tren_ban_do": false,
+   "loai": null,
+   "anqg": false
+  },
+  {
+   "ten": "Đơn Dương",
+   "ten_ban_do": "TĐ. Đơn Dương",
+   "tren_ban_do": true,
+   "loai": "Thủy điện",
+   "anqg": false,
+   "lon": 108.61,
+   "lat": 11.8519
+  },
+  {
+   "ten": "Đại Ninh",
+   "ten_ban_do": "Đại Ninh",
+   "tren_ban_do": true,
+   "loai": "Thủy điện",
+   "anqg": false,
+   "lon": 108.320267,
+   "lat": 11.649881
+  },
+  {
+   "ten": "Đồng Nai 2",
+   "ten_ban_do": "Đồng Nai 2",
+   "tren_ban_do": true,
+   "loai": "Thủy điện",
+   "anqg": false,
+   "lon": 108.05753,
+   "lat": 11.713109
+  },
+  {
+   "ten": "Đồng Nai 3",
+   "ten_ban_do": "Đồng Nai 3",
+   "tren_ban_do": true,
+   "loai": "Thủy điện",
+   "anqg": false,
+   "lon": 107.88842,
+   "lat": 11.872524
+  },
+  {
+   "ten": "Đồng Nai 4",
+   "ten_ban_do": "Đồng Nai 4",
+   "tren_ban_do": true,
+   "loai": "Thủy điện",
+   "anqg": false,
+   "lon": 107.729162,
+   "lat": 11.885301
+  },
+  {
+   "ten": "Đăk R'Tih",
+   "ten_ban_do": "Hồ Đắk R'Tih",
+   "tren_ban_do": true,
+   "loai": "Thủy lợi",
+   "anqg": false,
+   "lon": 107.484802,
+   "lat": 12.077046
+  },
+  {
+   "ten": "Đồng Nai 5",
+   "ten_ban_do": "Đồng Nai 5",
+   "tren_ban_do": true,
+   "loai": "Thủy điện",
+   "anqg": false,
+   "lon": 107.553405,
+   "lat": 11.792656
+  },
+  {
+   "ten": "Trị An",
+   "ten_ban_do": "Trị An",
+   "tren_ban_do": true,
+   "loai": "Thủy điện",
+   "anqg": false,
+   "lon": 106.984643,
+   "lat": 11.104966
+  },
+  {
+   "ten": "Hàm Thuận",
+   "ten_ban_do": "Hàm Thuận",
+   "tren_ban_do": true,
+   "loai": "Thủy điện",
+   "anqg": false,
+   "lon": 107.911853,
+   "lat": 11.3054
+  },
+  {
+   "ten": "Đa Mi",
+   "ten_ban_do": "Đa Mi",
+   "tren_ban_do": true,
+   "loai": "Thủy điện",
+   "anqg": false,
+   "lon": 107.8376,
+   "lat": 11.2408
+  },
+  {
+   "ten": "Dầu Tiếng",
+   "ten_ban_do": "Hồ Dầu Tiếng",
+   "tren_ban_do": true,
+   "loai": "Thủy lợi",
+   "anqg": true,
+   "lon": 106.339954,
+   "lat": 11.324275,
+   "console_id": "dam.dautieng"
+  },
+  {
+   "ten": "Đa Khai",
+   "ten_ban_do": "Đa Khai",
+   "tren_ban_do": true,
+   "loai": "Thủy điện",
+   "anqg": false,
+   "lon": 108.558127,
+   "lat": 12.108131
+  },
+  {
+   "ten": "Đa Dâng 3",
+   "ten_ban_do": "Đa dâng 3",
+   "tren_ban_do": true,
+   "loai": "Thủy điện",
+   "anqg": false,
+   "lon": 108.233631,
+   "lat": 11.667721
+  },
+  {
+   "ten": "Đăk Sin 1",
+   "ten_ban_do": "Đăk Sin 1",
+   "tren_ban_do": true,
+   "loai": "Thủy điện",
+   "anqg": false,
+   "lon": 107.470772,
+   "lat": 11.807298
+  },
+  {
+   "ten": "Đa M'Bri",
+   "ten_ban_do": "ĐamBri",
+   "tren_ban_do": true,
+   "loai": "Thủy điện",
+   "anqg": false,
+   "lon": 107.672423,
+   "lat": 11.582607
+  },
+  {
+   "ten": "Đắk Kar",
+   "ten_ban_do": "Đak Kar",
+   "tren_ban_do": true,
+   "loai": "Thủy điện",
+   "anqg": false,
+   "lon": 107.422387,
+   "lat": 11.844881
+  },
+  {
+   "ten": "Đập dâng Tà Pao",
+   "ten_ban_do": null,
+   "tren_ban_do": false,
+   "loai": null,
+   "anqg": false
+  }
+ ]
+}

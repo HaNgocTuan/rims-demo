@@ -1,0 +1,114 @@
+{
+ "schema": "rims.hethong.lienho/v0.1",
+ "he_thong": "ca",
+ "ten": "Hệ thống liên hồ chứa lưu vực sông Cả",
+ "quyet_dinh": "QĐ 1605/QĐ-TTg (2019)",
+ "cap_nhat": "2026-09-07",
+ "nguon": {
+  "danh_muc_ho": "DB luật SEHO (WP_SEHO_Legal_Master_v2.6) — MD10, Điều 1 QTVH liên hồ",
+  "ten_ban_do + toa_do": "data/congtrinh/*.geojson (khớp tên; bỏ tiền tố TĐ., 'bậc'→'b', alias tên rút gọn)"
+ },
+ "nguyen_tac": "Thành viên theo Điều 1 QTVH luật định. Vẽ marker theo lon/lat đã chốt. tren_ban_do=false = hồ luật định CHƯA có trong geojson nền (chưa xây / đập dâng / thiếu bản ghi).",
+ "ho": [
+  {
+   "ten": "Bản Vẽ",
+   "ten_ban_do": "Bản Vẽ",
+   "tren_ban_do": true,
+   "loai": "Thủy điện",
+   "anqg": false,
+   "lon": 104.483155,
+   "lat": 19.345712
+  },
+  {
+   "ten": "Khe Bố",
+   "ten_ban_do": "Thủy điện Khe Bố",
+   "tren_ban_do": true,
+   "loai": "Thủy điện",
+   "anqg": false,
+   "lon": 104.6632,
+   "lat": 19.1814
+  },
+  {
+   "ten": "Chi Khê",
+   "ten_ban_do": "Chi Khê",
+   "tren_ban_do": true,
+   "loai": "Thủy điện",
+   "anqg": false,
+   "lon": 104.802881,
+   "lat": 19.088099
+  },
+  {
+   "ten": "Nậm Nơn",
+   "ten_ban_do": "Nậm Nơn",
+   "tren_ban_do": true,
+   "loai": "Thủy điện",
+   "anqg": false,
+   "lon": 104.422198,
+   "lat": 19.297207
+  },
+  {
+   "ten": "Nậm Mô",
+   "ten_ban_do": "Nậm Mô",
+   "tren_ban_do": true,
+   "loai": "Thủy điện",
+   "anqg": false,
+   "lon": 104.112289,
+   "lat": 19.414299
+  },
+  {
+   "ten": "Bản Ang",
+   "ten_ban_do": "Bản Ang",
+   "tren_ban_do": true,
+   "loai": "Thủy điện",
+   "anqg": false,
+   "lon": 104.400478,
+   "lat": 19.256206
+  },
+  {
+   "ten": "Bản Mồng",
+   "ten_ban_do": null,
+   "tren_ban_do": false,
+   "loai": null,
+   "anqg": false
+  },
+  {
+   "ten": "Nhạn Hạc A",
+   "ten_ban_do": "Nhạn Hạc",
+   "tren_ban_do": true,
+   "loai": "Thủy điện",
+   "anqg": false,
+   "lon": 104.957652,
+   "lat": 19.538567,
+   "ghi_chu": "Khớp geojson theo tên rút gọn 'Nhạn Hạc' (cùng công trình)"
+  },
+  {
+   "ten": "Châu Thắng",
+   "ten_ban_do": "Châu Thắng",
+   "tren_ban_do": true,
+   "loai": "Thủy điện",
+   "anqg": false,
+   "lon": 104.99968,
+   "lat": 19.600228
+  },
+  {
+   "ten": "Ngàn Trươi",
+   "ten_ban_do": "Hồ Ngàn Trươi",
+   "tren_ban_do": true,
+   "loai": "Thủy lợi",
+   "anqg": true,
+   "lon": 105.476469,
+   "lat": 18.384996,
+   "console_id": "dam.ngantruoi"
+  },
+  {
+   "ten": "Hố Hô",
+   "ten_ban_do": "Hố Hô",
+   "tren_ban_do": true,
+   "loai": "Thủy điện",
+   "anqg": false,
+   "lon": 105.833437,
+   "lat": 18.046464,
+   "console_id": "dam.hoho"
+  }
+ ]
+}

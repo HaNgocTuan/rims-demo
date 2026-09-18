@@ -1,0 +1,251 @@
+{
+ "schema": "rims.hethong.lienho/v0.1",
+ "he_thong": "vugia_thubon",
+ "ten": "Hệ thống liên hồ chứa lưu vực sông Vu Gia - Thu Bồn",
+ "quyet_dinh": "QĐ 1865/QĐ-TTg ngày 23/12/2019 của Thủ tướng Chính phủ",
+ "thay_the": "QĐ 1537/QĐ-TTg ngày 07/9/2015",
+ "cap_nhat": "2026-09-07",
+ "nguon": {
+  "danh_muc_ho + tram_khong_che + bang": "QĐ 1865/QĐ-TTg (Điều 1, Điều 6 - Bảng 1, Bảng 2)",
+  "ten_ban_do + toa_do": "data/congtrinh/congtrinh_*.geojson (khớp theo tên)"
+ },
+ "nguyen_tac": "Bổ sung theo RIMS-18 (hệ Vu Gia-Thu Bồn BẮT BUỘC có), nguồn NGOÀI DB luật SEHO. Thành viên theo Điều 1 QĐ 1865/2019. tren_ban_do=false = hồ/đập luật định chưa có trên bản đồ (chưa xây / đập dâng / trạm cấp nước).",
+ "tram_khong_che": [
+  {
+   "song": "Vu Gia",
+   "tram": "Hội Khách"
+  },
+  {
+   "song": "Vu Gia",
+   "tram": "Ái Nghĩa"
+  },
+  {
+   "song": "Thu Bồn",
+   "tram": "Nông Sơn"
+  },
+  {
+   "song": "Thu Bồn",
+   "tram": "Câu Lâu"
+  }
+ ],
+ "mua_lu": {
+  "tu_ngay": "01/9",
+  "den_ngay": "15/12"
+ },
+ "ho": [
+  {
+   "ten": "A Vương",
+   "loai": "Thủy điện",
+   "anqg": false,
+   "ten_ban_do": "TĐ. A Vương",
+   "tren_ban_do": true,
+   "lon": 107.617348,
+   "lat": 15.800132,
+   "mn_cao_nhat_truoc_lu_m": 376.0,
+   "mn_don_lu_thap_nhat_m": 370.0
+  },
+  {
+   "ten": "Đắk Mi 4",
+   "loai": "Thủy điện",
+   "anqg": false,
+   "ten_ban_do": "Đăk Mi 4",
+   "tren_ban_do": true,
+   "lon": 107.922216,
+   "lat": 15.459512,
+   "mn_cao_nhat_truoc_lu_m": 255.0,
+   "mn_don_lu_thap_nhat_m": 251.5
+  },
+  {
+   "ten": "Sông Tranh 2",
+   "loai": "Thủy điện",
+   "anqg": false,
+   "ten_ban_do": "Sông Tranh 2",
+   "tren_ban_do": true,
+   "lon": 108.147483,
+   "lat": 15.331187,
+   "mn_cao_nhat_truoc_lu_m": 172.0,
+   "mn_don_lu_thap_nhat_m": 165.0
+  },
+  {
+   "ten": "Sông Bung 4",
+   "loai": "Thủy điện",
+   "anqg": false,
+   "ten_ban_do": "Sông Bung 4",
+   "tren_ban_do": true,
+   "lon": 107.639201,
+   "lat": 15.697731,
+   "mn_cao_nhat_truoc_lu_m": 217.5,
+   "mn_don_lu_thap_nhat_m": 216.0
+  },
+  {
+   "ten": "Sông Bung 4A",
+   "loai": "Thủy điện",
+   "anqg": false,
+   "ten_ban_do": "Sông Bung 4A",
+   "tren_ban_do": true,
+   "lon": 107.680102,
+   "lat": 15.764464
+  },
+  {
+   "ten": "Sông Bung 5",
+   "loai": "Thủy điện",
+   "anqg": false,
+   "ten_ban_do": "Sông Bung 5",
+   "tren_ban_do": true,
+   "lon": 107.747266,
+   "lat": 15.80807
+  },
+  {
+   "ten": "Sông Bung 2",
+   "loai": "Thủy điện",
+   "anqg": false,
+   "ten_ban_do": "TĐ Sông Bung 2",
+   "tren_ban_do": true,
+   "lon": 107.485033,
+   "lat": 15.699943,
+   "mn_cao_nhat_truoc_lu_m": 600.0,
+   "mn_don_lu_thap_nhat_m": 595.0
+  },
+  {
+   "ten": "Sông Bung 6",
+   "loai": "Thủy điện",
+   "anqg": false,
+   "ten_ban_do": "Sông Bung 6",
+   "tren_ban_do": true,
+   "lon": 107.778781,
+   "lat": 15.818683
+  },
+  {
+   "ten": "A Vương 3",
+   "loai": "Thủy điện",
+   "anqg": false,
+   "ten_ban_do": null,
+   "tren_ban_do": false
+  },
+  {
+   "ten": "Za Hung",
+   "loai": "Thủy điện",
+   "anqg": false,
+   "ten_ban_do": "Za Hung",
+   "tren_ban_do": true,
+   "lon": 107.653753,
+   "lat": 15.859985
+  },
+  {
+   "ten": "Đắk Mi 2",
+   "loai": "Thủy điện",
+   "anqg": false,
+   "ten_ban_do": "Đăk Mi 2",
+   "tren_ban_do": true,
+   "lon": 107.813055,
+   "lat": 15.229722
+  },
+  {
+   "ten": "Đắk Mi 3",
+   "loai": "Thủy điện",
+   "anqg": false,
+   "ten_ban_do": "Đak Mi 3",
+   "tren_ban_do": true,
+   "lon": 107.825448,
+   "lat": 15.319146
+  },
+  {
+   "ten": "Đắk Mi 4b",
+   "loai": "Thủy điện",
+   "anqg": false,
+   "ten_ban_do": "Đăk Mi 4B",
+   "tren_ban_do": true,
+   "lon": 107.89246,
+   "lat": 15.444263
+  },
+  {
+   "ten": "Đắk Mi 4c",
+   "loai": "Thủy điện",
+   "anqg": false,
+   "ten_ban_do": "Đăk Mi 4C",
+   "tren_ban_do": true,
+   "lon": 107.928927,
+   "lat": 15.464179
+  },
+  {
+   "ten": "Sông Tranh 3",
+   "loai": "Thủy điện",
+   "anqg": false,
+   "ten_ban_do": "Sông Tranh 3",
+   "tren_ban_do": true,
+   "lon": 108.143056,
+   "lat": 15.444444
+  },
+  {
+   "ten": "Sông Tranh 4",
+   "loai": "Thủy điện",
+   "anqg": false,
+   "ten_ban_do": "Sông Tranh 4",
+   "tren_ban_do": true,
+   "lon": 108.147982,
+   "lat": 15.526668
+  },
+  {
+   "ten": "Khe Diên",
+   "loai": "Thủy điện",
+   "anqg": false,
+   "ten_ban_do": "Khe Diên",
+   "tren_ban_do": true,
+   "lon": 107.94344,
+   "lat": 15.688187
+  },
+  {
+   "ten": "Sông Côn 2 bậc 1",
+   "loai": "Thủy điện",
+   "anqg": false,
+   "ten_ban_do": "Sông Côn 2 b1",
+   "tren_ban_do": true,
+   "lon": 107.790411,
+   "lat": 15.985356
+  },
+  {
+   "ten": "Sông Côn 2 bậc 2",
+   "loai": "Thủy điện",
+   "anqg": false,
+   "ten_ban_do": "Sông Côn 2 b2",
+   "tren_ban_do": true,
+   "lon": 107.808205,
+   "lat": 15.933321
+  },
+  {
+   "ten": "Đập An Trạch",
+   "loai": "Đập dâng",
+   "anqg": false,
+   "ten_ban_do": null,
+   "tren_ban_do": false
+  },
+  {
+   "ten": "Đập Hà Thanh",
+   "loai": "Đập dâng",
+   "anqg": false,
+   "ten_ban_do": null,
+   "tren_ban_do": false
+  },
+  {
+   "ten": "Đập Thanh Quýt",
+   "loai": "Đập dâng",
+   "anqg": false,
+   "ten_ban_do": null,
+   "tren_ban_do": false
+  },
+  {
+   "ten": "Đập Bàu Nít",
+   "loai": "Đập dâng",
+   "anqg": false,
+   "ten_ban_do": null,
+   "tren_ban_do": false
+  },
+  {
+   "ten": "Nhà máy nước Cầu Đỏ",
+   "loai": "Công trình khác",
+   "anqg": false,
+   "ten_ban_do": null,
+   "tren_ban_do": false
+  }
+ ]
+}

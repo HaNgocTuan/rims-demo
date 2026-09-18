@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>RIMS — Cài đặt · Minh bạch nguồn dữ liệu</title>
+<!--
+  =====================================================================
+  MÀN HÌNH CÀI ĐẶT — MINH BẠCH NGUỒN DỮ LIỆU
+  ---------------------------------------------------------------------
+  Đọc thẳng data/sources.json. Mọi nguồn dữ liệu của hệ thống đều phải
+  xuất hiện ở đây: lấy từ đâu, cấp cái gì, đường dẫn nào, khoá nào,
+  giấy phép ra sao. Không có nguồn nào chạy ngầm.
+
+  Khoá: màn hình này chỉ hiển thị TÊN khoá và trạng thái (đã cấu hình /
+  chưa), KHÔNG hiển thị giá trị. Giá trị nằm ở config/secret (prototype)
+  hoặc backend (môi trường thật).
+  =====================================================================
+-->
+<link rel="stylesheet" href="assets/hnt-fonts.css">
+<style>
+  :root{ --ink:#1a2332; --muted:#5b6b78; --line:#dde5ea; --bg:#f1f5f8;
+         --navy:#21295c; --deep:#065a82; --teal:#1c7293; --amber:#b4571c; --green:#3d7a3d; }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+       font-family:"Be Vietnam Pro",system-ui,Segoe UI,Arial,sans-serif;font-size:14px;line-height:1.55}
+  header{background:var(--navy);color:#fff;padding:14px 22px;display:flex;align-items:center;gap:14px;position:sticky;top:0;z-index:10}
+  header .t{font-weight:700;font-size:16px}
+  header .s{font-size:12px;color:#cadcfc}
+  header .sp{flex:1}
+  header a{color:#cadcfc;font-size:12.5px;text-decoration:none;border:1px solid #3e4a8f;padding:5px 12px;border-radius:999px}
+  header a:hover{background:#2c3570}
+  main{max-width:1180px;margin:0 auto;padding:22px}
+
+  .note{background:#fff;border:1px solid var(--line);border-left:4px solid var(--deep);
+        border-radius:10px;padding:14px 16px;margin-bottom:20px}
+  .note b{color:var(--deep)}
+
+  .bar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:16px}
+  .bar input{flex:1;min-width:220px;padding:8px 12px;border:1px solid var(--line);border-radius:9px;font-size:13.5px}
+  .bar select{padding:8px 12px;border:1px solid var(--line);border-radius:9px;font-size:13.5px;background:#fff}
+  .cnt{font-size:12.5px;color:var(--muted)}
+
+  h2{font-size:13px;letter-spacing:.7px;text-transform:uppercase;color:var(--muted);
+     margin:26px 0 12px;font-weight:700}
+
+  .card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:16px 18px;margin-bottom:14px}
+  .card.off{opacity:.55}
+  .hd{display:flex;align-items:flex-start;gap:12px;flex-wrap:wrap}
+  .hd .nm{font-weight:700;font-size:15.5px;color:var(--navy);flex:1;min-width:220px}
+  .prov{font-size:12.5px;color:var(--muted);margin-top:2px;font-weight:400}
+
+  .chip{display:inline-block;font-size:11px;font-weight:700;padding:3px 9px;border-radius:999px;white-space:nowrap}
+  .c-on{background:#e8f2e8;color:var(--green)}
+  .c-plan{background:#fdf3ea;color:var(--amber)}
+  .c-off{background:#eef1f3;color:var(--muted)}
+  .c-key{background:#e6eff5;color:var(--deep)}
+  .c-nokey{background:#fbe9e7;color:#9b2c2c}
+  .c-free{background:#eef1f3;color:var(--muted)}
+
+  .sec{margin-top:12px}
+  .sec .lb{font-size:11px;letter-spacing:.5px;text-transform:uppercase;color:var(--muted);font-weight:700;margin-bottom:5px}
+  ul.d{margin:0;padding-left:18px}
+  ul.d li{margin:2px 0}
+
+  table.ep{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:4px}
+  table.ep th{text-align:left;background:#f7f9fb;color:var(--muted);font-size:11px;
+              letter-spacing:.4px;text-transform:uppercase;padding:6px 8px;border-bottom:1px solid var(--line)}
+  table.ep td{padding:6px 8px;border-bottom:1px solid #eef2f5;vertical-align:top}
+  table.ep td.m{font-weight:700;color:var(--deep);width:52px}
+  code{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:12px;
+       background:#f2f6f8;padding:1px 5px;border-radius:4px;word-break:break-all}
+
+  .warn{background:#fdf3ea;border:1px solid #e0b088;border-radius:8px;padding:9px 12px;
+        font-size:12.5px;color:#8a4a12;margin-top:10px}
+  .meta{display:flex;gap:18px;flex-wrap:wrap;font-size:12.5px;color:var(--muted);margin-top:10px;
+        padding-top:10px;border-top:1px solid #eef2f5}
+  .acts{display:flex;gap:8px;align-items:center;margin-top:12px}
+  button{padding:6px 13px;border:1px solid var(--line);background:#fff;border-radius:8px;
+         font-size:12.5px;cursor:pointer;font-family:inherit}
+  button:hover{background:#f2f6f8}
+  .hs{font-size:12px;color:var(--muted)}
+  .hs.ok{color:var(--green)} .hs.bad{color:#9b2c2c}
+
+  .keys{background:#fff;border:1px solid var(--line);border-radius:12px;padding:16px 18px}
+  .keys table{width:100%;border-collapse:collapse;font-size:13px}
+  .keys th{text-align:left;color:var(--muted);font-size:11px;text-transform:uppercase;
+           letter-spacing:.4px;padding:7px 8px;border-bottom:1px solid var(--line)}
+  .keys td{padding:8px;border-bottom:1px solid #eef2f5}
+
+  details.help{background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px 18px;margin-top:22px}
+  details.help summary{cursor:pointer;font-weight:700;color:var(--navy)}
+  details.help pre{background:#f7f9fb;border:1px solid var(--line);border-radius:8px;
+                   padding:12px;overflow:auto;font-size:12px;line-height:1.5}
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <div class="t">Cài đặt — Minh bạch nguồn dữ liệu</div>
+    <div class="s">RIMS — Hệ thống tích hợp quản lý hồ chứa</div>
+  </div>
+  <div class="sp"></div>
+  <a href="index.html">← Về bản đồ</a>
+</header>
+
+<main>
+  <div class="note">
+    <b>Nguyên tắc.</b> Sổ đăng ký <code>data/sources.json</code> là nơi duy nhất khai báo nguồn dữ liệu.
+    Màn hình này đọc thẳng file đó — không có nguồn nào chạy ngầm trong mã.
+    Sổ đăng ký chỉ ghi <b>tên khoá</b>, không bao giờ ghi giá trị khoá; giá trị nằm ở
+    <code>secret.local.js</code> (chạy thử) hoặc ở backend (môi trường thật).
+  </div>
+
+  <div class="bar">
+    <input id="q" type="text" placeholder="Tìm theo tên, nhà cung cấp, dữ liệu cấp ra, đường dẫn…">
+    <select id="fc">
+      <option value="">Tất cả phân loại</option>
+    </select>
+    <select id="fs">
+      <option value="">Mọi trạng thái</option>
+      <option value="hoat_dong">Đang hoạt động</option>
+      <option value="du_kien">Dự kiến</option>
+    </select>
+    <span class="cnt" id="cnt"></span>
+  </div>
+
+  <div id="list"></div>
+
+  <h2>Khoá truy cập được khai báo</h2>
+  <div class="keys">
+    <table>
+      <thead><tr><th>Tên khoá (key_ref)</th><th>Trạng thái</th><th>Giá trị</th><th>Nguồn sử dụng</th></tr></thead>
+      <tbody id="keys"></tbody>
+    </table>
+    <div class="warn" style="margin-top:12px">
+      <b>Môi trường thật:</b> khoá phải sống ở backend RIMS (biến môi trường / secrets manager).
+      Trình duyệt gọi BE của RIMS, BE gắn khoá rồi mới gọi engine — trình duyệt không bao giờ thấy khoá.
+      Cách nhập khoá ở màn hình này chỉ dành cho giai đoạn dựng khung.
+    </div>
+  </div>
+
+  <details class="help">
+    <summary>Cắm thêm một nguồn dữ liệu mới — 3 bước</summary>
+    <p><b>Bước 1.</b> Thêm một khối vào mảng <code>nguon</code> của <code>data/sources.json</code>:</p>
+<pre>{
+  "id": "vidu.nguonmo",
+  "ten": "Tên nguồn",
+  "nha_cung_cap": "Đơn vị cung cấp",
+  "phan_loai": ["khi_tuong"],
+  "muc_tin_cay": "tham_khao",
+  "trang_thai": "du_kien",
+  "cap_du_lieu": ["Mô tả dữ liệu nguồn này cấp ra"],
+  "base_url": "https://…",
+  "endpoints": [ { "method": "GET", "path": "/v1/…", "cap": "cấp cái gì" } ],
+  "auth": { "type": "api_key", "vi_tri": "header", "ten_truong": "x-api-key",
+            "key_ref": "TEN_KHOA" },
+  "giay_phep": "Điều khoản sử dụng",
+  "adapter": "core/adapters/vidu.nguonmo.js"
+}</pre>
+    <p><b>Bước 2.</b> Copy <code>core/adapters/_MAU_adapter.js</code> thành <code>core/adapters/&lt;id&gt;.js</code>, điền phần thân.</p>
+    <p><b>Bước 3.</b> Nạp file adapter sau <code>rims-sources.js</code>. Xong — nguồn mới tự hiện ở màn hình này.</p>
+    <p style="color:#8a4a12"><b>Bắt buộc:</b> adapter không được hardcode khoá hay đường dẫn — luôn dùng
+    <code>RIMSSources.getKey(ref)</code> và <code>RIMSSources.url(id, path)</code>. Lấy hỏng thì giữ bản tốt trước đó,
+    không ghi đè bằng rỗng, không bịa số.</p>
+  </details>
+</main>
+
+<script src="secret.local.js" onerror="console.info('[RIMS] chưa có secret.local.js')"></script>
+<script src="config.js"></script>
+<script src="core/rims-sources.js"></script>
+<script src="core/adapters/openmeteo.js"></script>
+<script>
+(function () {
+  var S = window.RIMSSources, C = window.RIMS_CONFIG || {};
+  var elList = document.getElementById('list'), elKeys = document.getElementById('keys');
+  var elQ = document.getElementById('q'), elFc = document.getElementById('fc'),
+      elFs = document.getElementById('fs'), elCnt = document.getElementById('cnt');
+  var DOC = null;
+
+  function esc(s){ return String(s == null ? '' : s).replace(/[&<>"]/g, function(c){
+    return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
+
+  function chipTrangThai(n){
+    if (!S.isEnabled(n.id)) return '<span class="chip c-off">ĐÃ TẮT</span>';
+    if (n.trang_thai === 'hoat_dong') return '<span class="chip c-on">ĐANG HOẠT ĐỘNG</span>';
+    return '<span class="chip c-plan">DỰ KIẾN</span>';
+  }
+
+  function chipKhoa(n){
+    var a = n.auth || {};
+    if (a.type === 'none') return '<span class="chip c-free">KHÔNG CẦN KHOÁ</span>';
+    if (a.type === 'chua_xac_dinh') return '<span class="chip c-plan">CHƯA XÁC ĐỊNH</span>';
+    if (a.key_ref && S.hasKey(a.key_ref)) return '<span class="chip c-key">KHOÁ: ' + esc(a.key_ref) + ' ✓</span>';
+    return '<span class="chip c-nokey">THIẾU KHOÁ: ' + esc(a.key_ref || '?') + '</span>';
+  }
+
+  function render(){
+    var q = (elQ.value || '').toLowerCase().trim();
+    var fc = elFc.value, fs = elFs.value;
+    var ds = S.all().filter(function(n){
+      if (fc && (n.phan_loai || []).indexOf(fc) < 0) return false;
+      if (fs && n.trang_thai !== fs) return false;
+      if (!q) return true;
+      return JSON.stringify(n).toLowerCase().indexOf(q) >= 0;
+    });
+    elCnt.textContent = 'Hiển thị ' + ds.length + '/' + S.all().length + ' nguồn';
+
+    var nhom = {};
+    ds.forEach(function(n){ var k = (n.phan_loai||['khac'])[0]; (nhom[k] = nhom[k]||[]).push(n); });
+
+    var html = '';
+    Object.keys(nhom).forEach(function(k){
+      var ten = (DOC.phan_loai && DOC.phan_loai[k]) || k;
+      html += '<h2>' + esc(ten) + '</h2>';
+      nhom[k].forEach(function(n){ html += card(n); });
+    });
+    elList.innerHTML = html || '<div class="card">Không có nguồn nào khớp bộ lọc.</div>';
+    ganSuKien();
+  }
+
+  function card(n){
+    var a = n.auth || {};
+    var h = '<div class="card' + (S.isEnabled(n.id) ? '' : ' off') + '" data-id="' + esc(n.id) + '">';
+    h += '<div class="hd"><div class="nm">' + esc(n.ten) +
+         '<div class="prov">' + esc(n.nha_cung_cap) + ' · <code>' + esc(n.id) + '</code></div></div>' +
+         chipTrangThai(n) + ' ' + chipKhoa(n) + '</div>';
+
+    h += '<div class="sec"><div class="lb">Cấp dữ liệu gì</div><ul class="d">' +
+         (n.cap_du_lieu || []).map(function(x){ return '<li>' + esc(x) + '</li>'; }).join('') + '</ul></div>';
+
+    if (n.pham_vi) {
+      h += '<div class="sec"><div class="lb">Phạm vi</div>' +
+           'Không gian: ' + esc(n.pham_vi.khong_gian || '—') +
+           ' · Thời gian: ' + esc(n.pham_vi.thoi_gian || '—') +
+           ' · Nhịp cập nhật: ' + esc(n.pham_vi.nhip_cap_nhat || '—') + '</div>';
+    }
+
+    if (n.base_url) {
+      h += '<div class="sec"><div class="lb">Đường dẫn</div><code>' + esc(n.base_url) + '</code></div>';
+    }
+
+    if (n.endpoints && n.endpoints.length) {
+      h += '<div class="sec"><div class="lb">Điểm cuối (endpoint)</div><table class="ep">' +
+           '<thead><tr><th>Method</th><th>Đường dẫn</th><th>Cấp cái gì</th></tr></thead><tbody>';
+      n.endpoints.forEach(function(e){
+        h += '<tr><td class="m">' + esc(e.method) + '</td><td><code>' + esc(e.path) + '</code></td><td>' +
+             esc(e.cap) + '</td></tr>';
+      });
+      h += '</tbody></table></div>';
+    }
+
+    if (a.type && a.type !== 'none') {
+      h += '<div class="sec"><div class="lb">Xác thực</div>' +
+           'Kiểu: <b>' + esc(a.type) + '</b>' +
+           (a.vi_tri ? ' · vị trí: ' + esc(a.vi_tri) : '') +
+           (a.ten_truong ? ' · trường: <code>' + esc(a.ten_truong) + '</code>' : '') +
+           (a.key_ref ? ' · tên khoá: <code>' + esc(a.key_ref) + '</code> (giá trị: ' + esc(S.maskKey(a.key_ref)) + ')' : '') +
+           (a.ghi_chu ? '<div class="hs" style="margin-top:4px">' + esc(a.ghi_chu) + '</div>' : '') +
+           '</div>';
+    }
+
+    if (n.giai_ma) {
+      h += '<div class="sec"><div class="lb">Ghi chú giải mã</div><ul class="d">';
+      Object.keys(n.giai_ma).forEach(function(k){
+        h += '<li><b>' + esc(k) + ':</b> ' + esc(n.giai_ma[k]) + '</li>';
+      });
+      h += '</ul></div>';
+    }
+
+    if (n.suy_giam) h += '<div class="sec"><div class="lb">Khi mất kết nối</div>' + esc(n.suy_giam) + '</div>';
+
+    [n.canh_bao, a.canh_bao].forEach(function(w){
+      if (w) h += '<div class="warn">' + esc(w) + '</div>';
+    });
+
+    h += '<div class="meta">' +
+         '<span><b>Giấy phép:</b> ' + esc(n.giay_phep || '—') + '</span>' +
+         (n.ghi_cong ? '<span><b>Ghi công:</b> ' + esc(n.ghi_cong) + '</span>' : '') +
+         (n.muc_tin_cay ? '<span><b>Mức tin cậy:</b> ' + esc((DOC.muc_tin_cay||{})[n.muc_tin_cay] || n.muc_tin_cay) + '</span>' : '') +
+         (n.adapter ? '<span><b>Adapter:</b> <code>' + esc(n.adapter) + '</code></span>' : '') +
+         '</div>';
+
+    var hs = S.health(n.id);
+    h += '<div class="acts">' +
+         '<button data-act="toggle">' + (S.isEnabled(n.id) ? 'Tắt nguồn' : 'Bật nguồn') + '</button>' +
+         (S.adapter(n.id) ? '<button data-act="check">Kiểm tra</button>' : '') +
+         '<span class="hs' + (hs ? (hs.ok ? ' ok' : ' bad') : '') + '" data-hs>' +
+         (hs ? (hs.ok ? '✓ ' : '✕ ') + esc(hs.note) + ' — ' + esc(hs.at.replace('T',' ').slice(0,19)) : '') +
+         '</span></div>';
+
+    return h + '</div>';
+  }
+
+  function ganSuKien(){
+    elList.querySelectorAll('.card').forEach(function(card){
+      var id = card.getAttribute('data-id');
+      var bt = card.querySelector('[data-act="toggle"]');
+      if (bt) bt.addEventListener('click', function(){ S.setEnabled(id, !S.isEnabled(id)); render(); });
+      var bc = card.querySelector('[data-act="check"]');
+      if (bc) bc.addEventListener('click', function(){
+        var out = card.querySelector('[data-hs]');
+        out.className = 'hs'; out.textContent = 'đang kiểm tra…';
+        S.check(id).then(function(r){
+          out.className = 'hs ' + (r.ok ? 'ok' : 'bad');
+          out.textContent = (r.ok ? '✓ ' : '✕ ') + r.note + ' — ' + r.at.replace('T',' ').slice(0,19);
+        });
+      });
+    });
+  }
+
+  function renderKeys(){
+    var refs = (DOC.khoa_khai_bao && DOC.khoa_khai_bao.danh_sach) || [];
+    var decl = (C.KEYS) || {};
+    elKeys.innerHTML = refs.map(function(ref){
+      var dung = S.all().filter(function(n){ return n.auth && n.auth.key_ref === ref; })
+                        .map(function(n){ return n.ten; }).join(', ') || '—';
+      var d = decl[ref] || {};
+      var ok = S.hasKey(ref);
+      return '<tr><td><code>' + esc(ref) + '</code>' +
+             (d.mo_ta ? '<div class="hs">' + esc(d.mo_ta) + '</div>' : '') + '</td>' +
+             '<td>' + (ok ? '<span class="chip c-key">đã cấu hình</span>'
+                          : '<span class="chip c-nokey">chưa cấu hình</span>') + '</td>' +
+             '<td><code>' + esc(S.maskKey(ref)) + '</code>' +
+             (d.env ? '<div class="hs">biến môi trường: <code>' + esc(d.env) + '</code></div>' : '') + '</td>' +
+             '<td>' + esc(dung) + '</td></tr>';
+    }).join('');
+  }
+
+  S.load().then(function(){
+    DOC = S.doc();
+    var pl = DOC.phan_loai || {};
+    Object.keys(pl).forEach(function(k){
+      var o = document.createElement('option'); o.value = k; o.textContent = pl[k]; elFc.appendChild(o);
+    });
+    render(); renderKeys();
+  }).catch(function(e){
+    elList.innerHTML = '<div class="card"><b>Không đọc được sổ đăng ký nguồn.</b><br>' +
+                       esc(e.message || e) + '<br><span class="hs">Kiểm tra file data/sources.json</span></div>';
+  });
+
+  elQ.addEventListener('input', render);
+  elFc.addEventListener('change', render);
+  elFs.addEventListener('change', render);
+})();
+</script>
+</body>
+</html>

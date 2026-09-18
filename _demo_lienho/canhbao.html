@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cảnh báo ngập lụt — HydroNet</title>
+<style>
+  :root{
+    --canvas:#21252b; --surface:#2a323b; --surface2:#242c34; --tint:#22303c;
+    --line:#39434e; --line2:#48535f; --ink:#e7e9ec; --ink2:#aab3bd; --mut:#828a93;
+    --brand:#0072bb; --azure:#1f93e3; --cyan:#5fb6e6;
+    --ok:#4caf6a; --watch:#e0a83a; --danger:#e0762f; --crit:#e0454f;
+    --font:"Be Vietnam Pro",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    --mono:"Roboto Mono",ui-monospace,Menlo,monospace;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;background:var(--canvas);color:var(--ink);font:13.5px/1.5 var(--font);-webkit-font-smoothing:antialiased}
+  #wrap{display:flex;flex-direction:column;height:100vh;min-height:0}
+  .hd0{display:flex;align-items:center;gap:8px;padding:11px 13px 0}
+  .hd0 b{font-size:14px;color:#cfe3f4}
+  .hd0 .certain{margin-left:auto;font-family:var(--mono);font-size:10px;font-weight:700;padding:2px 9px;border-radius:6px}
+  .hd0 .x{cursor:pointer;color:var(--mut);font-size:16px;background:none;border:0}
+  .demo{margin:6px 13px 0;font-size:10.5px;color:#0b0f13;background:var(--watch);border-radius:6px;padding:2px 8px;display:inline-block;font-weight:700}
+  .notice{font-family:var(--mono);font-size:10.5px;color:var(--mut);margin:3px 13px 0}.notice .s{color:#bfe3f7}
+  #body{overflow:auto;padding:6px 13px 14px;flex:1}
+  #body::-webkit-scrollbar{width:8px}#body::-webkit-scrollbar-thumb{background:#33414f;border-radius:8px}
+  .sec{font-size:11px;font-weight:800;letter-spacing:.4px;text-transform:uppercase;color:var(--mut);margin:14px 2px 8px}
+  .stn{border:1px solid var(--line);border-left-width:4px;border-radius:11px;background:var(--surface2);padding:9px 12px;margin-bottom:9px}
+  .stn .top{display:flex;align-items:center;gap:8px;margin-bottom:2px}
+  .stn .top .nm{font-weight:800;font-size:13px}.stn .top .lv{font-family:var(--mono);font-weight:800;font-size:12.5px}.stn .top .ar{margin-left:auto;font-size:15px;font-weight:800}
+  .stn .say{font-size:12.5px;line-height:1.5}.stn .say b{color:#fff}.stn .say .t{font-family:var(--mono)}
+  .stn .cav{font-size:10.5px;color:var(--mut);margin-top:4px;font-style:italic}
+  .gen{display:flex;align-items:center;gap:12px;border:1px solid var(--line);border-left-width:4px;border-radius:12px;padding:11px 13px;background:var(--surface2)}
+  .gen .ic{font-size:20px}.gen .w{font-weight:800;font-size:19px;line-height:1}.gen .basis{font-size:11px;color:var(--mut);margin-top:3px}
+  table.xa{width:100%;border-collapse:collapse;font-size:12px}
+  table.xa th{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.3px;color:var(--mut);text-align:right;padding:4px 6px;border-bottom:1px solid var(--line)}table.xa th:first-child{text-align:left}
+  table.xa td{padding:5px 6px;border-bottom:1px solid var(--line2);text-align:right;font-family:var(--mono)}table.xa td:first-child{text-align:left;font-family:var(--font);font-weight:600}table.xa tr:last-child td{border-bottom:0}
+  .card{background:var(--surface2);border:1px solid var(--line);border-radius:11px;padding:10px 11px;margin-bottom:11px}
+  .empty{color:var(--mut);text-align:center;padding:14px;font-size:12.5px}
+  .mk{font-family:var(--mono);font-size:9px;font-weight:700;padding:1px 6px;border-radius:5px;color:#0b0f13}
+  .vf{border:1px solid var(--line);border-left-width:4px;border-radius:11px;background:var(--surface2);padding:9px 12px;margin-bottom:9px}
+  .vf .top{display:flex;align-items:center;gap:8px}.vf .nm{font-weight:800;font-size:13px;flex:1}.vf .nm span{display:block;font-size:9.5px;color:var(--mut);font-weight:400;font-family:var(--mono)}
+  .vf .d{font-family:var(--mono);font-weight:800;font-size:14px}.vf .ar{font-size:15px;font-weight:800}
+  .vf .say{font-size:12px;line-height:1.45;margin-top:3px}.vf .say b{color:#fff}.vf .say .t{font-family:var(--mono)}
+  .bcast{border:1px solid var(--line);border-radius:11px;background:var(--surface2);padding:10px 11px;margin-bottom:9px}
+  .send{width:100%;font:inherit;font-size:12px;color:#0b0f13;background:var(--cyan);border:0;border-radius:8px;padding:9px;cursor:pointer;font-weight:700;justify-content:center}
+  .send.done{background:var(--surface);color:var(--cyan);border:1px solid var(--cyan)}
+  .send:disabled{background:var(--surface);color:var(--mut);border:1px solid var(--line2);cursor:not-allowed;opacity:.85;font-weight:600}
+  .log{margin-top:7px;font-family:var(--mono);font-size:10px;color:var(--mut);border-top:1px dashed rgba(255,255,255,.06);padding-top:6px}.log .none{color:#4a5c6e}
+  .foot{border-top:1px solid var(--line);padding-top:11px;margin-top:12px}
+  .disc{font-size:10px;color:var(--mut);font-style:italic;margin-bottom:9px}
+  .btn{width:100%;font:inherit;font-size:12px;color:#cfe9fb;background:rgba(95,182,230,.12);border:1px solid var(--cyan);border-radius:9px;padding:9px;cursor:pointer;font-weight:600}
+  #ov{position:fixed;inset:0;background:rgba(4,9,16,.72);display:none;align-items:center;justify-content:center;padding:24px;z-index:50}#ov.show{display:flex}
+  #ovbox{background:var(--surface);border:1px solid var(--line);border-radius:14px;width:min(640px,100%);max-height:88vh;display:flex;flex-direction:column;overflow:hidden}
+  #ovbox .h{display:flex;align-items:center;padding:11px 14px;border-bottom:1px solid var(--line);font-weight:800;font-size:13px}#ovbox .h .x{margin-left:auto;cursor:pointer;color:var(--mut);font-size:16px;background:none;border:0}
+  #ovbox .doc{overflow:auto;padding:16px 18px;font-size:13px;line-height:1.6}#ovbox .doc h3{font-size:12px;text-transform:uppercase;letter-spacing:.4px;color:#bcd3e6;border-bottom:1px solid var(--line2);padding-bottom:4px;margin:16px 0 6px}#ovbox .doc h3:first-child{margin-top:0}#ovbox .doc .t{font-family:var(--mono)}#ovbox .doc ul{padding-left:18px;margin:5px 0}
+  #ovbox .f{display:flex;gap:8px;padding:11px 14px;border-top:1px solid var(--line)}
+  body.embed .hd0 .x{display:none}
+  body.embed .hd0{display:none}   /* nhúng: khung host đã hiện tên → bỏ lặp tiêu đề */
+</style>
+<script src="tower_config.js"></script>
+</head>
+<body>
+<div id="wrap">
+  <div class="hd0"><b>Cảnh báo ngập lụt</b><span class="certain" id="certain">—</span><button class="x" id="closeBtn" title="Đóng">✕</button></div>
+  <div id="demoWrap"></div>
+  <div class="notice" id="notice">đang tải dữ liệu…</div>
+  <div id="body"></div>
+</div>
+
+<div id="ov"><div id="ovbox">
+  <div class="h">Bản tin cảnh báo — bản văn để gửi<button class="x" id="ovx">✕</button></div>
+  <div class="doc" id="ovdoc"></div>
+  <div class="f"><button class="btn" id="ovcopy">⧉ Sao chép</button></div>
+</div></div>
+
+<script>
+(function(){
+  "use strict";
+  var SHEX=['#4caf6a','#e0a83a','#e0762f','#e0454f'];
+  var LVLW=['Không ngập','Ngập nhẹ','Ngập vừa','Ngập nặng'];
+  var SEV2B={ok:0,watch:1,danger:2,crit:3};
+  // ===== THÁP BÁO LŨ — DỮ LIỆU THẬT (tower_history.json + tower_forecast.json) =====
+  var TOWERS=[], TWFC=null, TWMODEL=null;
+  var TWCFG=(window.HNT_TOWER_CONFIG)||{default:{thresholds:[0.15,0.5,1.0]},towers:{}};
+  function twTh(code){return (TWCFG.towers&&TWCFG.towers[code]&&TWCFG.towers[code].thresholds)||(TWCFG.default&&TWCFG.default.thresholds)||[1,2,3];}
+  function twBand(d,th){if(d==null)return 0;if(d>=th[2])return 3;if(d>=th[1])return 2;if(d>=th[0])return 1;return 0;}
+  function twWord(d,th){if(d==null)return '—';var b=twBand(d,th);if(b>0)return ['','Ngập nhẹ','Ngập vừa','Ngập nặng'][b];return d>=0.05?'Ngập nông':'An toàn';}
+  function twCurTxt(d){return d==null?'—':(d<0.05?'khô':fnum(d)+' m');}
+  function twCur(tw){var r=tw.rows||[];for(var i=r.length-1;i>=0;i--){if(r[i]&&r[i].depth!=null)return {d:r[i].depth,t:r[i].t};}return {d:null,t:null};}
+  function twTrend(tw){var r=(tw.rows||[]).filter(function(x){return x&&x.depth!=null;});if(r.length<4)return 0;return r[r.length-1].depth-r[r.length-4].depth;}
+  function twFcPeak(code){var f=TWFC&&TWFC.forecasts&&TWFC.forecasts[code];if(!f||!f.points)return null;var now=Date.now(),pk=null;f.points.forEach(function(p){var tt=Date.parse((p.t||'').replace(' ','T'));if(isFinite(tt)&&tt<now)return;if(pk==null||p.depth>pk.depth)pk={depth:p.depth,t:p.t};});return pk;}
+  function twSimDepth(Hcl,Hhd){var m=TWMODEL;if(!m||Hcl==null||Hhd==null)return null;return Math.max(0, m.w_chule*Hcl+m.w_hoaduyet*Hhd-m.Z_dem_m+(m.calib_m||0));}
+  function twFrameReal(tw){
+    var code=tw.code||tw.station_id, th=twTh(code);
+    var cur=twCur(tw), d=cur.d, band=twBand(d,th), tr=twTrend(tw), pk=twFcPeak(code);
+    var gov=Math.max(band, pk?twBand(pk.depth,th):0);
+    var arw=tr>0.02?'↑':tr<-0.02?'↓':'•';
+    var say='Hiện <b>'+twWord(d,th)+'</b>'+(d!=null?' (sâu '+(d<0.05?'<0,05':fnum(d))+' m)':'')+'. ';
+    if(pk&&pk.depth>=0.05){var pt=new Date((pk.t||'').replace(' ','T'));say+='Dự báo <b>đỉnh '+twWord(pk.depth,th)+' '+fnum(pk.depth)+' m</b>'+(isFinite(pt)?' lúc <b class="t">'+hhmm(pt)+'</b>':'')+'.';}
+    else say+='Dự báo <b>chưa ngập</b> chân tháp (dưới ngưỡng).';
+    return '<div class="vf" style="border-left-color:'+SHEX[gov]+'"><div class="top"><div class="nm">'+(tw.name||('Tháp '+code))+'<span>'+(tw.area||'')+' · mã '+code+'</span></div><div class="d" style="color:'+SHEX[band]+'">'+twCurTxt(d)+'</div><div class="ar" style="color:'+SHEX[gov]+'">'+arw+'</div></div><div class="say">'+say+'</div><div class="cav" style="font-size:10px;color:var(--mut);font-style:italic;margin-top:3px">Dự báo ngập chân tháp: mô hình rating (bồn-tắm tim sông) — số mô hình.</div></div>';
+  }
+  var LOG=[]; // log broadcast chung (phiên; API thật xem RUNBOOK)
+
+  function p2(n){return String(n).padStart(2,'0');}
+  function fnum(x){return (Math.round(x*10)/10).toFixed(1).replace('.',',');}
+  function bandOf(x,th){if(x==null||!th)return 0;if(x>=th.III)return 3;if(x>=th.II)return 2;if(x>=th.I)return 1;return 0;}
+  function lvlText(x,th){var b=bandOf(x,th);if(b<3)return['An toàn','BĐ1','BĐ2'][b];return 'BĐ3+'+fnum(x-th.III)+'m';}
+  function hhmm(dt){return p2(dt.getHours())+':'+p2(dt.getMinutes());}
+  function hhmmdd(dt){return p2(dt.getHours())+':'+p2(dt.getMinutes())+' '+p2(dt.getDate())+'/'+p2(dt.getMonth()+1);}
+  function hoursBetween(a,b){return Math.round((a-b)/3600000);}
+  function opName(){
+    var docs=[];try{if(window.parent&&window.parent!==window)docs.push(window.parent.document);}catch(e){}
+    try{if(window.opener&&window.opener!==window)docs.push(window.opener.document);}catch(e){}
+    for(var i=0;i<docs.length;i++){try{var el=docs[i].getElementById('tbUserName2')||docs[i].getElementById('tbUserName');if(el&&el.textContent&&el.textContent.trim())return el.textContent.trim();}catch(e){}}
+    return 'Khách';
+  }
+
+  // ---------- DEMO fallback (khi chưa nối feed / mở bằng file://) ----------
+  var DEMO={
+    now:new Date().toISOString(),
+    generated_at:new Date().toISOString(),
+    demo:true,
+    tier:{sev:'danger',label:'NGẬP VỪA',comment:'Nước đã vào khu dân cư một số xã (dữ liệu DEMO).'},
+    stations:{
+      chule:{station:'Chu Lễ',peak_m:13.6,peak_t:new Date(Date.now()+6*3600000).toISOString(),thresholds:{'BĐI':11.5,'BĐII':12.5,'BĐIII':14.0},cur:11.8,caveat:'DEMO'},
+      hoaduyet:{station:'Hòa Duyệt',peak_m:10.8,peak_t:new Date(Date.now()+8*3600000).toISOString(),thresholds:{'BĐI':7.5,'BĐII':9.0,'BĐIII':10.5},cur:8.6,caveat:'DEMO'}
+    },
+    overbanking:[{name:'Hà Linh',eta_h:0},{name:'Hương Phố',eta_h:2}]
+  };
+
+  var STA=[{key:'chule',match:['chu lễ','chu le']},{key:'hoaduyet',match:['hòa duyệt','hoa duyet']}];
+
+  function thOf(fcS){if(!fcS||!fcS.thresholds)return null;return{I:fcS.thresholds['BĐI'],II:fcS.thresholds['BĐII'],III:fcS.thresholds['BĐIII']};}
+  function curOf(key,fcS,snap){
+    if(fcS&&typeof fcS.cur==='number')return fcS.cur;
+    if(!snap)return null;var m=STA.filter(function(s){return s.key===key;})[0];if(!m)return null;
+    for(var i=0;i<snap.length;i++){var nm=(snap[i].name||'').toLowerCase();if(m.match.some(function(x){return nm.indexOf(x)>=0;})&&(snap[i].lv!=null||snap[i].v!=null))return snap[i].lv!=null?snap[i].lv:snap[i].v;}
+    return null;
+  }
+  function stState(key,fc,snap){
+    var fcS=(fc.stations||{})[key]||{};var th=thOf(fcS);var cur=curOf(key,fcS,snap);
+    var pkv=(typeof fcS.peak_m==='number')?fcS.peak_m:null,pkt=fcS.peak_t?new Date(fcS.peak_t):null;
+    var now=fc.now?new Date(fc.now):new Date();
+    var cb=bandOf(cur,th),pb=bandOf(pkv,th);
+    var phase;if(pb===0&&cb===0)phase='none';else if(pkt&&pkt>now)phase='up';else phase='down';
+    var gov=phase==='none'?0:(phase==='down'?cb:pb);
+    return{nm:fcS.station||key,th:th,cur:cur,cb:cb,pkv:pkv,pkt:pkt,pb:pb,phase:phase,gov:gov,now:now,caveat:fcS.caveat};
+  }
+
+  function stnFrame(id,S){
+    var arw=S.phase==='up'?'↑':S.phase==='down'?'↓':'•';var say;
+    var curTxt=S.cur==null?'—':lvlText(S.cur,S.th);
+    if(S.phase==='none') say='Hiện <b>'+(S.cur==null?'dưới báo động':curTxt)+'</b>. Dự báo chưa vượt báo động 24 giờ tới.';
+    else if(S.phase==='up'){var dt=S.pkt?hoursBetween(S.pkt,S.now):null;say='Hiện <b>'+curTxt+'</b>, nước đang lên. Dự báo <b>đạt đỉnh '+lvlText(S.pkv,S.th)+'</b>'+(S.pkt?' lúc <b class="t">'+hhmm(S.pkt)+'</b>':'')+(dt!=null?' (sau ~'+dt+'h)':'')+'.';}
+    else {var dta=S.pkt?hoursBetween(S.now,S.pkt):null;say='Đã đạt <b>đỉnh '+lvlText(S.pkv,S.th)+'</b>'+(S.pkt?' lúc <b class="t">'+hhmm(S.pkt)+'</b>':'')+(dta!=null?' ('+dta+'h trước)':'')+'; nước đang rút, hiện <b>'+curTxt+'</b>.';}
+    var cav=(S.caveat&&S.caveat!=='DEMO')?'<div class="cav">'+S.caveat+'</div>':'';
+    return '<div class="stn" id="'+id+'" style="border-left-color:'+SHEX[S.gov]+'"><div class="top"><span class="nm">'+S.nm+'</span><span class="lv" style="color:'+SHEX[S.cb]+'">'+curTxt+'</span><span class="ar" style="color:'+SHEX[S.gov]+'">'+arw+'</span></div><div class="say">'+say+'</div>'+cav+'</div>';
+  }
+
+  var LASTFC=null,LASTSNAP=null,BCc=null,SIMON=false;
+  try{BCc=new BroadcastChannel('hydronet');}catch(e){}
+  function renderSimView(fc){
+    document.getElementById('demoWrap').innerHTML='';
+    var t=fc._simT?new Date(fc._simT):new Date();
+    var ce=document.getElementById('certain');ce.textContent='MÔ PHỎNG';ce.style.background='#b06cff';ce.style.color='#0b0f13';
+    document.getElementById('notice').innerHTML='mốc mô phỏng <span class="s">'+hhmmdd(t)+'</span>';
+    var thC=thOf((fc.stations||{}).chule),thH=thOf((fc.stations||{}).hoaduyet);
+    var Lc=(fc.stations&&fc.stations.chule)?fc.stations.chule.cur:null;
+    var Lh=(fc.stations&&fc.stations.hoaduyet)?fc.stations.hoaduyet.cur:null;
+    var bc=bandOf(Lc,thC),bh=bandOf(Lh,thH);
+    function simStn(id,nm,cur,th,band){
+      var curTxt=cur==null?'—':lvlText(cur,th);
+      return '<div class="stn" id="'+id+'" style="border-left-color:'+SHEX[band]+'"><div class="top"><span class="nm">'+nm+'</span><span class="lv" style="color:'+SHEX[band]+'">'+curTxt+'</span><span class="ar" style="color:'+SHEX[band]+'">•</span></div><div class="say">Mốc mô phỏng: <b>'+(cur==null?'—':curTxt)+'</b>'+(cur!=null?' (mực '+fnum(cur)+' m)':'')+'.</div></div>';
+    }
+    var s='<div class="sec">Báo động thủy văn — mốc mô phỏng</div>'+simStn('frmChuLe','Chu Lễ',Lc,thC,bc)+simStn('frmHoaDuyet','Hòa Duyệt',Lh,thH,bh);
+    // Tình hình ngập lụt
+    var ob=fc._ob||[],im=fc._imp2||null,g=Math.max(bc,bh);
+    if(g===0&&ob.length)g=1;
+    var basis;
+    if(im&&im.households>0){basis=im.households.toLocaleString('vi')+' hộ ngập'+(im.buildings_total?' · '+im.buildings_total.toLocaleString('vi')+' công trình':'')+(im.area_km2?' · '+fnum(im.area_km2)+' km²':'');}
+    else basis='Chưa cụm dân cư nào tràn bờ ở mốc này.';
+    s+='<div class="sec">Tình hình ngập lụt</div><div class="gen" id="genBox" style="border-left-color:'+SHEX[g]+'"><span class="ic">'+['✓','💧','🌊','⛔'][g]+'</span><div><div class="w" style="color:'+SHEX[g]+'">'+(g===0?'Không ngập':LVLW[g])+'</div><div class="basis">'+basis+'</div></div></div>';
+    // Ảnh hưởng theo xã — ưu tiên sơ tán
+    s+='<div class="sec">Ảnh hưởng theo xã — ưu tiên sơ tán</div>';
+    if(!ob.length){s+='<div class="card"><div class="empty">Chưa xã nào tràn bờ ở mốc này.</div></div>';}
+    else{
+      s+='<div class="card" id="xaBox" style="padding:3px 8px 5px"><table class="xa"><thead><tr><th>Xã</th><th>Số nhà</th><th>Tình trạng</th></tr></thead><tbody>';
+      ob.forEach(function(x){var nm=x.name||'—';var nn=(x.n!=null)?x.n.toLocaleString('vi'):'—';var eta=(typeof x.eta_h==='number')?(x.eta_h<=0?'đã ngập':'sau '+x.eta_h+'h'):'—';
+        s+='<tr><td>'+nm+'</td><td>'+nn+'</td><td class="tcell" style="text-align:left">'+eta+'</td></tr>';});
+      s+='</tbody></table></div>';
+    }
+    // Tháp báo lũ VFASS — suy từ mô hình rating tại mốc mô phỏng (H_ChuLe & H_HoaDuyet)
+    if(TOWERS.length){
+      s+='<div class="sec">Tháp báo lũ VFASS — mốc mô phỏng</div>';
+      TOWERS.forEach(function(tw){ var th=twTh(tw.code), d=twSimDepth(Lc,Lh), band=twBand(d,th);
+        s+='<div class="vf" style="border-left-color:'+SHEX[band]+'"><div class="top"><div class="nm">'+(tw.name||('Tháp '+tw.code))+'<span>'+(tw.area||'')+'</span></div><div class="d" style="color:'+SHEX[band]+'">'+twCurTxt(d)+'</div></div><div class="say">Mốc mô phỏng: <b>'+twWord(d,th)+'</b>'+(d!=null?' (sâu '+(d<0.05?'<0,05':fnum(d))+' m)':'')+'.</div></div>'; });
+    }
+    document.getElementById('body').innerHTML=s;
+  }
+  function simClone(fc,m){var c={},k,kk,s2;for(k in fc)c[k]=fc[k];c.stations={};for(s2 in fc.stations){var o={};for(kk in fc.stations[s2])o[kk]=fc.stations[s2][kk];c.stations[s2]=o;}if(c.stations.chule)c.stations.chule.cur=m.chule;if(c.stations.hoaduyet)c.stations.hoaduyet.cur=m.hoaduyet;c._sim=true;c._simT=m.t;c.now=m.t;c._ob=m.ob||[];c._imp2=m.imp||null;return c;}
+  if(BCc)BCc.onmessage=function(ev){var m=ev&&ev.data;if(!m||m.type!=='flood:frame')return;if(m.mode==='sim'&&LASTFC){SIMON=true;render(simClone(LASTFC,m),LASTSNAP);}else{SIMON=false;load();}};
+
+  function render(fc,snap){
+    if(fc._sim){renderSimView(fc);return;}
+    var demo=!!fc.demo;
+    document.getElementById('demoWrap').innerHTML=demo?'<span class="demo">DEMO — chưa nối feed dữ liệu (flood_forecast.json)</span>':'';
+    var now=fc.now?new Date(fc.now):new Date();var gen=fc.generated_at?new Date(fc.generated_at):null;
+    var Sc=stState('chule',fc,snap),Sh=stState('hoaduyet',fc,snap);
+    var tier=fc.tier||{sev:'ok'};var g=SEV2B[tier.sev]!=null?SEV2B[tier.sev]:0;
+    var anyFlood=g>0||(fc.overbanking&&fc.overbanking.length>0);
+    document.getElementById('certain').textContent=anyFlood?'QUAN TRẮC + DỰ BÁO':'DỰ BÁO';
+    document.getElementById('certain').style.background=anyFlood?'var(--cyan)':'#3a97dd';
+    document.getElementById('certain').style.color='#0b0f13';
+    document.getElementById('notice').innerHTML='số liệu <span class="s">'+hhmmdd(now)+'</span>'+(gen?' · phiên dự báo '+hhmm(gen):'');
+
+    var s='';
+    s+='<div class="sec">Báo động thủy văn</div>'+stnFrame('frmChuLe',Sc)+stnFrame('frmHoaDuyet',Sh);
+
+    // tình hình ngập lụt
+    var word=(tier.label&&tier.label.toUpperCase().indexOf('AN TOÀN')<0)?tier.label:LVLW[g];
+    var basis=(tier.comment||'').replace(/\s*\(dữ liệu DEMO\)\.?/,'');
+    var im=fc._impact;if(im&&im.households&&im.households.est_flooded>0){basis=im.households.est_flooded+' hộ ngập'+(im.buildings&&im.buildings.flooded_total?' · '+im.buildings.flooded_total+' công trình':'');}
+    s+='<div class="sec">Tình hình ngập lụt</div><div class="gen" id="genBox" style="border-left-color:'+SHEX[g]+'"><span class="ic">'+['✓','💧','🌊','⛔'][g]+'</span><div><div class="w" style="color:'+SHEX[g]+'">'+(g===0?'Không ngập':word)+'</div><div class="basis">'+(basis||'Chưa có xã nào ngập theo lưới DEM.')+'</div></div></div>';
+
+    // theo xã
+    var ob=fc.overbanking||[];
+    s+='<div class="sec">Ảnh hưởng theo xã</div>';
+    if(!ob.length){ s+='<div class="card"><div class="empty">Chưa xã nào ngập (theo lưới DEM). Theo dõi diễn biến.</div></div>'; }
+    else{
+      s+='<div class="card" id="xaBox" style="padding:3px 8px 5px"><table class="xa"><thead><tr><th>Xã</th><th>Thời gian ngập</th></tr></thead><tbody>';
+      ob.forEach(function(x){var nm=x.name||x.cluster||x.ma||'—';var eta=(typeof x.eta_h==='number')?(x.eta_h<=0?'đã ngập':'bắt đầu sau '+x.eta_h+'h'):(x.note||'—');
+        s+='<tr><td>'+nm+'</td><td class="tcell" style="text-align:left">'+eta+'</td></tr>';});
+      s+='</tbody></table></div>';
+    }
+
+    // tháp VFASS — dữ liệu THẬT (hiện + dự báo) + một nút broadcast (chờ API nhận)
+    s+='<div class="sec">Tháp báo lũ VFASS</div><div id="thapBox">';
+    if(!TOWERS.length){ s+='<div class="card"><div class="empty">Chưa nối được dữ liệu tháp (tower_history.json).</div></div>'; }
+    else { TOWERS.forEach(function(tw){ s+=twFrameReal(tw); }); }
+    s+='<div class="bcast"><button class="send" id="twSend" disabled title="Chưa có API nhận ở tháp">⤳ Chuyển tin đến tháp ('+TOWERS.length+' tháp)</button><div class="log"><div class="none">chưa nối API nhận của tháp</div></div></div></div>';
+
+    s+='<div class="foot"><div class="disc">Nguồn: HydroNet — tin tham khảo, KHÔNG thay bản tin chính thức của cơ quan KTTV. Việc phát/gửi do cán bộ PCTT quyết định.</div><button class="btn" id="btnExport">📄 Xuất bản tin</button></div>';
+
+    document.getElementById('body').innerHTML=s;
+    var ex=document.getElementById('btnExport');if(ex)ex.addEventListener('click',function(){showBulletin(fc,snap,Sc,Sh,g,ob,now,gen);});
+  }
+
+  function bStn(S){
+    var curTxt=S.cur==null?'—':lvlText(S.cur,S.th);
+    if(S.phase==='none')return S.nm+': hiện '+(S.cur==null?'dưới báo động':curTxt)+', dự báo chưa vượt báo động.';
+    if(S.phase==='up')return S.nm+': hiện '+curTxt+', đang lên; đỉnh '+lvlText(S.pkv,S.th)+(S.pkt?' ~'+hhmm(S.pkt):'')+'.';
+    return S.nm+': đã đạt đỉnh '+lvlText(S.pkv,S.th)+(S.pkt?' ~'+hhmm(S.pkt):'')+', đang rút, hiện '+curTxt+'.';
+  }
+  function showBulletin(fc,snap,Sc,Sh,g,ob,now,gen){
+    var anyFlood=g>0||(ob&&ob.length>0);var st=anyFlood?'ĐANG DIỄN RA':'DỰ BÁO — CẢNH BÁO SỚM';
+    var h='<h3>Bản tin cảnh báo ngập lụt — Ngàn Sâu (Hà Tĩnh)</h3><div class="t" style="color:var(--mut);font-size:11px">Phát '+hhmmdd(now)+(gen?' · Phiên dự báo '+hhmm(gen):'')+' · <b>'+st+'</b></div>';
+    h+='<h3>I. Báo động thủy văn</h3><ul><li>'+bStn(Sc)+'</li><li>'+bStn(Sh)+'</li></ul>';
+    h+='<h3>II. Tình hình ngập lụt</h3>';
+    if(!anyFlood)h+='<p>Chưa xã nào ngập ở khu dân cư (theo lưới DEM).</p>';
+    else{h+='<p>Mức ngập lưu vực: <b>'+LVLW[g]+'</b>.</p>';if(ob&&ob.length){h+='<ul>';ob.forEach(function(x){var nm=x.name||x.cluster||'—';var eta=(typeof x.eta_h==='number')?(x.eta_h<=0?'đã ngập':'bắt đầu sau '+x.eta_h+'h'):'';h+='<li>'+nm+(eta?' — '+eta:'')+'.</li>';});h+='</ul>';}}
+    h+='<h3>III. Tháp báo lũ VFASS</h3>';
+    if(!TOWERS.length){h+='<p>Chưa nối dữ liệu tháp.</p>';}
+    else{h+='<ul>';TOWERS.forEach(function(tw){var code=tw.code||tw.station_id,th=twTh(code),d=twCur(tw).d,pk=twFcPeak(code);
+      var line=(tw.name||('Tháp '+code))+' ('+(tw.area||'')+'): hiện '+twWord(d,th)+' (sâu '+twCurTxt(d)+')';
+      line+=(pk&&pk.depth>=0.05)?', dự báo đỉnh '+twWord(pk.depth,th)+' '+fnum(pk.depth)+' m':', dự báo chưa ngập';
+      h+='<li>'+line+'.</li>';});h+='</ul>';}
+    h+='<div style="border-top:1px solid var(--line2);margin-top:14px;padding-top:10px;font-size:11px;color:var(--mut);font-style:italic">Nguồn: HydroNet — tin tham khảo, KHÔNG thay bản tin chính thức của cơ quan KTTV. Việc phát/gửi do cán bộ PCTT quyết định. Người trực phát tin: '+opName()+'.</div>';
+    document.getElementById('ovdoc').innerHTML=h;document.getElementById('ov').classList.add('show');
+  }
+
+  // copy thật
+  document.getElementById('ovx').addEventListener('click',function(){document.getElementById('ov').classList.remove('show');});
+  document.getElementById('ov').addEventListener('click',function(e){if(e.target.id==='ov')this.classList.remove('show');});
+  document.getElementById('ovcopy').addEventListener('click',function(){var b=this;var txt=document.getElementById('ovdoc').innerText;function ok(){b.textContent='✓ Đã sao chép';setTimeout(function(){b.textContent='⧉ Sao chép';},1400);}if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(txt).then(ok,ok);}else{try{var ta=document.createElement('textarea');ta.value=txt;ta.style.position='fixed';ta.style.opacity='0';document.body.appendChild(ta);ta.focus();ta.select();document.execCommand('copy');document.body.removeChild(ta);}catch(e){}ok();}});
+  document.getElementById('closeBtn').addEventListener('click',function(){try{if(window.parent&&window.parent!==window&&window.parent.HHTHost&&window.parent.HHTHost.toggleModule)window.parent.HHTHost.toggleModule('flood.canhbao');else window.close();}catch(e){}});
+
+  function load(){
+    var F=function(u){return fetch(u,{cache:'no-store'}).then(function(r){return r.ok?r.json():null;}).catch(function(){return null;});};
+    Promise.all([F('flood_forecast.json'),F('station_now.json'),F('flood_live_history.json'),F('flood_impact_live.json'),F('tower_history.json'),F('tower_forecast.json')]).then(function(res){
+      var fc=res[0],snap=res[1],hist=res[2],imp=res[3],th=res[4],tfc=res[5];
+      if(th&&th.towers)TOWERS=th.towers; TWFC=tfc||null; if(tfc&&tfc.model)TWMODEL=tfc.model;
+      if(!fc||!fc.stations){LASTFC=DEMO;if(!SIMON)render(DEMO,null);return;}
+      if(fc.tier&&fc.tier.overbanking&&!fc.overbanking)fc.overbanking=fc.tier.overbanking;
+      var lp=(hist&&hist.points&&hist.points.length)?hist.points[hist.points.length-1]:null;
+      if(lp){ if(fc.stations.chule&&lp.chule!=null)fc.stations.chule.cur=lp.chule; if(fc.stations.hoaduyet&&lp.hoaduyet!=null)fc.stations.hoaduyet.cur=lp.hoaduyet; }
+      fc._impact=imp||null;
+      LASTFC=fc;LASTSNAP=snap&&snap.stations?snap.stations:null;
+      if(SIMON)return;
+      render(fc,LASTSNAP);
+    }).catch(function(){LASTFC=DEMO;if(!SIMON)render(DEMO,null);});
+  }
+  try{if(new URLSearchParams(location.search).get('mode')==='embed')document.body.classList.add('embed');}catch(e){}
+  load(); setInterval(load,5*60*1000);
+  try{window.addEventListener('hnt:updateall',load);}catch(e){}
+})();
+</script>
+<script src="hht-module-client.js"></script>
+<script src="hht-canhbao-adapter.js"></script>
+</body></html>

@@ -1,0 +1,688 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dự báo thủy văn</title>
+<style>
+:root{
+  color-scheme: dark;
+  --bg:#0a121c; --panel:#0f1c2b; --panel2:#0c1826; --card:#12202f; --tint:#122536;
+  --line:#20344a; --line2:#2b4560; --ink:#e9eff6; --ink2:#a8bccd; --mut:#71879a;
+  --rt:#5fb6e6;      /* quan trắc / thời gian thực */
+  --fc:#8b8ff0;      /* TANK / mưa-dòng chảy */
+  --thr:#e0b34a;     /* đường thềm */
+  --ens:#eef4fb;     /* tổ hợp (đường chốt) */
+  --rain:#3a97dd;
+  --ok:#4caf6a; --watch:#e0a83a; --danger:#e0762f; --crit:#e0454f;
+  --font:"Be Vietnam Pro",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --mono:"Roboto Mono",ui-monospace,Menlo,monospace;
+}
+*{box-sizing:border-box}
+body{margin:0;background:
+  radial-gradient(1200px 600px at 80% -10%, #10233a 0%, transparent 60%),
+  var(--bg);
+  color:var(--ink);font:14px/1.5 var(--font);-webkit-font-smoothing:antialiased}
+.wrap{max-width:1200px;margin:0 auto;padding-block:14px;padding-left:16px;padding-right:16px}
+h1,h2,h3,p{margin:0}
+.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+
+/* ---------- top bar ---------- */
+.top{display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+  background:linear-gradient(180deg,#12233701,transparent);margin-bottom:12px}
+.brand{display:flex;align-items:center;gap:11px;min-width:0}
+.brand .mk{width:34px;height:34px;border-radius:9px;flex:none;display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(160deg,#164a6e,#0d2338);border:1px solid var(--line2)}
+.brand .mk svg{width:20px;height:20px;stroke:var(--rt);fill:none;stroke-width:1.8}
+.brand .t b{font-size:15px;font-weight:800;letter-spacing:.2px;display:block;line-height:1.15}
+.brand .t span{font-size:11px;color:var(--mut)}
+.chip{display:inline-flex;align-items:center;gap:6px;font-size:12px;padding:5px 10px;border-radius:8px;
+  background:var(--card);border:1px solid var(--line)}
+.chip b{font-weight:700}
+.chip .dot{width:7px;height:7px;border-radius:50%;background:var(--rt);box-shadow:0 0 0 3px rgba(95,182,230,.18)}
+.spacer{flex:1 1 auto}
+.modesw{display:flex;background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:3px}
+.modesw button{border:0;background:transparent;color:var(--ink2);font:600 12px var(--font);padding:6px 12px;border-radius:6px;cursor:pointer}
+.modesw button.on{background:var(--rt);color:#04121d}
+.score{display:flex;align-items:center;gap:11px;background:var(--card);border:1px solid var(--line);border-radius:11px;padding:8px 14px}
+.score .ring{width:52px;height:52px;flex:none}
+.score .lab{font-size:10.5px;text-transform:uppercase;letter-spacing:.5px;color:var(--mut)}
+.score .grade{font-weight:800;font-size:15px;line-height:1.1}
+
+/* ---------- rail ---------- */
+.rail{display:flex;gap:0;overflow-x:auto;padding:2px 0 10px;margin-bottom:12px;scrollbar-width:thin}
+.stg{position:relative;flex:1 0 auto;min-width:118px;display:flex;flex-direction:column;gap:6px;
+  padding:10px 12px;border:1px solid var(--line);background:var(--panel2);cursor:pointer;transition:.16s}
+.stg:first-child{border-radius:11px 0 0 11px}.stg:last-child{border-radius:0 11px 11px 0}
+.stg+.stg{border-left:0}
+.stg:hover{background:var(--card)}
+.stg.sel{background:var(--card);box-shadow:inset 0 -3px 0 var(--rt)}
+.stg .n{font-family:var(--mono);font-size:10px;color:var(--mut)}
+.stg .nm{font-size:12.5px;font-weight:700;line-height:1.2}
+.stg .meta{font-size:10.5px;color:var(--ink2)}
+.stg .led{position:absolute;top:10px;right:11px;width:9px;height:9px;border-radius:50%}
+.led.ok{background:var(--ok);box-shadow:0 0 0 3px rgba(76,175,106,.2)}
+.led.watch{background:var(--watch);box-shadow:0 0 0 3px rgba(224,168,58,.2)}
+.led.crit{background:var(--crit);box-shadow:0 0 0 3px rgba(224,69,79,.2)}
+.led.idle{background:#33465a}
+.stg .arrow{position:absolute;right:-1px;top:50%;transform:translate(50%,-50%) rotate(45deg);width:9px;height:9px;
+  background:var(--panel2);border-right:1px solid var(--line);border-top:1px solid var(--line);z-index:2}
+.stg:hover .arrow,.stg.sel .arrow{background:var(--card)}
+.stg:last-child .arrow{display:none}
+.stg.run{animation:pulse 1s ease}
+@keyframes pulse{0%{box-shadow:inset 0 0 0 0 rgba(95,182,230,0)}40%{box-shadow:inset 0 0 0 2px rgba(95,182,230,.5)}100%{box-shadow:inset 0 0 0 0 rgba(95,182,230,0)}}
+
+/* ---------- main grid ---------- */
+.grid{display:grid;grid-template-columns:1fr 372px;gap:12px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:13px}
+.card>.ch{display:flex;align-items:center;gap:8px;padding:10px 14px;border-bottom:1px solid var(--line)}
+.ch .tt{font-weight:800;font-size:12.5px;letter-spacing:.3px;text-transform:uppercase;color:var(--ink2)}
+.ch .rt{margin-left:auto;font-size:11px;color:var(--mut)}
+.pbody{padding:12px 14px}
+.play{display:inline-flex;align-items:center;gap:7px;border:1px solid var(--rt);background:rgba(95,182,230,.1);color:#cfeafb;
+  font:700 12px var(--font);padding:6px 12px;border-radius:8px;cursor:pointer}
+.play:hover{background:rgba(95,182,230,.2)}
+.play[disabled]{opacity:.5;cursor:default}
+
+/* hydrograph */
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;padding:8px 14px 0;font-size:11.5px;color:var(--ink2)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend i{width:16px;height:0;border-top:3px solid;border-radius:2px}
+.legend i.d{border-top-style:dashed}
+.legend i.sw{width:11px;height:11px;border-top:0;border-radius:3px}
+#hydro{width:100%;height:auto;display:block}
+.hnote{display:flex;flex-wrap:wrap;gap:8px;padding:0 14px 12px}
+.stat{flex:1 1 120px;background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:8px 10px}
+.stat .l{font-size:10.5px;color:var(--mut)}
+.stat .v{font-family:var(--mono);font-weight:700;font-size:17px;margin-top:1px}
+.stat .v small{font-size:11px;color:var(--mut);font-weight:400}
+
+/* control drawer */
+#ctrl .ch .tt{color:var(--rt)}
+.sec{font-size:10.5px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--mut);margin:2px 0 7px}
+.seg{display:flex;background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:3px;gap:2px;flex-wrap:wrap}
+.seg button{flex:1 1 auto;border:0;background:transparent;color:var(--ink2);font:600 12px var(--font);padding:7px 8px;border-radius:6px;cursor:pointer;white-space:nowrap}
+.seg button.on{background:var(--rt);color:#04121d}
+.seg.warn button.on{background:var(--watch);color:#1a1204}
+.seg.two button{flex:1 1 46%}
+.row{display:flex;align-items:center;gap:8px}
+.pill{display:inline-flex;align-items:center;gap:5px;font-family:var(--mono);font-size:11px;font-weight:600;padding:3px 9px;border-radius:20px;border:1px solid}
+.pill.ok{color:#bff0cd;border-color:rgba(76,175,106,.5);background:rgba(76,175,106,.12)}
+.pill.watch{color:#ffe0a0;border-color:rgba(224,168,58,.5);background:rgba(224,168,58,.12)}
+.pill.crit{color:#ffb3b0;border-color:rgba(224,69,79,.5);background:rgba(224,69,79,.12)}
+.pill.info{color:#cfeafb;border-color:var(--line2);background:var(--tint)}
+.badge{font-family:var(--mono);font-size:9.5px;font-weight:700;padding:1px 6px;border-radius:5px;background:var(--tint);color:var(--rt);border:1px solid var(--line2)}
+
+/* station QC list */
+.stns{display:flex;flex-direction:column;gap:1px;border:1px solid var(--line);border-radius:9px;overflow:hidden}
+.st{display:flex;align-items:center;gap:9px;padding:7px 10px;background:var(--panel2);cursor:pointer}
+.st:hover{background:var(--card)}
+.st .sn{flex:1;font-size:12.5px}
+.st .sn small{display:block;color:var(--mut);font-size:10px;font-family:var(--mono)}
+.st .tag{font-family:var(--mono);font-size:10px;font-weight:700;padding:1px 7px;border-radius:5px}
+.st .tog{width:34px;height:19px;border-radius:20px;background:#2a3d51;position:relative;flex:none;transition:.15s}
+.st .tog::after{content:"";position:absolute;top:2px;left:2px;width:15px;height:15px;border-radius:50%;background:#0a121c;transition:.15s}
+.st.inc .tog{background:var(--rt)}.st.inc .tog::after{left:17px;background:#04121d}
+.st.bad .sn{color:var(--mut)}
+
+/* model table */
+.mtab{width:100%;border-collapse:collapse;font-size:12px}
+.mtab th{font-size:9.5px;text-transform:uppercase;letter-spacing:.3px;color:var(--mut);font-weight:700;text-align:right;padding:4px 5px;border-bottom:1px solid var(--line)}
+.mtab th:first-child{text-align:left}
+.mtab td{padding:5px;border-bottom:1px solid var(--line2);text-align:right;font-family:var(--mono)}
+.mtab td:first-child{text-align:left;font-family:var(--font)}
+.mtab tr{cursor:pointer}
+.mtab tr.on td{background:rgba(95,182,230,.12)}
+.mtab tr.veto td{opacity:.45}
+.mtab tr.veto td:first-child{text-decoration:line-through}
+.mtab .mnm{font-weight:600}
+.mtab .mnm i{font-style:normal;font-size:9.5px;color:var(--mut);margin-left:5px}
+
+/* funnel */
+.funnel{display:flex;gap:6px;margin-bottom:10px}
+.fn{flex:1;text-align:center;background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:7px 4px}
+.fn .k{font-size:9.5px;color:var(--mut);text-transform:uppercase;letter-spacing:.3px}
+.fn .c{font-family:var(--mono);font-weight:700;font-size:16px;margin-top:2px}
+.fn.pass{border-color:rgba(95,182,230,.4)}
+
+/* tank schematic */
+.tank{display:block;margin:2px auto 0}
+
+/* metric strip */
+.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:12px}
+.met{background:var(--panel);border:1px solid var(--line);border-radius:11px;padding:9px 11px;position:relative;overflow:hidden}
+.met::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--line2)}
+.met.g::before{background:var(--ok)}.met.w::before{background:var(--watch)}.met.b::before{background:var(--crit)}
+.met .l{font-size:10.5px;color:var(--mut)}
+.met .v{font-family:var(--mono);font-weight:700;font-size:18px;margin-top:1px}
+.met .v small{font-size:10.5px;color:var(--mut);font-weight:400}
+.met .sub{font-size:10px;color:var(--ink2);margin-top:1px}
+
+.foot{margin-top:12px;font-size:11px;color:var(--mut);line-height:1.5}
+.foot b{color:var(--ink2)}
+
+@media(max-width:900px){
+  .grid{grid-template-columns:1fr}
+  .metrics{grid-template-columns:repeat(2,1fr)}
+}
+</style>
+
+</head>
+<body>
+<div class="wrap">
+  <!-- TOP BAR -->
+  <div class="top">
+    <div class="brand">
+      <div class="mk"><svg viewBox="0 0 24 24"><path d="M3 17c2-3 3-3 4.5 0S10 20 12 17s2.5-3 4 0 2.5 3 4.5 0"/><path d="M12 3v6M9 6l3-3 3 3"/></svg></div>
+      <div class="t"><b>Dự báo thủy văn</b><span>Kiểm soát mô hình &amp; chất lượng · vòng lặp dự báo viên</span></div>
+    </div>
+    <span class="chip"><span class="dot"></span>Lưu vực <b>Sông Chảy 3</b></span>
+    <span class="chip" id="phienChip">Phiên <b class="mono">—</b></span>
+    <span class="spacer"></span>
+    <div class="modesw" id="modesw">
+      <button data-mode="live" class="on">Thời gian thực</button>
+      <button data-mode="fat">Kiểm chứng</button>
+    </div>
+    <div class="score">
+      <svg class="ring" viewBox="0 0 44 44" id="scoreRing" aria-hidden="true"></svg>
+      <div><div class="lab">Chất lượng phiên</div><div class="grade" id="scoreGrade">—</div></div>
+    </div>
+  </div>
+
+  <!-- PIPELINE RAIL -->
+  <div class="rail" id="rail"></div>
+
+  <!-- MAIN -->
+  <div class="grid">
+    <!-- hydrograph -->
+    <div class="card">
+      <div class="ch"><span class="tt">Đường dự báo lưu lượng</span>
+        <span class="rt" id="hydroRt">m³/s · 72 giờ</span>
+        <button class="play" id="playBtn" style="margin-left:auto">▶ Chạy chu trình</button>
+      </div>
+      <div class="legend">
+        <span><i style="border-color:var(--rt)"></i>Q quan trắc</span>
+        <span><i style="border-color:var(--fc)"></i>TANK (mưa–dòng chảy)</span>
+        <span><i class="d" style="border-color:var(--thr)"></i>Đường thềm</span>
+        <span><i style="border-color:var(--ens);border-width:3px"></i>Tổ hợp (chốt)</span>
+        <span><i class="sw" style="background:var(--rain)"></i>Mưa lưu vực</span>
+      </div>
+      <svg id="hydro" viewBox="0 0 900 430" role="img" aria-label="Biểu đồ dự báo lưu lượng"></svg>
+      <div class="hnote" id="hnote"></div>
+    </div>
+
+    <!-- control drawer -->
+    <div class="card" id="ctrl">
+      <div class="ch"><span class="tt" id="ctrlTitle">Khâu</span><span class="rt" id="ctrlLed"></span></div>
+      <div class="pbody" id="ctrlBody"></div>
+    </div>
+  </div>
+
+  <!-- METRICS -->
+  <div class="metrics" id="metrics"></div>
+
+  <div class="foot" id="foot"></div>
+</div>
+
+<script>
+"use strict";
+/* =========================================================================
+ * MOCK TRÌNH DIỄN — Công cụ hỗ trợ dự báo viên: Dự báo thủy văn
+ * Số liệu tổng hợp minh hoạ (Sông Chảy 3). Gạt công tắc → đổi đường + chất lượng.
+ * ========================================================================= */
+var H=72, NOW=36;                 // 0..72 giờ, hiện tại giờ 36
+var Q0=90;                        // dòng nền m³/s
+
+/* ---- mưa quan trắc (quá khứ) + mưa dự báo nền (tương lai) ---- */
+function bump(t,c,w,a){return a*Math.exp(-Math.pow((t-c)/w,2));}
+var RAIN_OBS=[], RAIN_FC0=[];
+for(var t=0;t<=H;t++){
+  RAIN_OBS[t]= bump(t,20,7,3.4)+bump(t,30,5,4.6)+ (t<NOW? (Math.sin(t*1.7)*0.4+0.5):0);
+  RAIN_FC0[t]= bump(t,44,8,6.2)+bump(t,58,7,3.0);
+  if(RAIN_OBS[t]<0)RAIN_OBS[t]=0; if(RAIN_FC0[t]<0)RAIN_FC0[t]=0;
+}
+
+/* ---- 9 mô hình mưa (danh mục thật) — điểm số / RE / ổn định / FAR ---- */
+var MODELS=[
+  {id:'ecmwf', nm:'ECMWF',            sc:8.6, re:0.13, stab:0.91, far:0.11, mult:0.97, shift:0},
+  {id:'coms',  nm:'COMS',             sc:8.4, re:0.15, stab:0.85, far:0.17, mult:1.00, shift:0, assigned:true},
+  {id:'mit3',  nm:'MITSUISHI2011', grid:'D03', sc:8.1, re:0.16, stab:0.88, far:0.14, mult:1.03, shift:-1},
+  {id:'icon',  nm:'ICON',             sc:7.7, re:0.18, stab:0.80, far:0.20, mult:0.94, shift:1},
+  {id:'gfs',   nm:'GFS',              sc:7.4, re:0.21, stab:0.71, far:0.29, mult:1.12, shift:1},
+  {id:'wrf',   nm:'WRF84H',           sc:7.1, re:0.23, stab:0.74, far:0.24, mult:1.06, shift:-2},
+  {id:'wpsm5', nm:'WPSM5',            sc:6.6, re:0.27, stab:0.66, far:0.33, mult:0.88, shift:2},
+  {id:'nimbus',nm:'NIMBUS',           sc:6.2, re:0.30, stab:0.61, far:0.41, mult:1.20, shift:3}
+];
+var TIER2_MIN=7.0;   // lọc kỹ năng theo hạn
+var TIER3_FAR=0.30;  // ngưỡng loại "báo giả" (mô tả: để ngỏ — dùng 0.30 minh hoạ)
+function tier(m){ if(m.sc<TIER2_MIN)return 2; if(m.far>=TIER3_FAR)return 3; return 0; } // 0=đạt
+
+/* ---- 6 trạm mưa cho QC ---- */
+var STNS=[
+  {id:'s1', nm:'Bắc Hà',        code:'K.1', q:'ok'},
+  {id:'s2', nm:'Cốc Ly',        code:'K.2', q:'ok'},
+  {id:'s3', nm:'Lùng Phình',    code:'K.3', q:'late'},
+  {id:'s4', nm:'Nậm Lúc',       code:'K.4', q:'ok'},
+  {id:'s5', nm:'Bảo Nhai',      code:'K.5', q:'miss'},
+  {id:'s6', nm:'Tà Chải',       code:'K.6', q:'ok'}
+];
+var QTAG={ok:['Tốt','var(--ok)'],late:['Trễ','var(--watch)'],miss:['Mất','var(--crit)']};
+
+/* ---- bộ tham số TANK (Wet/Dry) ---- */
+var PARSETS=[
+  {id:'w2', kind:'wet', nm:'Ướt · bộ #2', kpeak:1.16, lag:-2},
+  {id:'w5', kind:'wet', nm:'Ướt · bộ #5', kpeak:1.10, lag:-1},
+  {id:'d3', kind:'dry', nm:'Khô · bộ #3', kpeak:0.86, lag:2},
+  {id:'d7', kind:'dry', nm:'Khô · bộ #7', kpeak:0.80, lag:3}
+];
+
+/* ================= STATE ================= */
+var S={
+  stage:0, mode:'live',
+  qcOut:{},                 // trạm bị loại
+  modelId:'coms',
+  phienB:'nguyen',          // nguyen|nang|ha|tohop
+  wetManual:null,           // null=auto | 'wet' | 'dry'
+  calip:'w2',
+  swH:48,                   // điểm chuyển TANK→Đường thềm (giờ)
+  fall:'thr',               // đường xuống: thr=Đường thềm | tank
+  combo:'obs-wet'           // trưng bày 4 tổ hợp
+};
+
+/* ================= COMPUTE ================= */
+function model(){ return MODELS.filter(function(m){return m.id===S.modelId;})[0]||MODELS[1]; }
+function goodStations(){ return STNS.filter(function(s){return s.q!=='miss'&&!S.qcOut[s.id];}); }
+function refObs(){ return goodStations().length>=4; }   // đủ trạm tốt → Obs, thiếu → Ana
+
+function rainSeries(){
+  var m=model(), rain=[];
+  for(var t=0;t<=H;t++){
+    if(t<NOW) rain[t]=RAIN_OBS[t];
+    else{ var ts=t - m.shift; var base=(ts>=0&&ts<=H)?RAIN_FC0[ts]:0; rain[t]=Math.max(0, base*m.mult + RAIN_OBS[t]*0.15); }
+  }
+  return rain;
+}
+function eventTotals(rain){
+  var R1=0; for(var t=NOW-16;t<=H;t++) if(rain[t]!=null) R1+=rain[t];   // trận đang phân tích
+  return {R1:R1, R0:46, dT:31};                                        // R0,ΔT minh hoạ
+}
+function cValue(R1,R0,dT){ return 0.17781 + 0.00245*R1 - 0.00097*dT + 0.00125*R0; }
+
+/* unit hydrograph (gamma) */
+function kernel(kpeak,lag){
+  var k=[],tp=9+lag, sh=3.1, sum=0;
+  for(var i=0;i<34;i++){ var x=i/tp; var v=Math.pow(x,sh)*Math.exp(-sh*(x-1)); if(!isFinite(v)||v<0)v=0; k[i]=v; sum+=v; }
+  for(var j=0;j<k.length;j++) k[j]=k[j]/sum*kpeak;
+  return k;
+}
+function convQ(effRain,ps){
+  var k=kernel(ps.kpeak,ps.lag), Q=[];
+  for(var t=0;t<=H;t++){ var s=0; for(var i=0;i<k.length;i++){ var u=t-i; if(u>=0&&effRain[u]!=null) s+=effRain[u]*k[i]; } Q[t]=Q0+s*320; }
+  return Q;
+}
+function peakOf(Q){ var mx=0,it=NOW; for(var t=NOW;t<=H;t++) if(Q[t]>mx){mx=Q[t];it=t;} return {q:mx,t:it}; }
+
+function compute(){
+  var rain=rainSeries();
+  var tot=eventTotals(rain);
+  var C=cValue(tot.R1,tot.R0,tot.dT);
+  var autoWet = C>=0.30;
+  var wet = S.wetManual? (S.wetManual==='wet') : autoWet;
+  // chọn bộ tham số hợp trạng thái (nếu người dùng chọn lệch → phạt chất lượng)
+  var ps=PARSETS.filter(function(p){return p.id===S.calip;})[0]||PARSETS[0];
+  var psMatch = (ps.kind==='wet')===wet;
+  var effRain=rain.map(function(r,t){ return (r||0)*C; });
+  var Qtank=convQ(effRain, ps);
+
+  // đường thềm: hồi quy triền xuống từ đỉnh + dòng nền mùa khô
+  var pk=peakOf(Qtank);
+  var Qthr=[]; for(var t=0;t<=H;t++){ Qthr[t]= (t<=pk.t)? Qtank[t] : Math.max(Q0, pk.q*Math.exp(-(t-pk.t)/16)); }
+
+  // tổ hợp: TANK tới điểm chuyển, sau đó theo lựa chọn triền xuống
+  var Qens=[]; for(var t=0;t<=H;t++){
+    if(t<=S.swH) Qens[t]=Qtank[t];
+    else Qens[t]= S.fall==='thr'? Qthr[t] : Qtank[t];
+  }
+
+  // phiên B: hiệu chỉnh tổng lượng (nâng/hạ/tổ hợp)
+  var kB = S.phienB==='nang'?1.08 : S.phienB==='ha'?0.93 : 1.0;
+  if(S.phienB!=='tohop'){ for(var t=0;t<=H;t++){ if(t>NOW){ Qens[t]=Q0+(Qens[t]-Q0)*kB; } } }
+
+  // "sự thật" để tính sai số: cấu hình chuẩn (ECMWF · đúng Wet/Dry · tổ hợp · đủ trạm)
+  var truthRain=RAIN_OBS.map(function(r,t){ return t<NOW? r : Math.max(0,(RAIN_FC0[t]||0)*0.99+r*0.15); });
+  var truthEff=truthRain.map(function(r){return (r||0)*C;});
+  var truthPS = autoWet? PARSETS[0]:PARSETS[2];
+  var Qtruth=convQ(truthEff, truthPS);
+
+  // sai số trên cửa sổ dự báo
+  var n=0,se=0,ae=0; for(var t=NOW+1;t<=H;t++){ var d=(Qens[t]-Qtruth[t]); se+=d*d; ae+=Math.abs(d)/Math.max(Qtruth[t],1); n++; }
+  var RE=ae/n, RMSE=Math.sqrt(se/n);
+  var pkE=peakOf(Qens), pkT=peakOf(Qtruth);
+  var REqp=Math.abs(pkE.q-pkT.q)/Math.max(pkT.q,1);
+
+  // QC ảnh hưởng độ bất định
+  var gd=goodStations().length, qcPen=(6-gd)*0.02;
+  var m=model();
+  var unc = 0.06 + qcPen + (1-m.stab)*0.12 + m.far*0.18 + (S.phienB==='tohop'?-0.01:0.01) + (psMatch?0:0.05);
+  unc=Math.max(0.04,Math.min(0.4,unc));
+
+  // POD/FAR/CSI/BIAS (minh hoạ, gắn với FAR mô hình + QC)
+  var FAR=Math.min(0.9, m.far + (refObs()?0:0.06));
+  var POD=Math.max(0.4, Math.min(0.98, 0.92 - m.far*0.5 - qcPen*2));
+  var CSI=POD*(1-FAR)/ (POD + (1-POD) + FAR*POD +1e-6); CSI=Math.max(0.3,Math.min(0.95, POD/(1+FAR+ (1-POD))));
+  var mn=0,md=0; for(var t=NOW+1;t<=H;t++){mn+=Qens[t];md+=Qtruth[t];} var BIAS=mn/Math.max(md,1);
+
+  // điểm chất lượng phiên
+  var qcScore=gd/6;
+  var modScore=(m.sc/10)*(1-m.far);
+  var phienScore = S.phienB==='tohop'?1 : S.phienB==='nguyen'?0.9 : 0.8;
+  var wetScore = psMatch?1:0.55;
+  var stabScore=m.stab;
+  var Qual=100*(0.24*qcScore + 0.24*modScore + 0.18*stabScore + 0.14*phienScore + 0.20*wetScore);
+  Qual=Math.max(5,Math.min(99,Qual));
+
+  return {rain:rain, C:C, autoWet:autoWet, wet:wet, ps:ps, psMatch:psMatch, tot:tot,
+    Qtank:Qtank, Qthr:Qthr, Qens:Qens, Qtruth:Qtruth, pk:pkE, unc:unc,
+    RE:RE, RMSE:RMSE, REqp:REqp, POD:POD, FAR:FAR, CSI:CSI, BIAS:BIAS, stab:m.stab,
+    Qual:Qual, gd:gd, refObs:refObs()};
+}
+
+/* ================= STAGE QC LEDS ================= */
+function ledClass(v){ return v>=0.75?'ok':v>=0.5?'watch':'crit'; }
+function stageStatus(R){
+  return [
+    R.refObs? (R.gd>=5?'ok':'watch') : 'crit',                 // QC mưa
+    (function(){var t=tier(model()); return t?'crit':(model().sc>=8?'ok':'watch');})(), // CT-A
+    S.phienB==='tohop'?'ok':(S.phienB==='nguyen'?'ok':'watch'),// CT-B
+    'ok',                                                      // Dự báo C / Wet-Dry
+    R.psMatch?'ok':'crit',                                     // Calip
+    S.fall==='thr'?'ok':'watch',                              // TANK⊕Đường thềm
+    R.unc<0.16?'ok':R.unc<0.24?'watch':'crit',                // Tổ hợp
+    R.RE<0.15?'ok':R.RE<0.25?'watch':'crit'                   // FAT
+  ];
+}
+
+/* ================= RAIL ================= */
+var STAGES=[
+  {n:'QC', nm:'QC mưa', k:'Chất lượng trạm'},
+  {n:'CT-A', nm:'Chọn mô hình mưa', k:'3 tầng'},
+  {n:'CT-B', nm:'Chọn phiên mưa', k:'ổn định'},
+  {n:'C', nm:'Dự báo C · Wet/Dry', k:'trạng thái'},
+  {n:'WTM', nm:'Calip · TANK', k:'bộ tham số'},
+  {n:'⊕', nm:'TANK ⊕ Đường thềm', k:'triền xuống'},
+  {n:'ENS', nm:'Dự báo tổ hợp', k:'độ tin cậy'},
+  {n:'FAT', nm:'Kiểm chứng', k:'sai số'}
+];
+function renderRail(R){
+  var st=stageStatus(R), el=document.getElementById('rail'); el.innerHTML='';
+  STAGES.forEach(function(s,i){
+    var d=document.createElement('div'); d.className='stg'+(i===S.stage?' sel':'');
+    var meta=[
+      R.refObs?'Obs · '+R.gd+'/6':'Ana · '+R.gd+'/6',
+      model().nm+(model().grid?' '+model().grid:''),
+      ({nguyen:'Dùng nguyên',nang:'Nâng',ha:'Hạ',tohop:'Tổ hợp'})[S.phienB],
+      'C='+R.C.toFixed(2)+' · '+(R.wet?'Ướt':'Khô'),
+      R.ps.nm.split(' · ')[1],
+      S.fall==='thr'?'Đường thềm':'TANK',
+      '±'+Math.round(R.unc*100)+'%',
+      'RE '+(R.RE*100).toFixed(0)+'%'
+    ][i];
+    d.innerHTML='<span class="led '+st[i]+'"></span><span class="n">'+s.n+'</span>'
+      +'<span class="nm">'+s.nm+'</span><span class="meta">'+meta+'</span><span class="arrow"></span>';
+    d.addEventListener('click',function(){ S.stage=i; render(); });
+    el.appendChild(d);
+  });
+}
+
+/* ================= HYDROGRAPH ================= */
+function path(Q,x,y){ var p=''; for(var t=0;t<=H;t++){ p+=(t===0?'M':'L')+x(t).toFixed(1)+' '+y(Q[t]).toFixed(1); } return p; }
+function renderHydro(R){
+  var W=900,Hh=430, mL=44,mR=14,mT=8,mB=26, rainH=96, gap=10;
+  var plotT=mT+rainH+gap, plotB=Hh-mB;
+  var maxQ=Math.max(600, Math.ceil(Math.max(R.pk.q, peakOf(R.Qtruth).q)*1.15/100)*100);
+  var maxR=Math.max(14, Math.ceil(Math.max.apply(null,R.rain)/2)*2);
+  var x=function(t){return mL+(t/H)*(W-mL-mR);};
+  var yQ=function(q){return plotB-(q/maxQ)*(plotB-plotT);};
+  var yR=function(r){return mT+(r/maxR)*rainH;};
+  var s='';
+  // grid Q
+  for(var g=0;g<=maxQ;g+=maxQ/4){ var yy=yQ(g); s+='<line x1="'+mL+'" y1="'+yy.toFixed(1)+'" x2="'+(W-mR)+'" y2="'+yy.toFixed(1)+'" stroke="#1a2c40" stroke-width="1"/>';
+    s+='<text x="'+(mL-6)+'" y="'+(yy+3).toFixed(1)+'" fill="#71879a" font-size="10" text-anchor="end" font-family="Roboto Mono">'+g+'</text>'; }
+  // time ticks
+  for(var h=0;h<=H;h+=12){ s+='<line x1="'+x(h)+'" y1="'+plotT+'" x2="'+x(h)+'" y2="'+plotB+'" stroke="#152437" stroke-width="1"/>';
+    s+='<text x="'+x(h)+'" y="'+(plotB+16)+'" fill="#71879a" font-size="10" text-anchor="middle" font-family="Roboto Mono">'+(h-NOW)+'h</text>'; }
+  // rainfall bars
+  var bw=(W-mL-mR)/H*0.7;
+  for(var t=0;t<=H;t++){ if(R.rain[t]<=0.05)continue; var hh=yR(R.rain[t])-mT; var col=t<NOW?'#3a97dd':'#2f6f9e';
+    s+='<rect x="'+(x(t)-bw/2).toFixed(1)+'" y="'+mT+'" width="'+bw.toFixed(1)+'" height="'+hh.toFixed(1)+'" fill="'+col+'" rx="1.2" opacity="'+(t<NOW?0.9:0.7)+'"/>'; }
+  // NOW divider
+  s+='<line x1="'+x(NOW)+'" y1="'+mT+'" x2="'+x(NOW)+'" y2="'+plotB+'" stroke="#5fb6e6" stroke-width="1.3" stroke-dasharray="4 4" opacity=".8"/>';
+  s+='<text x="'+(x(NOW)+4)+'" y="'+(plotT+11)+'" fill="#5fb6e6" font-size="10" font-family="Roboto Mono">hiện tại</text>';
+  // confidence band (future)
+  var bandU='',bandL=''; for(var t=NOW;t<=H;t++){ bandU+=(t===NOW?'M':'L')+x(t).toFixed(1)+' '+yQ(R.Qens[t]*(1+R.unc)).toFixed(1); }
+  for(var t=H;t>=NOW;t--){ bandL+='L'+x(t).toFixed(1)+' '+yQ(Math.max(Q0*0.6,R.Qens[t]*(1-R.unc))).toFixed(1); }
+  s+='<path d="'+bandU+bandL+'Z" fill="rgba(139,143,240,.16)" stroke="none"/>';
+  // switchover marker
+  s+='<line x1="'+x(S.swH)+'" y1="'+plotT+'" x2="'+x(S.swH)+'" y2="'+plotB+'" stroke="#e0b34a" stroke-width="1" stroke-dasharray="2 3" opacity=".7"/>';
+  s+='<circle cx="'+x(S.swH)+'" cy="'+yQ(R.Qens[S.swH]).toFixed(1)+'" r="3.4" fill="#e0b34a"/>';
+  // curves
+  s+='<path d="'+path(R.Qtruth,x,yQ)+'" fill="none" stroke="#5fb6e6" stroke-width="1.4" opacity=".5" stroke-dasharray="1 3"/>';
+  s+='<path d="'+path(R.Qtank,x,yQ)+'" fill="none" stroke="#8b8ff0" stroke-width="1.8"/>';
+  // đường thềm chỉ vẽ đoạn sau đỉnh
+  var thrSeg=''; var started=false; for(var t=R.pk.t;t<=H;t++){ thrSeg+=(!started?'M':'L')+x(t).toFixed(1)+' '+yQ(R.Qthr[t]).toFixed(1); started=true; }
+  s+='<path d="'+thrSeg+'" fill="none" stroke="#e0b34a" stroke-width="1.8" stroke-dasharray="6 4"/>';
+  // observed part of Q (solid rt on past of tank≈truth)
+  var obsSeg=''; for(var t=0;t<=NOW;t++){ obsSeg+=(t===0?'M':'L')+x(t).toFixed(1)+' '+yQ(R.Qtruth[t]).toFixed(1); }
+  s+='<path d="'+obsSeg+'" fill="none" stroke="#5fb6e6" stroke-width="2.4"/>';
+  // ensemble (headline)
+  s+='<path d="'+path(R.Qens,x,yQ)+'" fill="none" stroke="#eef4fb" stroke-width="2.6" stroke-linejoin="round"/>';
+  // peak dot + label
+  s+='<circle cx="'+x(R.pk.t)+'" cy="'+yQ(R.pk.q).toFixed(1)+'" r="4" fill="#eef4fb" stroke="#0a121c" stroke-width="1.5"/>';
+  s+='<text x="'+x(R.pk.t)+'" y="'+(yQ(R.pk.q)-8).toFixed(1)+'" fill="#eef4fb" font-size="11" text-anchor="middle" font-family="Roboto Mono" font-weight="700">'+Math.round(R.pk.q)+'</text>';
+  document.getElementById('hydro').innerHTML=s;
+
+  // stat tiles under chart
+  var hn=document.getElementById('hnote');
+  var tp=new Date(2026,8,18, 0,0,0); tp.setHours(tp.getHours()+R.pk.t);
+  hn.innerHTML=
+     tile('Đỉnh lũ dự báo', Math.round(R.pk.q), 'm³/s')
+    +tile('Thời gian đỉnh', 'sau '+ (R.pk.t-NOW)+'h','')
+    +tile('Tổng mưa trận (R1)', Math.round(R.tot.R1),'mm')
+    +tile('Hệ số dòng chảy C', R.C.toFixed(3), R.wet?'· Ướt':'· Khô');
+}
+function tile(l,v,u){ return '<div class="stat"><div class="l">'+l+'</div><div class="v">'+v+' <small>'+u+'</small></div></div>'; }
+
+/* ================= SCORE RING ================= */
+function renderScore(R){
+  var q=R.Qual, col=q>=80?'var(--ok)':q>=62?'var(--watch)':'var(--crit)';
+  var grade=q>=80?'Tốt':q>=62?'Khá':q>=45?'Trung bình':'Kém';
+  var r=18, c=2*Math.PI*r, off=c*(1-q/100);
+  document.getElementById('scoreRing').innerHTML=
+    '<circle cx="22" cy="22" r="18" fill="none" stroke="#1c2f45" stroke-width="5"/>'
+   +'<circle cx="22" cy="22" r="18" fill="none" stroke="'+col+'" stroke-width="5" stroke-linecap="round" stroke-dasharray="'+c.toFixed(1)+'" stroke-dashoffset="'+off.toFixed(1)+'" transform="rotate(-90 22 22)"/>'
+   +'<text x="22" y="26" text-anchor="middle" fill="#e9eff6" font-size="14" font-weight="700" font-family="Roboto Mono">'+Math.round(q)+'</text>';
+  var g=document.getElementById('scoreGrade'); g.textContent=grade; g.style.color=col;
+}
+
+/* ================= METRICS ================= */
+function band(v,good,warn,inv){ // inv=true nghĩa là nhỏ tốt
+  if(inv) return v<=good?'g':v<=warn?'w':'b';
+  return v>=good?'g':v>=warn?'w':'b';
+}
+function renderMetrics(R){
+  var m=[
+    {l:'RE (sai số tương đối)', v:(R.RE*100).toFixed(1), u:'%', c:band(R.RE,0.15,0.25,true), sub:'mục tiêu ↓'},
+    {l:'RMSE', v:Math.round(R.RMSE), u:'m³/s', c:band(R.RMSE,120,220,true), sub:'mục tiêu ↓'},
+    {l:'RE đỉnh lũ', v:(R.REqp*100).toFixed(1), u:'%', c:band(R.REqp,0.12,0.22,true), sub:'sai số Qpeak'},
+    {l:'Độ ổn định mô hình', v:R.stab.toFixed(2), u:'', c:band(R.stab,0.82,0.7,false), sub:'0→1 (tốt=1)'},
+    {l:'POD', v:(R.POD*100).toFixed(0), u:'%', c:band(R.POD,0.8,0.65,false), sub:'phát hiện ↑'},
+    {l:'FAR', v:(R.FAR*100).toFixed(0), u:'%', c:band(R.FAR,0.2,0.32,true), sub:'báo giả ↓'},
+    {l:'CSI', v:R.CSI.toFixed(2), u:'', c:band(R.CSI,0.7,0.55,false), sub:'kỹ năng ↑'},
+    {l:'BIAS', v:R.BIAS.toFixed(2), u:'', c:(Math.abs(R.BIAS-1)<=0.1?'g':Math.abs(R.BIAS-1)<=0.2?'w':'b'), sub:'≈ 1'}
+  ];
+  document.getElementById('metrics').innerHTML=m.map(function(x){
+    return '<div class="met '+x.c+'"><div class="l">'+x.l+'</div><div class="v">'+x.v+' <small>'+x.u+'</small></div><div class="sub">'+x.sub+'</div></div>';
+  }).join('');
+}
+
+/* ================= CONTROL DRAWER ================= */
+function seg(opts,cur,cb,warn){
+  var w=document.createElement('div'); w.className='seg'+(warn?' warn':'')+(opts.length>2?' two':'');
+  opts.forEach(function(o){ var b=document.createElement('button'); b.textContent=o.l; if(o.v===cur)b.className='on';
+    b.addEventListener('click',function(){ cb(o.v); }); w.appendChild(b); });
+  return w;
+}
+function renderCtrl(R){
+  document.getElementById('ctrlTitle').textContent=STAGES[S.stage].n+' · '+STAGES[S.stage].nm;
+  var st=stageStatus(R)[S.stage];
+  var led=document.getElementById('ctrlLed');
+  led.className='rt'; led.innerHTML='<span class="pill '+st+'">'+({ok:'Đạt',watch:'Theo dõi',crit:'Cảnh báo'})[st]+'</span>';
+  var b=document.getElementById('ctrlBody'); b.innerHTML=''; var frag=document.createDocumentFragment();
+  var add=function(html){ var d=document.createElement('div'); d.innerHTML=html; while(d.firstChild)frag.appendChild(d.firstChild); };
+
+  if(S.stage===0){ // QC mưa
+    add('<div class="sec">Trạm đo mưa — hệ quy chiếu '+(R.refObs?'<span class="pill ok">Obs · quan trắc</span>':'<span class="pill watch">Ana · giải tích</span>')+'</div>');
+    var list=document.createElement('div'); list.className='stns';
+    STNS.forEach(function(s){
+      var inc = s.q!=='miss' && !S.qcOut[s.id]; var tg=QTAG[s.q];
+      var row=document.createElement('div'); row.className='st'+(inc?' inc':'')+(s.q==='miss'?' bad':'');
+      row.innerHTML='<div class="sn">'+s.nm+'<small>'+s.code+'</small></div>'
+        +'<span class="tag" style="color:'+tg[1]+';background:'+tg[1].replace(')',',.14)').replace('var(--','rgba(')+'">'+tg[0]+'</span>'
+        +'<div class="tog"></div>';
+      // màu tag đơn giản hoá:
+      row.querySelector('.tag').style.background='rgba(255,255,255,.06)';
+      if(s.q!=='miss') row.addEventListener('click',function(){ S.qcOut[s.id]=!S.qcOut[s.id]; render(); });
+      list.appendChild(row);
+    });
+    frag.appendChild(list);
+    add('<div class="sec" style="margin-top:12px">Kết quả QC</div>');
+    add('<div class="row" style="gap:16px"><div><div class="l" style="font-size:10.5px;color:var(--mut)">Trạm dùng</div><div class="mono" style="font-size:17px;font-weight:700">'+R.gd+'/6</div></div>'
+      +'<div><div class="l" style="font-size:10.5px;color:var(--mut)">RE (Obs)</div><div class="mono" style="font-size:17px;font-weight:700;color:'+(R.refObs?'var(--ok)':'var(--mut)')+'">'+(R.refObs?(R.RE*100).toFixed(0)+'%':'—')+'</div></div>'
+      +'<div><div class="l" style="font-size:10.5px;color:var(--mut)">Ngưỡng Obs</div><div class="mono" style="font-size:17px;font-weight:700">≥4 trạm</div></div></div>');
+  }
+  else if(S.stage===1){ // CT-A
+    var pass=MODELS.filter(function(m){return tier(m)===0;});
+    add('<div class="funnel">'
+      +'<div class="fn pass"><div class="k">Tầng 1 · Điểm số</div><div class="c">'+MODELS.length+'</div></div>'
+      +'<div class="fn pass"><div class="k">Tầng 2 · Hạn</div><div class="c">'+MODELS.filter(function(m){return m.sc>=TIER2_MIN;}).length+'</div></div>'
+      +'<div class="fn pass"><div class="k">Tầng 3 · Lọc báo giả</div><div class="c">'+pass.length+'</div></div></div>');
+    var tab=document.createElement('table'); tab.className='mtab';
+    tab.innerHTML='<thead><tr><th>Mô hình</th><th>Điểm</th><th>RE</th><th>Ổn định</th><th>FAR</th></tr></thead>';
+    var tb=document.createElement('tbody');
+    MODELS.forEach(function(m){
+      var t=tier(m), tr=document.createElement('tr');
+      tr.className=(m.id===S.modelId?'on':'')+(t?' veto':'');
+      tr.innerHTML='<td class="mnm">'+m.nm+(m.grid?' <i>'+m.grid+'</i>':'')+(m.assigned?' <i>·gán</i>':'')+'</td>'
+        +'<td>'+m.sc.toFixed(1)+'</td><td>'+(m.re*100).toFixed(0)+'%</td><td>'+m.stab.toFixed(2)+'</td>'
+        +'<td style="color:'+(m.far>=TIER3_FAR?'var(--crit)':'inherit')+'">'+(m.far*100).toFixed(0)+'%</td>';
+      if(!t) tr.addEventListener('click',function(){ S.modelId=m.id; render(); });
+      tb.appendChild(tr);
+    });
+    tab.appendChild(tb); frag.appendChild(tab);
+    add('<div class="sec" style="margin-top:10px">MITSUISHI → lưới D03 · Tầng 3 loại FAR ≥ '+(TIER3_FAR*100)+'%</div>');
+  }
+  else if(S.stage===2){ // CT-B
+    add('<div class="sec">Độ ổn định phiên (Nút ④)</div>');
+    var stb=model().stab;
+    add('<div style="height:8px;border-radius:5px;background:#1c2f45;overflow:hidden;margin-bottom:4px"><div style="height:100%;width:'+(stb*100)+'%;background:'+(stb>=0.82?'var(--ok)':stb>=0.7?'var(--watch)':'var(--crit)')+'"></div></div>');
+    add('<div class="row"><span class="pill info">ổn định '+stb.toFixed(2)+'</span><span class="pill '+(model().re<0.18?'ok':'watch')+'">RE '+(model().re*100).toFixed(0)+'%</span><span class="badge">chế độ ÁP</span></div>');
+    add('<div class="sec" style="margin-top:12px">Cây quyết định chọn phiên</div>');
+    frag.appendChild(seg([{l:'Dùng nguyên',v:'nguyen'},{l:'Nâng',v:'nang'},{l:'Hạ',v:'ha'},{l:'Tổ hợp',v:'tohop'}],S.phienB,function(v){S.phienB=v;render();}));
+    add('<div class="sec" style="margin-top:10px">Ra · biên bất định ±'+Math.round(R.unc*100)+'%</div>');
+  }
+  else if(S.stage===3){ // Dự báo C / Wet-Dry
+    add('<div class="sec">Hàm C — đoán khô/ướt trận tới</div>');
+    add('<div class="mono" style="font-size:12px;background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:9px 10px;line-height:1.6">'
+      +'C = 0,178 + 0,00245·R1 − 0,00097·ΔT + 0,00125·R0<br>'
+      +'= 0,178 + 0,00245·<b style="color:var(--rt)">'+Math.round(R.tot.R1)+'</b> − 0,00097·<b>'+R.tot.dT+'</b> + 0,00125·<b>'+R.tot.R0+'</b><br>'
+      +'<b style="color:var(--ens)">C = '+R.C.toFixed(3)+'</b> · ngưỡng ướt 0,30 → <b style="color:'+(R.autoWet?'var(--danger)':'var(--rt)')+'">'+(R.autoWet?'ƯỚT':'KHÔ')+'</b></div>');
+    add('<div class="sec" style="margin-top:12px">Công tắc CT-5 · Wet/Dry <span class="badge">bật tay</span></div>');
+    frag.appendChild(seg([{l:'Tự động ('+(R.autoWet?'Ướt':'Khô')+')',v:'auto'},{l:'Ướt',v:'wet'},{l:'Khô',v:'dry'}],
+      S.wetManual||'auto',function(v){ S.wetManual=(v==='auto'?null:v); render(); }));
+    if(!R.psMatch) add('<div class="sec" style="margin-top:10px;color:var(--crit)">Bộ tham số Calip đang lệch trạng thái — vào WTM chọn lại.</div>');
+  }
+  else if(S.stage===4){ // WTM Calip + TANK
+    add('<div class="sec">Bộ tham số TANK · trạng thái cần: <b style="color:'+(R.wet?'var(--danger)':'var(--rt)')+'">'+(R.wet?'Ướt':'Khô')+'</b></div>');
+    var g=document.createElement('div'); g.style.cssText='display:flex;flex-direction:column;gap:5px';
+    PARSETS.forEach(function(p){
+      var on=p.id===S.calip, match=(p.kind==='wet')===R.wet;
+      var d=document.createElement('div');
+      d.style.cssText='display:flex;align-items:center;gap:8px;padding:7px 10px;border:1px solid '+(on?'var(--rt)':'var(--line)')+';border-radius:8px;background:'+(on?'rgba(95,182,230,.1)':'var(--panel2)')+';cursor:pointer';
+      d.innerHTML='<span style="flex:1;font-size:12.5px">'+p.nm+'</span>'+(match?'<span class="badge" style="color:var(--ok);border-color:rgba(76,175,106,.4)">hợp</span>':'<span class="badge" style="color:var(--mut)">lệch</span>')+(on?'<span class="pill info">đang dùng</span>':'');
+      d.addEventListener('click',function(){ S.calip=p.id; render(); });
+      g.appendChild(d);
+    });
+    frag.appendChild(g);
+    // TANK 4 bể schematic
+    add('<div class="sec" style="margin-top:12px">Mô hình TANK · 4 bể nối tiếp</div>');
+    var tk='<svg class="tank" width="220" height="140" viewBox="0 0 220 140">';
+    for(var i=0;i<4;i++){ var yy=8+i*32; tk+='<rect x="70" y="'+yy+'" width="80" height="26" rx="3" fill="#12202f" stroke="#2b4560"/>';
+      tk+='<line x1="150" y1="'+(yy+9)+'" x2="176" y2="'+(yy+9)+'" stroke="#5fb6e6" stroke-width="2"/>';
+      tk+='<text x="182" y="'+(yy+12)+'" fill="#a8bccd" font-size="9" font-family="Roboto Mono">Q'+(i+1)+'</text>';
+      if(i<3) tk+='<line x1="110" y1="'+(yy+26)+'" x2="110" y2="'+(yy+32)+'" stroke="#2b4560" stroke-width="2"/>'; }
+    tk+='<text x="110" y="'+ (8) +'" fill="#7fb4de" font-size="9" text-anchor="middle" font-family="Roboto Mono" dy="-1">mưa·bốc hơi</text>';
+    tk+='<path d="M110 2 L110 8" stroke="#3a97dd" stroke-width="2"/><path d="M106 6 L110 2 L114 6" fill="none" stroke="#3a97dd" stroke-width="1.5"/>';
+    tk+='</svg>';
+    add(tk);
+  }
+  else if(S.stage===5){ // TANK ⊕ Đường thềm
+    add('<div class="sec">Triền xuống sau đỉnh</div>');
+    frag.appendChild(seg([{l:'Đường thềm (thống kê)',v:'thr'},{l:'Tiếp tục TANK',v:'tank'}],S.fall,function(v){S.fall=v;render();}));
+    add('<div class="sec" style="margin-top:12px">Điểm chuyển TANK → Đường thềm · giờ +'+(S.swH-NOW)+'h</div>');
+    var rg=document.createElement('input'); rg.type='range'; rg.min=NOW+2; rg.max=H-2; rg.value=S.swH; rg.style.width='100%';
+    rg.addEventListener('input',function(){ S.swH=+rg.value; render(); });
+    frag.appendChild(rg);
+  }
+  else if(S.stage===6){ // Dự báo tổ hợp
+    add('<div class="sec">4 tổ hợp chạy song song — chọn để trưng bày</div>');
+    frag.appendChild(seg([{l:'Obs·Ướt',v:'obs-wet'},{l:'Obs·Khô',v:'obs-dry'},{l:'Ana·Ướt',v:'ana-wet'},{l:'Ana·Khô',v:'ana-dry'}],S.combo,function(v){S.combo=v;render();}));
+    add('<div class="sec" style="margin-top:12px">Ghép Q lũ (TANK) ⊕ Q nền (Đường thềm)</div>');
+    add('<div class="row" style="gap:8px"><span class="pill '+(R.unc<0.16?'ok':R.unc<0.24?'watch':'crit')+'">độ tin cậy ±'+Math.round(R.unc*100)+'%</span>'
+      +'<span class="pill info">đỉnh '+Math.round(R.pk.q)+' m³/s</span></div>');
+    add('<div class="sec" style="margin-top:10px">Chốt → HNT Dashboard (khách hàng)</div>');
+  }
+  else if(S.stage===7){ // FAT
+    add('<div class="sec">Sai số theo hạn dự báo</div>');
+    var leads=[6,12,24,36,48], base=R.RE;
+    var bars='<div style="display:flex;align-items:flex-end;gap:8px;height:96px;padding:4px 0">';
+    leads.forEach(function(L,i){ var v=base*(0.7+i*0.16); var h=Math.min(1,v/0.4)*84;
+      bars+='<div style="flex:1;text-align:center"><div style="height:'+(84-h)+'px"></div><div style="height:'+h+'px;background:'+(v<0.15?'var(--ok)':v<0.25?'var(--watch)':'var(--crit)')+';border-radius:4px 4px 0 0"></div>'
+        +'<div class="mono" style="font-size:9.5px;color:var(--mut);margin-top:3px">'+L+'h</div><div class="mono" style="font-size:9.5px">'+(v*100).toFixed(0)+'%</div></div>'; });
+    bars+='</div>'; add(bars);
+    add('<div class="sec" style="margin-top:8px">Độ ổn định mô hình lưu lượng</div>');
+    add('<div class="row" style="gap:8px"><span class="pill '+(R.stab>=0.82?'ok':R.stab>=0.7?'watch':'crit')+'">ổn định '+R.stab.toFixed(2)+'</span>'
+      +'<span class="pill '+(R.REqp<0.15?'ok':'watch')+'">RE đỉnh '+(R.REqp*100).toFixed(0)+'%</span>'
+      +'<span class="badge">chỉ hiển thị</span></div>');
+  }
+  b.appendChild(frag);
+}
+
+/* ================= RENDER ALL ================= */
+function render(){
+  var R=compute();
+  document.getElementById('phienChip').innerHTML='Phiên <b class="mono">12:00 · 18/09</b>';
+  renderScore(R); renderRail(R); renderHydro(R); renderMetrics(R); renderCtrl(R);
+  document.getElementById('foot').innerHTML='<b>Bản trình diễn</b> · số liệu minh hoạ (Sông Chảy 3) · cấu trúc theo hồ sơ Hệ thống hoá công cụ WP.';
+}
+
+/* mode toggle */
+document.getElementById('modesw').addEventListener('click',function(e){
+  var b=e.target.closest('button'); if(!b)return;
+  [].forEach.call(this.querySelectorAll('button'),function(x){x.classList.toggle('on',x===b);});
+  S.mode=b.getAttribute('data-mode'); S.stage=(S.mode==='fat')?7:0; render();
+});
+
+/* run-cycle animation */
+document.getElementById('playBtn').addEventListener('click',function(){
+  var btn=this; btn.disabled=true; var chips=document.querySelectorAll('#rail .stg'); var i=0;
+  var iv=setInterval(function(){
+    chips.forEach(function(c){c.classList.remove('run');});
+    if(i<chips.length){ chips[i].classList.add('run'); S.stage=i; render(); i++; }
+    else{ clearInterval(iv); btn.disabled=false; }
+  },360);
+});
+
+render();
+</script>
+
+</body></html>

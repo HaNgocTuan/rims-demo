@@ -1,0 +1,103 @@
+{
+ "schema": "rims.hethong.lienho/v0.1",
+ "he_thong": "kon_hathanh",
+ "ten": "Hệ thống liên hồ chứa lưu vực sông Kôn - Hà Thanh",
+ "quyet_dinh": "QĐ 936/QĐ-TTg (2018)",
+ "cap_nhat": "2026-09-07",
+ "nguon": {
+  "danh_muc_ho": "DB luật SEHO (WP_SEHO_Legal_Master_v2.6) — MD10, Điều 1 QTVH liên hồ",
+  "ten_ban_do + toa_do": "data/congtrinh/*.geojson (khớp tên; bỏ tiền tố TĐ., 'bậc'→'b', alias tên rút gọn)"
+ },
+ "nguyen_tac": "Thành viên theo Điều 1 QTVH luật định. Vẽ marker theo lon/lat đã chốt. tren_ban_do=false = hồ luật định CHƯA có trong geojson nền (chưa xây / đập dâng / thiếu bản ghi).",
+ "ho": [
+  {
+   "ten": "Vĩnh Sơn A",
+   "ten_ban_do": "Vĩnh Sơn A",
+   "tren_ban_do": true,
+   "loai": "Thủy điện",
+   "anqg": false,
+   "lon": 108.694467,
+   "lat": 14.365745
+  },
+  {
+   "ten": "Vĩnh Sơn B",
+   "ten_ban_do": "Vĩnh Sơn B",
+   "tren_ban_do": true,
+   "loai": "Thủy điện",
+   "anqg": false,
+   "lon": 108.615848,
+   "lat": 14.379704
+  },
+  {
+   "ten": "Vĩnh Sơn C",
+   "ten_ban_do": "Vĩnh Sơn C",
+   "tren_ban_do": true,
+   "loai": "Thủy điện",
+   "anqg": false,
+   "lon": 108.445225,
+   "lat": 14.425488
+  },
+  {
+   "ten": "Vĩnh Sơn 4",
+   "ten_ban_do": null,
+   "tren_ban_do": false,
+   "loai": null,
+   "anqg": false
+  },
+  {
+   "ten": "Vĩnh Sơn 5",
+   "ten_ban_do": "Vĩnh Sơn 5",
+   "tren_ban_do": true,
+   "loai": "Thủy điện",
+   "anqg": false,
+   "lon": 108.720185,
+   "lat": 14.36132
+  },
+  {
+   "ten": "Trà Xom 1",
+   "ten_ban_do": "Trà Xom",
+   "tren_ban_do": true,
+   "loai": "Thủy điện",
+   "anqg": false,
+   "lon": 108.686762,
+   "lat": 14.304321,
+   "ghi_chu": "Khớp geojson theo tên rút gọn 'Trà Xom' (cùng công trình)"
+  },
+  {
+   "ten": "Định Bình",
+   "ten_ban_do": "Hồ Định Bình",
+   "tren_ban_do": true,
+   "loai": "Thủy lợi",
+   "anqg": false,
+   "lon": 108.7746,
+   "lat": 14.1558
+  },
+  {
+   "ten": "Núi Một",
+   "ten_ban_do": "Hồ Núi Một",
+   "tren_ban_do": true,
+   "loai": "Thủy lợi",
+   "anqg": false,
+   "lon": 109.002287,
+   "lat": 13.809143
+  },
+  {
+   "ten": "Thuận Ninh",
+   "ten_ban_do": "Hồ Thuận Ninh",
+   "tren_ban_do": true,
+   "loai": "Thủy lợi",
+   "anqg": false,
+   "lon": 108.922439,
+   "lat": 14.010039
+  },
+  {
+   "ten": "Văn Phong",
+   "ten_ban_do": "Văn Phong",
+   "tren_ban_do": true,
+   "loai": "Thủy điện",
+   "anqg": false,
+   "lon": 108.874116,
+   "lat": 13.939163
+  }
+ ]
+}
