@@ -236,26 +236,34 @@ async function handleHealth(res) {
 function handleRainlab(req, res, urlPath, search) {
   const rest = urlPath.slice("/api/rainlab".length) || "/";
   const target = RAINLAB_BASE + rest + (search || "");
-  // classify mất 5–9 s; cho chờ rộng hơn timeout RMA.
-  const to = Number(ENV.RIMS_RAINLAB_TIMEOUT || 45) * 1000;
+  // Render -> rainqc đôi khi rớt socket (UND_ERR_SOCKET). classify/stations/rain là GET
+  // nên RETRY an toàn. Mỗi lần thử <=60s, tối đa RIMS_RAINLAB_RETRY lần, backoff tăng dần.
+  const perTry = Math.min(Number(ENV.RIMS_RAINLAB_TIMEOUT || 60), 60) * 1000;
+  const MAX = Math.max(1, Number(ENV.RIMS_RAINLAB_RETRY || 4));
   (async () => {
-    try {
-      const opts = { method: req.method, signal: AbortSignal.timeout(to), headers: {} };
-      if (RAINLAB_KEY) opts.headers["X-API-Key"] = RAINLAB_KEY;
-      const up = await fetch(target, opts);
-      const buf = Buffer.from(await up.arrayBuffer());
-      res.writeHead(up.status, {
-        "Content-Type": up.headers.get("content-type") || "application/json; charset=utf-8",
-        "Content-Length": buf.length,
-        "Cache-Control": "no-store",
-      });
-      res.end(buf);
-    } catch (e) {
-      var code = (e && e.cause && e.cause.code) || (e && e.code) || "";
-      var chi = (e && e.message || String(e)) + (code ? " [" + code + "]" : "");
-      console.error("[rainlab] " + req.method + " " + target + " -> " + chi);
-      jsonRes(res, 502, { ok: false, target: target, code: code, msg: "Không gọi được RainLab QC (" + RAINLAB_BASE + "). Lỗi: " + chi + ". Kiểm dịch vụ RainLab + địa chỉ RIMS_RAINLAB_BASE trong .env." });
+    let lastErr = null;
+    for (let attempt = 1; attempt <= MAX; attempt++) {
+      try {
+        const opts = { method: req.method, signal: AbortSignal.timeout(perTry), headers: {} };
+        if (RAINLAB_KEY) opts.headers["X-API-Key"] = RAINLAB_KEY;
+        const up = await fetch(target, opts);
+        const buf = Buffer.from(await up.arrayBuffer());
+        res.writeHead(up.status, {
+          "Content-Type": up.headers.get("content-type") || "application/json; charset=utf-8",
+          "Content-Length": buf.length,
+          "Cache-Control": "no-store",
+        });
+        return res.end(buf);
+      } catch (e) {
+        lastErr = e;
+        const c = (e && e.cause && e.cause.code) || (e && e.code) || "";
+        console.error("[rainlab] thử " + attempt + "/" + MAX + " " + req.method + " " + target + " -> " + ((e && e.message) || e) + (c ? " [" + c + "]" : ""));
+        if (attempt < MAX) await new Promise((r) => setTimeout(r, 400 * attempt));
+      }
     }
+    const code = (lastErr && lastErr.cause && lastErr.cause.code) || (lastErr && lastErr.code) || "";
+    const chi = ((lastErr && lastErr.message) || String(lastErr)) + (code ? " [" + code + "]" : "");
+    jsonRes(res, 502, { ok: false, target: target, code: code, msg: "Không gọi được RainLab QC (" + RAINLAB_BASE + ") sau " + MAX + " lần thử. Lỗi: " + chi + "." });
   })();
 }
 
