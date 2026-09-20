@@ -22,6 +22,7 @@ import http from "node:http";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { spawn } from "node:child_process";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));   // app/services/server
 const ROOT = HERE;   // deploy: phục vụ ngay từ gốc repo (index.html ở đây)
@@ -444,3 +445,17 @@ server.listen(PORT, HOST, () => {
     Dừng: Ctrl+C
 `);
 });
+
+// PULLER NỀN: tự kéo dam_history/tank định kỳ (server-side, live)
+if (process.env.RIMS_PULLER !== "off") {
+  const mins = String(Number(process.env.RIMS_PULLER_MIN) || 10);
+  const startPuller = () => {
+    const c = spawn(process.execPath, [path.join(HERE, "dam_pull_live.mjs"), "--loop=" + mins],
+      { cwd: HERE, env: process.env, stdio: "inherit" });
+    c.on("exit", (code) => { console.log("[puller] thoát code=" + code + " — khởi động lại sau 60s"); setTimeout(startPuller, 60000); });
+    c.on("error", (e) => console.error("[puller] lỗi spawn:", e && e.message));
+  };
+  startPuller();
+  console.log("[puller] đã bật — nhịp " + mins + " phút (tắt bằng RIMS_PULLER=off)");
+}
+
