@@ -22,6 +22,7 @@ import http from "node:http";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import crypto from "node:crypto";
 import { spawn } from "node:child_process";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));   // app/services/server
@@ -50,6 +51,108 @@ function loadEnv(file) {
   return out;
 }
 const ENV = { ...loadEnv(ENV_FILE), ...process.env };
+
+/* ── XÁC THỰC ĐăNG NHẬP (server-side; mật khẩu KHÔNG lộ ra trình duyệt) ──
+ * Tài khoản đọc từ biến môi trường (Render env), không nằm trong repo/HTML:
+ *   RIMS_LOGIN_USER / RIMS_LOGIN_PASS         — một tài khoản
+ *   RIMS_LOGIN_USERS = "u1:p1,u2:p2"          — (tuỳ chọn) nhiều tài khoản
+ *   RIMS_SESSION_SECRET                        — khoá ký cookie phiên (nên đặt cố định)
+ *   RIMS_SESSION_TTL_HOURS  (mặc định 24)      — thời hạn phiên
+ * Thiếu cả USER/PASS lẫn USERS => tắt xác thực (chạy local như cũ).       */
+const AUTH_CRED = new Map();
+if (ENV.RIMS_LOGIN_USER && ENV.RIMS_LOGIN_PASS) AUTH_CRED.set(ENV.RIMS_LOGIN_USER, ENV.RIMS_LOGIN_PASS);
+for (const pair of String(ENV.RIMS_LOGIN_USERS || "").split(",")) {
+  const i = pair.indexOf(":"); if (i < 1) continue;
+  const u = pair.slice(0, i).trim(), pw = pair.slice(i + 1).trim();
+  if (u && pw) AUTH_CRED.set(u, pw);
+}
+const AUTH_ON = AUTH_CRED.size > 0;
+const SESSION_SECRET = ENV.RIMS_SESSION_SECRET || crypto.randomBytes(32).toString("hex");
+const SESSION_TTL_MS = Math.max(1, Number(ENV.RIMS_SESSION_TTL_HOURS || 24)) * 3600_000;
+const AUTH_COOKIE = "rims_auth";
+const AUTH_PUBLIC = new Set(["/login.html", "/api/login", "/api/logout", "/assets/brand/RIMS_icon.svg"]);
+
+function safeEq(a, b) {
+  const ba = Buffer.from(String(a)), bb = Buffer.from(String(b));
+  if (ba.length !== bb.length) { crypto.timingSafeEqual(ba, ba); return false; }
+  return crypto.timingSafeEqual(ba, bb);
+}
+function credOk(user, pass) {
+  const real = AUTH_CRED.get(user);
+  if (real === undefined) { safeEq(pass, pass); return false; }   // vẫn so sánh để đều thời gian
+  return safeEq(pass, real);
+}
+function b64url(buf) { return Buffer.from(buf).toString("base64").replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, ""); }
+function signSession(user) {
+  const payload = b64url(JSON.stringify({ u: user, exp: Date.now() + SESSION_TTL_MS }));
+  const sig = b64url(crypto.createHmac("sha256", SESSION_SECRET).update(payload).digest());
+  return payload + "." + sig;
+}
+function verifySession(token) {
+  if (!token || token.indexOf(".") < 0) return null;
+  const [payload, sig] = token.split(".");
+  const good = b64url(crypto.createHmac("sha256", SESSION_SECRET).update(payload).digest());
+  if (!safeEq(sig, good)) return null;
+  let obj; try { obj = JSON.parse(Buffer.from(payload.replace(/-/g, "+").replace(/_/g, "/"), "base64").toString("utf8")); } catch { return null; }
+  if (!obj || !obj.exp || Date.now() > obj.exp) return null;
+  return obj;
+}
+function readCookie(req, name) {
+  const raw = req.headers.cookie || "";
+  for (const part of raw.split(";")) {
+    const i = part.indexOf("=");
+    if (i < 0) continue;
+    if (part.slice(0, i).trim() === name) return decodeURIComponent(part.slice(i + 1).trim());
+  }
+  return null;
+}
+function isAuthed(req) { return !!verifySession(readCookie(req, AUTH_COOKIE)); }
+function isHttps(req) { return (req.headers["x-forwarded-proto"] || "").split(",")[0].trim() === "https"; }
+function setSessionCookie(req, res, user) {
+  const bits = [AUTH_COOKIE + "=" + signSession(user), "HttpOnly", "Path=/", "SameSite=Lax",
+               "Max-Age=" + Math.floor(SESSION_TTL_MS / 1000)];
+  if (isHttps(req)) bits.push("Secure");
+  res.setHeader("Set-Cookie", bits.join("; "));
+}
+function clearSessionCookie(req, res) {
+  const bits = [AUTH_COOKIE + "=", "HttpOnly", "Path=/", "SameSite=Lax", "Max-Age=0"];
+  if (isHttps(req)) bits.push("Secure");
+  res.setHeader("Set-Cookie", bits.join("; "));
+}
+
+/* Van chống dò mật khẩu: mỗi IP tối đa 8 lần sai / 5 phút → 429 */
+const loginFails = new Map();
+function loginBlocked(ip) {
+  const now = Date.now(), arr = (loginFails.get(ip) || []).filter((t) => t > now - 300_000);
+  loginFails.set(ip, arr);
+  return arr.length >= 8;
+}
+function loginNoteFail(ip) {
+  const now = Date.now(), arr = (loginFails.get(ip) || []).filter((t) => t > now - 300_000);
+  arr.push(now); loginFails.set(ip, arr);
+}
+function clientIp(req) { return (req.headers["x-forwarded-for"] || "").split(",")[0].trim() || req.socket.remoteAddress || "?"; }
+
+function handleLogin(req, res) {
+  const ip = clientIp(req);
+  if (loginBlocked(ip)) return jsonRes(res, 429, { ok: false, msg: "Too many attempts. Please wait a few minutes." });
+  let body = "", tooBig = false;
+  req.on("data", (c) => { body += c; if (body.length > 8192) { tooBig = true; req.destroy(); } });
+  req.on("end", () => {
+    if (tooBig) return jsonRes(res, 413, { ok: false, msg: "Payload too large" });
+    let o; try { o = JSON.parse(body || "{}"); } catch { return jsonRes(res, 400, { ok: false, msg: "Bad request" }); }
+    const user = String(o.username || "").trim(), pass = String(o.password || "");
+    if (credOk(user, pass)) { setSessionCookie(req, res, user); return jsonRes(res, 200, { ok: true }); }
+    loginNoteFail(ip);
+    return jsonRes(res, 401, { ok: false, msg: "Incorrect username or password." });
+  });
+}
+function handleLogout(req, res) {
+  clearSessionCookie(req, res);
+  res.writeHead(302, { Location: "/login.html" });
+  res.end();
+}
+
 
 const RMA_KEY = ENV.RIMS_RMA_API_KEY || ENV.RMA_API_KEY || "";
 const RMA_GATEWAY = (ENV.RIMS_RMA_GATEWAY || "https://wpe-tools.seho.vn/api/portal/gateway/rma").replace(/\/+$/, "");
@@ -400,6 +503,21 @@ const server = http.createServer((req, res) => {
 
   if (urlPath === "/" || urlPath === "") urlPath = "/index.html";
 
+  // ── CỔNG XÁC THỰC ──────────────────────────────────────────────────
+  if (AUTH_ON) {
+    if (urlPath === "/api/login" && req.method === "POST") return handleLogin(req, res);
+    if (urlPath === "/api/logout") return handleLogout(req, res);
+    if (!AUTH_PUBLIC.has(urlPath) && !isAuthed(req)) {
+      if (urlPath.startsWith("/api/")) return jsonRes(res, 401, { ok: false, msg: "Chưa đăng nhập" });
+      const accept = req.headers.accept || "";
+      if (accept.includes("text/html") || urlPath === "/index.html") {
+        res.writeHead(302, { Location: "/login.html?next=" + encodeURIComponent(urlPath + search) });
+        return res.end();
+      }
+      return jsonRes(res, 401, { ok: false, msg: "Chưa đăng nhập" });
+    }
+  }
+
   if (urlPath === "/api/rma" || urlPath.startsWith("/api/rma/")) return handleRma(req, res, urlPath, search);
   if (urlPath === "/api/rainlab" || urlPath.startsWith("/api/rainlab/")) return handleRainlab(req, res, urlPath, search);
   if (urlPath === "/api/health") return handleHealth(res);
@@ -446,6 +564,7 @@ server.listen(PORT, HOST, () => {
     Khoá RMA     :  ${RMA_KEY ? "đã nạp từ .env (trình duyệt KHÔNG thấy)" : "⚑ CHƯA CÓ — lớp Trạm và Mưa dự báo sẽ tắt"}
     Gateway RMA  :  ${RMA_GATEWAY}
     RainLab QC   :  ${RAINLAB_BASE}  (proxy: /api/rainlab/*) ${RAINLAB_KEY ? "· có khoá" : "· CHƯA CÓ KHOÁ"}
+    Xác thực     :  ${AUTH_ON ? ("BẬT · " + AUTH_CRED.size + " tài khoản" + (ENV.RIMS_SESSION_SECRET ? "" : " · ⚑ chưa đặt RIMS_SESSION_SECRET (phiên mất khi restart)")) : "TẮT (chưa đặt RIMS_LOGIN_USER/PASS)"}
     Van tiết lưu :  ${p.gioi_han.goi_moi_phut} lời gọi/phút · ${p.gioi_han.song_song} luồng song song
     Chính sách   :  ${fs.existsSync(POLICY_FILE) ? "data/fetch_policy.json" : "MẶC ĐỊNH (chưa có fetch_policy.json)"}
     Tải thật     :  http://localhost:${PORT}/api/rma/_thongke
