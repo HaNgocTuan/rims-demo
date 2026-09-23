@@ -32,6 +32,7 @@
     model:'<svg viewBox="0 0 24 24"><path d="M4 19V5M4 19h16"/><path d="M7 15l3-4 3 3 4-6"/></svg>',
     warn: '<svg viewBox="0 0 24 24"><path d="M12 3l9 16H3l9-16z"/><path d="M12 10v4M12 17h.01"/></svg>',
     flow: '<svg viewBox="0 0 24 24"><path d="M3 6h6l3 6 3-6h6"/><path d="M6 18h12"/></svg>',
+    rp:   '<svg viewBox="0 0 24 24"><path d="M6 3h9l3 3v15H6z"/><path d="M9 9h6M9 13h6M9 17h4"/></svg>',
     stat: '<svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>'
   };
 
@@ -54,9 +55,10 @@
     { id:'xa_lu',    nhom:'ho',  ten:'Kịch bản xả lũ',        ic:IC.flow,  tt:'sap_co',   mo:'Dựng kịch bản xả theo quy trình vận hành liên hồ.' },
     { id:'dientoan', nhom:'ho',  ten:'Diễn toán dòng chảy',   ic:IC.flow,  tt:'sap_co',   mo:'Diễn toán lũ về hạ du.' },
     { id:'sosanh',   nhom:'db',  ten:'Dự báo mưa-dòng chảy',  ic:IC.model, tt:'san_sang', mo:'Tổng mưa 3 ngày qua + dự báo 3 ngày tới, tìm đỉnh lũ 6 ngày và xếp hạng hồ có lũ.' },
-    { id:'canhbao',  nhom:'db',  ten:'Cảnh báo mưa-lũ',       ic:IC.warn,  tt:'sap_co',   mo:'Cảnh báo mưa lớn và lũ theo ngưỡng vùng/hồ.' },
+    { id:'canhbao',  nhom:'db',  ten:'Đánh giá rủi ro',       ic:IC.warn,  tt:'sap_co',   mo:'Đánh giá rủi ro vận hành và độ tin cậy (mưa, Q đến, kết quả mô hình); xếp hạng phương án.' },
     { id:'dbkt',     nhom:'htdbv', ten:'Dự báo khí tượng',    ic:IC.mua,   tt:'san_sang', mo:'Phân tích hình thế thời tiết — mở cửa sổ riêng.' },
-    { id:'dbtv',     nhom:'htdbv', ten:'Dự báo thủy văn',     ic:IC.flow,  tt:'sap_co',   mo:'Hỗ trợ dự báo viên lập bản tin dự báo thủy văn.' }
+    { id:'dbtv',     nhom:'htdbv', ten:'Dự báo thủy văn',     ic:IC.flow,  tt:'sap_co',   mo:'Hỗ trợ dự báo viên lập bản tin dự báo thủy văn.' },
+    { id:'baocao',   nhom:'htdbv', ten:'Báo cáo',           ic:IC.rp,    tt:'sap_co',   mo:'Lập bản tin nhanh/đột xuất, báo cáo ngày/tuần/tháng/mùa và báo cáo kịch bản; xuất Word/PDF/Excel.' }
   ];
 
   var MOUNTS = {};
